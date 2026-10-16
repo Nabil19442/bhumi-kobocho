@@ -1,0 +1,99 @@
+/* ==========================================================================
+   BHUMI KOBOCHO — Cadastral Responsive Layout & Components
+   Theme: Cadastral Map & Survey Ink Aesthetic (LandTech Innovation Hackathon 2026)
+   ========================================================================== */
+
+.landing-container {
+  width: 100%;
+  max-width: var(--max-content-width, 1200px);
+  margin: 0 auto;
+  padding-left: var(--gutter-desktop, 32px);
+  padding-right: var(--gutter-desktop, 32px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .landing-container {
+    padding-left: var(--gutter-mobile, 16px);
+    padding-right: var(--gutter-mobile, 16px);
+  }
+}
+
+/* Accessibility: Visible Focus Ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary-accent, #2742A0) !important;
+  outline-offset: 2px !important;
+}
+
+/* Minimum 44px Touch Targets on Interactive Elements */
+button, 
+.btn-primary, 
+.btn-secondary, 
+.nav-item-btn {
+  min-height: 44px;
+}
+
+/* Mobile-Friendly Hero Layout */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  
+  .hero-text-block {
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-cta-group button {
+    width: 100%;
+  }
+
+  .hero-passport-card {
+    margin-top: -40px !important;
+    width: 100% !important;
+  }
+}
+
+/* Hard Shadows for Hero, Plot Passport, and Alert Cards */
+.hero-passport-card,
+.cadastral-map-card,
+.alert-card-hard {
+  box-shadow: var(--shadow-hard, 6px 6px 0 #10272A);
+  border-radius: var(--radius-std, 6px);
+}
+
+/* Survey Map Hover / Precision */
+.cadastral-map-card polygon {
+  transition: opacity 0.15s ease;
+}
+
+.cadastral-map-card polygon:hover {
+  opacity: 0.85;
+}
+
+/* Prevent horizontal overflow on 390px mobile */
+body, #root, .app-shell {
+  overflow-x: hidden;
+  max-width: 100vw;
+}

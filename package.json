@@ -1,0 +1,21 @@
+{
+  "name": "bhumi-koboch",
+  "version": "1.0.0",
+  "description": "Bhumi Kobocho (ভূমি কবচ) — Plot Passport & Citizen Land Guardian",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "backend": "backend\\venv\\Scripts\\python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload",
+    "test": "backend\\venv\\Scripts\\python -m pytest -v backend/tests"
+  },
+  "keywords": [
+    "landtech",
+    "plot-passport",
+    "bangladesh",
+    "civictech"
+  ],
+  "author": "",
+  "license": "MIT"
+}

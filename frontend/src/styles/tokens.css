@@ -1,0 +1,73 @@
+/* ==========================================================================
+   BHUMI KOBOCHO (ভূমি কবচ) — DESIGN TOKENS
+   Theme: Cadastral / Mouza Map & Survey Ink Aesthetic
+   Hackathon: LandTech Innovation Hackathon 2026 • Team: ZENOX
+   ========================================================================== */
+
+:root {
+  /* Canonical Design Tokens */
+  --ground: #F1F5F0;           /* Pale sage background */
+  --paper: #FBFCFA;            /* Crisp document paper */
+  --white: #FFFFFF;            /* Pure white surface */
+  --ink: #10272A;              /* Deep ink-teal headings & primary text */
+  --ink-soft: #2D4649;         /* High-contrast body text */
+  --muted: #3C5558;            /* Legible secondary & metadata text */
+  --line: #CBD8D2;             /* Cadastral line border */
+  --deep: #0D2B2E;             /* Dark band & disclaimer surface */
+  --accent: #2742A0;           /* Survey-ink blue accent */
+
+  /* Aliased Surface & Background Colors */
+  --bg-primary: var(--ground);
+  --bg-paper: var(--paper);
+  --bg-card: var(--white);
+  --dark-band: var(--deep);
+
+  /* Aliased Text Colors */
+  --text-main: var(--ink);
+  --text-body: var(--ink-soft);
+  --text-muted: var(--muted);
+  --text-dim: var(--muted);
+
+  /* Aliased Accent Colors */
+  --primary-accent: var(--accent);
+  --primary-accent-hover: #1B3284;
+  --accent-tint: #E7EEFB;
+
+  /* Rule Engine 4-Status Colors */
+  --status-matched-bg: #DFF1E6;
+  --status-matched-text: #14633A;
+  --status-matched-border: #B7DFCA;
+
+  --status-mismatch-bg: #FADFD7;
+  --status-mismatch-text: #9A2C14;
+  --status-mismatch-row: #FEF4F0;
+  --status-mismatch-border: #F3BFB3;
+
+  --status-review-bg: #FBEBC4;
+  --status-review-text: #7A4E00;
+  --status-review-border: #F2D48E;
+
+  --status-notchecked-bg: #E3EAE8;
+  --status-notchecked-text: #3F5256;
+  --status-notchecked-border: #9AAFAA;
+
+  /* Typography */
+  --font-heading: 'Anek Bangla', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+  --font-body: 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+  /* Borders & Structure */
+  --radius-std: 6px;
+  --border-cadastral: 1px solid #CAD7CF;
+  --border-dark: 1px solid #10272A;
+  --border-dashed: 1px dashed #9AAFAA;
+
+  /* Hard Shadows (Applied exclusively to Hero, Plot Passport, and Alert cards) */
+  --shadow-hard: 6px 6px 0 #10272A;
+  --shadow-hard-sm: 4px 4px 0 #10272A;
+
+  /* Layout */
+  --max-content-width: 1200px;
+  --gutter-desktop: 32px;
+  --gutter-mobile: 16px;
+}

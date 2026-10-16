@@ -1,0 +1,77 @@
+[
+  {
+    "event_id": "evt-001",
+    "record_id": "rec-demo-001",
+    "status_label": "SIMULATED",
+    "event_type": "mutation_applied",
+    "title_bn": "খতিয়ান মিউটেশন আবেদন শনাক্ত (সিমুলেটেড)",
+    "title_en": "Mutation Application Detected (Simulated)",
+    "timestamp": "2026-10-15T09:30:00Z",
+    "source_system_mock": "AC-Land Demo Feed",
+    "field_changes": {
+      "khatian_no": {
+        "old_value": "412",
+        "new_value": "412/1",
+        "note_bn": "নামজারি খতিয়ান বিভাজন প্রস্তাব",
+        "note_en": "Proposed khatian partition under mutation"
+      },
+      "area_decimal": {
+        "old_value": 15.5,
+        "new_value": 10.0,
+        "note_bn": "৫.৫ শতাংশ জমি হস্তান্তরের আবেদন",
+        "note_en": "Application to transfer 5.5 decimal"
+      }
+    },
+    "description_bn": "সিমুলেটেড সতর্কতা: রেকর্ড নং rec-demo-001 এ একটি নামজারি জমা-খারিজের আবেদন নথিবদ্ধ হয়েছে। আপনার রেকর্ডকৃত মূল জমি ১৫.৫ শতাংশ থেকে পরিবর্তিত হয়ে ১০.০ শতাংশ হতে পারে।",
+    "description_en": "Simulated Alert: A mutation partition application was recorded against rec-demo-001. Recorded land area may change from 15.5 decimal to 10.0 decimal.",
+    "action_recommendation_bn": "ভূমি অফিসে সরাসরি যোগাযোগ করে শুনানি নোটিশ ও আবেদনকারীর তথ্য যাচাই করুন।",
+    "action_recommendation_en": "Contact the local Upazila Land Office to review hearing notices and applicant details.",
+    "disclaimer": "DEMO DATA — not a legal verdict"
+  },
+  {
+    "event_id": "evt-002",
+    "record_id": "rec-demo-002",
+    "status_label": "SIMULATED",
+    "event_type": "dag_split_flagged",
+    "title_bn": "দাগ সীমানা জরিপ পরিবর্তন (সিমুলেটেড)",
+    "title_en": "Dag Boundary Resurvey Notice (Simulated)",
+    "timestamp": "2026-10-14T14:15:00Z",
+    "source_system_mock": "Survey & Settlement Demo Feed",
+    "field_changes": {
+      "dag_no": {
+        "old_value": "2490",
+        "new_value": "2490/A",
+        "note_bn": "ডিজিটাল জরিপে উপ-দাগ প্রস্তাবিত",
+        "note_en": "Sub-dag proposed in digital survey"
+      }
+    },
+    "description_bn": "সিমুলেটেড সতর্কতা: দাগ নং ২৪৯০ তে নকশা হালনাগাদ সংক্রান্ত প্রস্তাবিত দাগ বিভাজন দেখা যাচ্ছে।",
+    "description_en": "Simulated Alert: Dag 2490 shows a proposed partition during map updating.",
+    "action_recommendation_bn": "হালনাগাদ মৌজা ম্যাপ ও দাগসূচি এসি ল্যান্ড অফিসে নিরীক্ষা করার পরামর্শ দেওয়া হচ্ছে।",
+    "action_recommendation_en": "Recommended to inspect the updated mouza map and dag index at the AC Land office.",
+    "disclaimer": "DEMO DATA — not a legal verdict"
+  },
+  {
+    "event_id": "evt-003",
+    "record_id": "rec-demo-003",
+    "status_label": "SIMULATED",
+    "event_type": "ownership_transfer_notice",
+    "title_bn": "সাব-রেজিস্ট্রি দলিল দাখিল সংকেত (সিমুলেটেড)",
+    "title_en": "Sub-Registry Deed Registration Signal (Simulated)",
+    "timestamp": "2026-10-16T11:00:00Z",
+    "source_system_mock": "Sub-Registry Demo Feed",
+    "field_changes": {
+      "owner_name_bn": {
+        "old_value": "আব্দুল করিম শেখ",
+        "new_value": "আব্দুল করিম শেখ ও অন্যান্য",
+        "note_bn": "সহ-অংশীদার অন্তর্ভুক্তি দলিল দাখিল",
+        "note_en": "Co-sharer inclusion deed submission"
+      }
+    },
+    "description_bn": "সিমুলেটেড সতর্কতা: সাব-রেজিস্ট্রি অফিসে উক্ত দাগে একটি নতুন হস্তান্তর দলিল নথিভুক্তির সংকেত এসেছে।",
+    "description_en": "Simulated Alert: A deed filing signal has been detected for this dag at the Sub-Registry office.",
+    "action_recommendation_bn": "সাব-রেজিস্ট্রি দলিলের সার্টিফাইড কপির আবেদন করে অংশীদারিত্ব বিবরণ মিলিয়ে নিন।",
+    "action_recommendation_en": "Apply for a certified copy of the deed at the Sub-Registry to verify co-ownership shares.",
+    "disclaimer": "DEMO DATA — not a legal verdict"
+  }
+]
