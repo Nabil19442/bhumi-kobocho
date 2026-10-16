@@ -184,6 +184,79 @@ def compare_document(req: CompareRequest):
     result["reference_record"] = ref_record
     return result
 
+def build_synthetic_timeline(rec: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Derives chronological timeline events strictly from fields present in the synthetic record.
+    Never invents dates, historical events, or mutation records.
+    Every event is explicitly marked with is_synthetic: True and the demo disclaimer.
+    """
+    timeline: List[Dict[str, Any]] = []
+
+    # 1. Cadastral Survey / Baseline Record (if khatian_no or dag_no exists)
+    dag_no = rec.get("dag_no")
+    khatian_no = rec.get("khatian_no")
+    mouza = rec.get("mouza")
+    if dag_no or khatian_no:
+        timeline.append({
+            "year": "জরিপ ভিত্তি (Baseline)",
+            "date": "নির্দিষ্ট তারিখ অপ্রাপ্য (Date unrecorded)",
+            "title_bn": "খতিয়ান ও দাগ রেকর্ড অন্তর্ভুক্তি",
+            "title_en": "Cadastral Survey Inscription",
+            "detail_bn": f"মৌজা: {mouza or 'অপ্রাপ্য'}, দাগ নং {dag_no or 'অপ্রাপ্য'}, খতিয়ান: {khatian_no or 'অপ্রাপ্য'}",
+            "detail_en": f"Mouza: {mouza or 'Unavailable'}, Dag No {dag_no or 'Unavailable'}, Khatian: {khatian_no or 'Unavailable'}",
+            "status_code": "RECORDED",
+            "is_synthetic": True,
+            "disclaimer": "DEMO DATA — not a legal verdict"
+        })
+
+    # 2. Saf-Kabala Deed Registration (if document_date or deed_no exists)
+    doc_date = rec.get("document_date")
+    deed_no = rec.get("deed_no")
+    if doc_date or deed_no:
+        year_val = "তারিখ অপ্রাপ্য (Unavailable)"
+        date_val = "তারিখ অপ্রাপ্য (Date Unavailable)"
+        if doc_date and len(str(doc_date)) >= 4:
+            year_val = str(doc_date)[:4]
+            date_val = str(doc_date)
+        elif deed_no and "/" in str(deed_no):
+            parts = str(deed_no).split("/")
+            if len(parts) > 1 and parts[-1].isdigit() and len(parts[-1]) == 4:
+                year_val = parts[-1]
+
+        timeline.append({
+            "year": year_val,
+            "date": date_val,
+            "title_bn": "সাব-কবলা দলিল রেজিস্ট্রেশন",
+            "title_en": "Saf-Kabala Deed Registration",
+            "detail_bn": f"দলিল নং: {deed_no or 'অপ্রাপ্য'}, ক্রেতা: {rec.get('owner_name_bn') or 'অপ্রাপ্য'}",
+            "detail_en": f"Deed No: {deed_no or 'Unavailable'}, Purchaser: {rec.get('owner_name_en') or 'Unavailable'}",
+            "status_code": "REGISTERED",
+            "is_synthetic": True,
+            "disclaimer": "DEMO DATA — not a legal verdict"
+        })
+
+    # 3. Mutation Case Sanction (only if last_mutation_case is present)
+    mutation_case = rec.get("last_mutation_case")
+    if mutation_case and str(mutation_case).strip():
+        # Derive year if encoded in case number (e.g. MUT-2022-9014 -> 2022)
+        match = re.search(r"\b(\d{4})\b", str(mutation_case))
+        mutation_year = match.group(1) if match else "অপ্রাপ্য (Unavailable)"
+        mutation_date = f"কেস রেকর্ড {mutation_year}" if match else "তারিখ অপ্রাপ্য (Date Unavailable)"
+
+        timeline.append({
+            "year": mutation_year,
+            "date": mutation_date,
+            "title_bn": "নামজারি ও জমা-খারিজ মঞ্জুর",
+            "title_en": "Mutation & Separation Sanctioned",
+            "detail_bn": f"নামজারি কেস: {mutation_case}, খতিয়ান: {khatian_no or 'অপ্রাপ্য'}",
+            "detail_en": f"Mutation Case: {mutation_case}, Khatian: {khatian_no or 'Unavailable'}",
+            "status_code": "MUTATED",
+            "is_synthetic": True,
+            "disclaimer": "DEMO DATA — not a legal verdict"
+        })
+
+    return timeline
+
 @app.get("/api/passport/{plot_id}")
 def get_plot_passport(plot_id: str, lang: str = Query("bn")):
     """
@@ -212,36 +285,7 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
 
     qr_code_base64 = generate_record_qr_base64(rec)
     explanation = explain_comparison(comparison, lang=lang)
-
-    timeline = [
-        {
-            "year": "2018",
-            "date": "2018-04-10",
-            "title_bn": "আরএস/বিএস রেকর্ড অন্তর্ভুক্তি",
-            "title_en": "RS/BS Record Inscription",
-            "detail_bn": f"মৌজা: {rec.get('mouza')}, দাগ নং {rec.get('dag_no')}",
-            "detail_en": f"Mouza: {rec.get('mouza')}, Dag No {rec.get('dag_no')}",
-            "status_code": "RECORDED"
-        },
-        {
-            "year": rec.get("document_date", "2021")[:4],
-            "date": rec.get("document_date", "2021-04-12"),
-            "title_bn": "সাব-কবলা দলিল রেজিস্ট্রেশন",
-            "title_en": "Saf-Kabala Deed Registration",
-            "detail_bn": f"দলিল নং: {rec.get('deed_no')}, ক্রেতা: {rec.get('owner_name_bn')}",
-            "detail_en": f"Deed No: {rec.get('deed_no')}, Purchaser: {rec.get('owner_name_en')}",
-            "status_code": "REGISTERED"
-        },
-        {
-            "year": "2022",
-            "date": "2022-08-18",
-            "title_bn": "নামজারি ও জমা-খারিজ মঞ্জুর",
-            "title_en": "Mutation & Separation Sanctioned",
-            "detail_bn": f"নামজারি কেস: {rec.get('last_mutation_case')}, খতিয়ান: {rec.get('khatian_no')}",
-            "detail_en": f"Mutation Case: {rec.get('last_mutation_case')}, Khatian: {rec.get('khatian_no')}",
-            "status_code": "MUTATED"
-        }
-    ]
+    timeline = build_synthetic_timeline(rec)
 
     return {
         "disclaimer": "DEMO DATA — not a legal verdict",
