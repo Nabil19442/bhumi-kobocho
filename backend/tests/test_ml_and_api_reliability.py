@@ -228,3 +228,18 @@ def test_frontend_land_price_payload_compatibility():
     assert "disclaimer_en" in data
     assert data["predicted_price_per_decimal_bdt"] > 0
     assert data["predicted_total_price_bdt"] > 0
+
+
+def test_import_compatibility_both_as_app_and_backend():
+    """
+    Verify that the FastAPI application can be imported both as 'app.main'
+    (as when working directory is backend/ on Render) and 'backend.app.main'
+    (as when working directory is the repository root).
+    """
+    import importlib
+    mod_as_backend = importlib.import_module("backend.app.main")
+    assert hasattr(mod_as_backend, "app")
+    mod_as_app = importlib.import_module("app.main")
+    assert hasattr(mod_as_app, "app")
+    assert mod_as_app.app is not None
+

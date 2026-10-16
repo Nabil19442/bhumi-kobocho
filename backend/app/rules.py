@@ -1,6 +1,9 @@
 import re
 from typing import Dict, Any, List, Optional
-from backend.app.names import evaluate_name_status
+try:
+    from .names import evaluate_name_status
+except ImportError:
+    from backend.app.names import evaluate_name_status
 
 ALLOWED_STATUSES = {"Matched", "Mismatch", "Needs review", "Not checked"}
 

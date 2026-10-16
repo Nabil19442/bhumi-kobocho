@@ -4,20 +4,36 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, Optional
 
-from backend.ml.config import (
-    SYNTHETIC_REGIONS,
-    LAND_TYPES,
-    ROAD_ACCESS_TYPES,
-    FLOOD_RISK_LEVELS,
-    DRAINAGE_QUALITIES,
-    PLOT_SHAPE_CATEGORIES,
-    LAND_USE_CATEGORIES,
-    TRANSACTION_PERIODS,
-    DEFAULT_RANDOM_SEED,
-    DEFAULT_SAMPLE_COUNT,
-    DATASET_CSV_PATH,
-    DATA_DIR,
-)
+try:
+    from .config import (
+        SYNTHETIC_REGIONS,
+        LAND_TYPES,
+        ROAD_ACCESS_TYPES,
+        FLOOD_RISK_LEVELS,
+        DRAINAGE_QUALITIES,
+        PLOT_SHAPE_CATEGORIES,
+        LAND_USE_CATEGORIES,
+        TRANSACTION_PERIODS,
+        DEFAULT_RANDOM_SEED,
+        DEFAULT_SAMPLE_COUNT,
+        DATASET_CSV_PATH,
+        DATA_DIR,
+    )
+except ImportError:
+    from backend.ml.config import (
+        SYNTHETIC_REGIONS,
+        LAND_TYPES,
+        ROAD_ACCESS_TYPES,
+        FLOOD_RISK_LEVELS,
+        DRAINAGE_QUALITIES,
+        PLOT_SHAPE_CATEGORIES,
+        LAND_USE_CATEGORIES,
+        TRANSACTION_PERIODS,
+        DEFAULT_RANDOM_SEED,
+        DEFAULT_SAMPLE_COUNT,
+        DATASET_CSV_PATH,
+        DATA_DIR,
+    )
 
 def generate_synthetic_land_dataset(
     n_samples: int = DEFAULT_SAMPLE_COUNT,

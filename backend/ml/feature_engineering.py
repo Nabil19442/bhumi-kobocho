@@ -4,12 +4,20 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
-from backend.ml.config import (
-    NUMERICAL_FEATURES,
-    CATEGORICAL_FEATURES,
-    BINARY_FEATURES,
-    ALL_FEATURE_COLUMNS,
-)
+try:
+    from .config import (
+        NUMERICAL_FEATURES,
+        CATEGORICAL_FEATURES,
+        BINARY_FEATURES,
+        ALL_FEATURE_COLUMNS,
+    )
+except ImportError:
+    from backend.ml.config import (
+        NUMERICAL_FEATURES,
+        CATEGORICAL_FEATURES,
+        BINARY_FEATURES,
+        ALL_FEATURE_COLUMNS,
+    )
 
 def build_feature_preprocessor() -> ColumnTransformer:
     """

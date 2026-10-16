@@ -20,24 +20,44 @@ from sklearn.ensemble import (
 )
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score, median_absolute_error
 
-from backend.ml.config import (
-    DATASET_CSV_PATH,
-    MODEL_PIPELINE_PATH,
-    MODEL_METADATA_PATH,
-    EVALUATION_REPORT_JSON_PATH,
-    EVALUATION_REPORT_MD_PATH,
-    ARTIFACTS_DIR,
-    REPORTS_DIR,
-    DEFAULT_RANDOM_SEED,
-    TRAIN_SPLIT_RATIO,
-    VAL_SPLIT_RATIO,
-    TEST_SPLIT_RATIO,
-    ALL_FEATURE_COLUMNS,
-    TARGET_COLUMN,
-    DISCLAIMER_EN,
-    DISCLAIMER_BN,
-)
-from backend.ml.feature_engineering import build_feature_preprocessor, get_feature_column_order
+try:
+    from .config import (
+        DATASET_CSV_PATH,
+        MODEL_PIPELINE_PATH,
+        MODEL_METADATA_PATH,
+        EVALUATION_REPORT_JSON_PATH,
+        EVALUATION_REPORT_MD_PATH,
+        ARTIFACTS_DIR,
+        REPORTS_DIR,
+        DEFAULT_RANDOM_SEED,
+        TRAIN_SPLIT_RATIO,
+        VAL_SPLIT_RATIO,
+        TEST_SPLIT_RATIO,
+        ALL_FEATURE_COLUMNS,
+        TARGET_COLUMN,
+        DISCLAIMER_EN,
+        DISCLAIMER_BN,
+    )
+    from .feature_engineering import build_feature_preprocessor, get_feature_column_order
+except ImportError:
+    from backend.ml.config import (
+        DATASET_CSV_PATH,
+        MODEL_PIPELINE_PATH,
+        MODEL_METADATA_PATH,
+        EVALUATION_REPORT_JSON_PATH,
+        EVALUATION_REPORT_MD_PATH,
+        ARTIFACTS_DIR,
+        REPORTS_DIR,
+        DEFAULT_RANDOM_SEED,
+        TRAIN_SPLIT_RATIO,
+        VAL_SPLIT_RATIO,
+        TEST_SPLIT_RATIO,
+        ALL_FEATURE_COLUMNS,
+        TARGET_COLUMN,
+        DISCLAIMER_EN,
+        DISCLAIMER_BN,
+    )
+    from backend.ml.feature_engineering import build_feature_preprocessor, get_feature_column_order
 
 def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     """Computes comprehensive regression evaluation metrics in BDT."""

@@ -5,7 +5,10 @@ import shutil
 import tempfile
 import subprocess
 from typing import Dict, Any, Optional, List, Tuple
-from backend.app.integrity import calculate_sha256
+try:
+    from .integrity import calculate_sha256
+except ImportError:
+    from backend.app.integrity import calculate_sha256
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 RECORDS_FILE = os.path.join(DATA_DIR, "records.json")

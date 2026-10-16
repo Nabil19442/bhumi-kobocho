@@ -12,35 +12,80 @@ from pydantic import BaseModel, Field, ConfigDict
 
 logger = logging.getLogger("bhumi_app.main")
 
-from backend.app.limiter import limiter
-from backend.app.rules import compare_records
-from backend.app.integrity import check_file_integrity, generate_record_qr_base64, calculate_sha256
-from backend.app.guardian import (
+import sys
+import types
+from pathlib import Path
+
+# Path and module aliasing normalization:
+# Allows running both from repo root ('uvicorn backend.app.main:app')
+# and from backend directory ('uvicorn app.main:app' as on Render)
+_current_dir = Path(__file__).resolve().parent      # .../backend/app
+_backend_dir = _current_dir.parent                  # .../backend
+_repo_root = _backend_dir.parent                    # .../repo_root
+
+for _p in (str(_backend_dir), str(_repo_root)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+if "backend" not in sys.modules:
+    _backend_pkg = types.ModuleType("backend")
+    _backend_pkg.__path__ = [str(_backend_dir)]
+    sys.modules["backend"] = _backend_pkg
+
+# Relative imports for app package modules
+from .limiter import limiter
+from .rules import compare_records
+from .integrity import check_file_integrity, generate_record_qr_base64, calculate_sha256
+from .guardian import (
     load_events,
     load_records,
     trigger_simulation_event,
     get_alerts,
     mark_alert_reviewed
 )
-from backend.app.explain import explain_comparison
-from backend.app.ocr import (
+from .explain import explain_comparison
+from .ocr import (
     load_known_demo_specimen,
     scan_uploaded_document,
     scan_document_bytes
 )
-from backend.app.graph import build_relationship_graph
-from backend.ml.schemas import (
-    LandPricePredictionRequest,
-    LandPricePredictionResponse,
-    ModelInfoResponse,
-    MetadataResponse
-)
-from backend.ml.predict import (
-    predict_land_price,
-    get_model_info,
-    get_metadata,
-    ModelNotAvailableError
-)
+from .graph import build_relationship_graph
+
+# ML imports via backend.ml to guarantee single shared module instance in sys.modules
+try:
+    from backend.ml.schemas import (
+        LandPricePredictionRequest,
+        LandPricePredictionResponse,
+        ModelInfoResponse,
+        MetadataResponse
+    )
+    from backend.ml.predict import (
+        predict_land_price,
+        get_model_info,
+        get_metadata,
+        ModelNotAvailableError
+    )
+except ImportError:
+    from ml.schemas import (
+        LandPricePredictionRequest,
+        LandPricePredictionResponse,
+        ModelInfoResponse,
+        MetadataResponse
+    )
+    from ml.predict import (
+        predict_land_price,
+        get_model_info,
+        get_metadata,
+        ModelNotAvailableError
+    )
+
+# Sync sys.modules alias between backend.ml and ml so patches on either apply to both
+if "backend.ml" in sys.modules and "ml" not in sys.modules:
+    sys.modules["ml"] = sys.modules["backend.ml"]
+if "backend.ml.predict" in sys.modules:
+    sys.modules["ml.predict"] = sys.modules["backend.ml.predict"]
+if "backend.ml.schemas" in sys.modules:
+    sys.modules["ml.schemas"] = sys.modules["backend.ml.schemas"]
 
 # Constants for strict API validation
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB limit
