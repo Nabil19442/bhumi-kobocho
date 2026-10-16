@@ -272,7 +272,7 @@ export default function LandPriceResultModal({
               )}
             </div>
 
-            {/* Unit Consistency Verification */}
+            {/* Land Area Tile */}
             <div style={{
               background: 'var(--paper)',
               border: '1px solid var(--line)',
@@ -286,26 +286,22 @@ export default function LandPriceResultModal({
                 fontFamily: 'var(--font-heading)',
                 marginBottom: '4px'
               }}>
-                {isBn ? 'একক সমতা যাচাই' : 'Unit Consistency Check'}
+                {isBn ? 'জমির মোট পরিমাণ' : 'Total Land Area'}
               </div>
               <div style={{
-                fontSize: '0.94rem',
-                fontWeight: 700,
-                color: 'var(--status-matched-text)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
+                fontSize: '1.28rem',
+                fontWeight: 800,
+                color: 'var(--ink)',
+                fontFamily: 'var(--font-heading)'
               }}>
-                <CheckCircle2 size={16} />
-                <span>{isBn ? 'গাণিতিকভাবে নিশ্চিত' : 'Verified Consistent'}</span>
+                {result.land_area_decimal} {isBn ? 'শতক' : 'Decimals'}
               </div>
               <div style={{
                 fontSize: '0.76rem',
                 color: 'var(--muted)',
-                fontFamily: 'var(--font-mono)',
                 marginTop: '4px'
               }}>
-                rate × {result.land_area_decimal} {isBn ? 'শতক' : 'decimals'} = total
+                {isBn ? 'ইনপুট অনুযায়ী প্রাক্কলিত' : 'As submitted in form'}
               </div>
             </div>
           </div>
@@ -379,27 +375,7 @@ export default function LandPriceResultModal({
             </div>
           )}
 
-          {/* Model Information */}
-          <div style={{
-            background: 'var(--paper)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-std)',
-            padding: '14px',
-            fontSize: '0.78rem',
-            color: 'var(--ink-soft)',
-            lineHeight: 1.55
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <Cpu size={14} style={{ color: 'var(--primary-accent)' }} />
-              <strong>{isBn ? 'মডেল আর্কিটেকচার:' : 'Model Architecture:'}</strong>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>{result.model_identifier}</span>
-            </div>
-            <div>
-              <strong>Provenance:</strong> {result.data_provenance}
-            </div>
-          </div>
-
-          {/* Critical Legal Disclaimer */}
+          {/* Concise Legal Disclaimer */}
           <div style={{
             background: '#FEF4F0',
             border: '1px solid #F3BFB3',
@@ -410,9 +386,11 @@ export default function LandPriceResultModal({
             gap: '10px'
           }}>
             <ShieldAlert size={18} style={{ color: '#9A2C14', flexShrink: 0 }} aria-hidden="true" />
-            <div style={{ fontSize: '0.82rem', color: '#9A2C14', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.84rem', color: '#9A2C14', lineHeight: 1.5 }}>
               <strong>{isBn ? 'আইনি নোটিশ:' : 'Notice:'} </strong>
-              {isBn ? 'এটি বাস্তব বাজারদর বা সরকারি মূল্যায়ন নয়।' : 'This is not an official government valuation or real market price.'}
+              {isBn
+                ? 'এটি বাস্তব বাজারদর বা সরকারি মূল্যায়ন নয়।'
+                : 'This is not an official government valuation or real market price.'}
             </div>
           </div>
 

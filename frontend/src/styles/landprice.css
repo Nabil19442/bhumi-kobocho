@@ -147,7 +147,13 @@
   opacity: 0.9;
 }
 
-/* 4. Two-Column Dashboard Layout */
+/* 4. Single-Column Focused Dashboard Layout */
+.landprice-single-card-layout {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
 .landprice-layout-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.95fr);
@@ -541,72 +547,4 @@
   font-size: 0.78rem;
   color: var(--status-review-text, #7A4E00);
   line-height: 1.4;
-}
-
-/* 8. Validated Model Metrics Card */
-.landprice-model-metrics-card {
-  background: var(--white, #FFFFFF);
-  border: 1px solid var(--line, #CBD8D2);
-  border-radius: var(--radius-std, 6px);
-  box-shadow: var(--shadow-card, 0 1px 4px rgba(16, 39, 42, 0.07));
-  margin-top: 18px;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.landprice-model-specs-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-@media (max-width: 640px) {
-  .landprice-model-specs-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-}
-
-.landprice-spec-tile {
-  background: var(--paper, #FBFCFA);
-  border: 1px solid var(--line, #CBD8D2);
-  border-radius: var(--radius-std, 6px);
-  padding: 10px 8px;
-  text-align: center;
-}
-
-.landprice-spec-label {
-  font-size: 0.72rem;
-  color: var(--muted, #3C5558);
-  font-family: var(--font-body, sans-serif);
-}
-
-.landprice-spec-val {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--ink, #10272A);
-  font-family: var(--font-heading, sans-serif);
-}
-
-.landprice-spec-sub {
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.landprice-spec-sub.green {
-  color: #14633A;
-}
-
-.landprice-spec-sub.blue {
-  color: var(--accent, #2742A0);
-}
-
-.landprice-provenance-text {
-  font-size: 0.78rem;
-  color: var(--muted, #3C5558);
-  line-height: 1.5;
-  border-top: 1px solid var(--line, #CBD8D2);
-  padding-top: 10px;
-  margin-top: 12px;
 }

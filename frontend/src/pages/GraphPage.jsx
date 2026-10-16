@@ -112,24 +112,6 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
             </p>
           </div>
         </div>
-
-        {/* Demo Data Disclaimer Bar */}
-        <div style={{
-          marginTop: '16px',
-          background: '#FFF8E1',
-          border: '1px solid #FFE082',
-          padding: '8px 16px',
-          borderRadius: 'var(--radius-std)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '0.85rem',
-          color: '#795548',
-          fontFamily: 'var(--font-mono)'
-        }}>
-          <Info size={16} color="#F57C00" />
-          <span><strong>DEMO DATA:</strong> {isBn ? 'কোনো আইনি সিদ্ধান্ত বা প্রত্যয়ন নয়। শুধুমাত্র পরীক্ষামূলক ডাটাবেস শৃঙ্খল বিশ্লেষণ।' : 'Not a legal verdict. Purely deterministic synthetic reference analysis.'}</span>
-        </div>
       </div>
 
       {/* Filter / Focus Control Bar */}

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldAlert, 
   Radio, 
   CheckCircle2, 
   Clock, 
@@ -110,41 +109,17 @@ export default function GuardianPage({ t, lang = 'bn' }) {
               {isBn ? 'ল্যান্ড গার্ডিয়ান — নাগরিক অ্যালার্ট ফিড' : 'Land Guardian Alert Feed'}
             </h1>
             <p style={{
-              fontSize: '0.96rem',
+              fontSize: '0.95rem',
               color: 'var(--text-body)',
               fontFamily: 'var(--font-body)',
               margin: '4px 0 0'
             }}>
               {isBn 
-                ? 'জমির রেকর্ডে কোনো পরিবর্তন বা নামজারি আবেদন শনাক্ত হলে রিয়েল-টাইম সতর্কবার্তা প্রদর্শন।' 
-                : 'Simulated monitoring hub alerting citizens when records or mutations change.'}
+                ? 'নাগরিক সুরক্ষা ডেমো: রেকর্ড পরিবর্তন শনাক্তকরণ ও সিমুলেটেড নোটিফিকেশন প্রদর্শন (লাইভ সরকারি সিস্টেম নয়)।' 
+                : 'Citizen protection demo: Simulated notifications alerting parcel holders upon record changes (not a live feed).'}
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Mandatory Prominent Disclaimer Banner */}
-      <div style={{
-        background: '#FEF4F0',
-        border: '1px solid #F3BFB3',
-        borderRadius: 'var(--radius-std)',
-        padding: '12px 18px',
-        marginBottom: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
-      }}>
-        <ShieldAlert size={18} style={{ color: '#9A2C14', flexShrink: 0 }} />
-        <span style={{
-          fontSize: '0.88rem',
-          fontWeight: 700,
-          color: '#9A2C14',
-          fontFamily: 'var(--font-heading)'
-        }}>
-          {isBn
-            ? 'সিমুলেটেড সতর্কতা ব্যবস্থা — কোনো লাইভ সরকারি সিস্টেম পর্যবেক্ষণ করা হচ্ছে না।'
-            : 'SIMULATED EVENT MONITORING — No live government system is being observed.'}
-        </span>
       </div>
 
       <ApiErrorNotice error={error} onRetry={loadGuardianData} title={isBn ? 'ল্যান্ড গার্ডিয়ান সেবা সাময়িকভাবে উপলব্ধ নয়' : 'Land Guardian Service Unavailable'} />

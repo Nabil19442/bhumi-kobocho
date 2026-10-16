@@ -49,13 +49,6 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
       title_en: 'Infrastructure Utilities',
       desc_bn: 'পল্লী বিদ্যুৎ সংযোগ ও গভীর নলকূপ সেচ সুবিধার উপস্থিতি',
       desc_en: 'Rural electricity grid availability and irrigation access'
-    },
-    {
-      icon: <BarChart2 size={18} />,
-      title_bn: 'এমপিরিক্যাল বাউন্ড ও রেঞ্জ',
-      title_en: 'Empirical Uncertainty',
-      desc_bn: '৮০% সম্ভাব্য বিচ্যুতির পরিসীমা ও প্রতি শতকের আনুমানিক দর',
-      desc_en: '80% empirical residual interval and unit-consistent rates'
     }
   ];
 
@@ -88,7 +81,7 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
             marginBottom: '12px'
           }}>
             <TrendingUp size={14} aria-hidden="true" />
-            <span>{isBn ? 'মেশিন লার্নিং বুদ্ধিমত্তা' : 'Machine Learning Intelligence'}</span>
+            <span>{isBn ? 'মূল্য বুদ্ধিমত্তা' : 'Price Intelligence'}</span>
           </div>
 
           <h2 style={{
@@ -110,17 +103,17 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
             margin: 0
           }}>
             {isBn
-              ? 'জমির অবস্থান, পরিমাণ, রাস্তার সংযোগ ও অন্যান্য বৈশিষ্ট্যের ভিত্তিতে পরীক্ষামূলক মডেলের মাধ্যমে সম্ভাব্য মূল্য বিশ্লেষণ করুন।'
-              : 'Estimate multi-factor rural land valuations using our reproducible machine learning regression model.'}
+              ? 'জমির অবস্থান, পরিমাণ ও অন্যান্য বৈশিষ্ট্যের ভিত্তিতে পরীক্ষামূলক মডেলের মাধ্যমে সম্ভাব্য মূল্য বিশ্লেষণ করুন।'
+              : 'Estimate multi-factor rural land valuations using our reproducible machine learning model.'}
           </p>
         </div>
 
         {/* Supported Factors Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '18px',
-          marginBottom: '36px'
+          marginBottom: '40px'
         }}>
           {supportedFactors.map((factor, idx) => (
             <div 
@@ -132,8 +125,7 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
                 padding: '20px',
                 display: 'flex',
                 gap: '14px',
-                alignItems: 'flex-start',
-                transition: 'transform 0.15s ease, border-color 0.15s ease',
+                alignItems: 'flex-start'
               }}
             >
               <div style={{
@@ -170,27 +162,7 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
           ))}
         </div>
 
-        {/* Strict Disclaimer Banner */}
-        <div style={{
-          background: '#FEF6F0',
-          border: '1px solid #F5CFC0',
-          borderRadius: 'var(--radius-std)',
-          padding: '16px 20px',
-          marginBottom: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px'
-        }}>
-          <ShieldAlert size={22} style={{ color: '#9A2C14', flexShrink: 0 }} aria-hidden="true" />
-          <div style={{ fontSize: '0.88rem', color: '#9A2C14', lineHeight: 1.55 }}>
-            <strong>{isBn ? 'সতর্কবার্তা ও সীমাবদ্ধতা:' : 'Strict Disclaimer:'} </strong>
-            {isBn
-              ? 'এই মডেলটি সম্পূর্ণ কৃত্রিম ডেটাসেট (synthetic data) দ্বারা প্রশিক্ষিত ও পরীক্ষিত। এটি বাংলাদেশের কোনো সরকারি সাব-রেজিস্ট্রি বা ভূমি মন্ত্রণালয়ের নথি নয়, কোনো প্রকৃত বাজারদর নয় এবং জমি কেনাবেচার আর্থিক বা আইনি সিদ্ধান্তের জন্য ব্যবহারযোগ্য নয়।'
-              : 'This model is trained on synthetic demo data only. It does not represent official government valuations or actual Bangladesh market rates and must not be used for legal or financial appraisal.'}
-          </div>
-        </div>
-
-        {/* Prominent CTA Button */}
+        {/* Prominent CTA Button & Clean Footnote */}
         <div style={{ textAlign: 'center' }}>
           <button
             type="button"
@@ -217,6 +189,18 @@ export default function LandPricePreviewSection({ lang = 'bn', onViewLandPrice }
             <span>{isBn ? 'জমির মূল্য বিশ্লেষণ করুন' : 'Analyze Rural Land Value'}</span>
             <ArrowRight size={18} aria-hidden="true" />
           </button>
+
+          <p style={{
+            fontSize: '0.84rem',
+            color: 'var(--muted)',
+            fontFamily: 'var(--font-body)',
+            marginTop: '16px',
+            marginBottom: 0
+          }}>
+            {isBn
+              ? 'পরীক্ষামূলক সংস্করণ: এই ফিচারটি কৃত্রিম ডেমো ডেটার ওপর ভিত্তি করে তৈরি এবং বাস্তব বাজারদর বা সরকারি মূল্যায়ন নয়।'
+              : 'Experimental demo based on synthetic test data. Not an official government valuation or actual market price.'}
+          </p>
         </div>
 
       </div>
