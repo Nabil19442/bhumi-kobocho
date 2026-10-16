@@ -88,7 +88,11 @@ export async function fetchSimulationEvents() {
   return request("/guardian/events");
 }
 
-const DEMO_GUARDIAN_KEY = "demo-zenox-2026";
+// SECURITY NOTE: Frontend-embedded API keys are visible to anyone inspecting the client bundle.
+// This key is used strictly for hackathon demonstration of simulation event triggering,
+// not as an enterprise security boundary. For production, role-based session auth (e.g. OAuth2/JWT)
+// must protect all mutation endpoints.
+const DEMO_GUARDIAN_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_GUARDIAN_API_KEY) || "demo-zenox-2026";
 
 export async function triggerSimulationApi(eventId) {
   return request(`/guardian/simulate/${eventId}`, {

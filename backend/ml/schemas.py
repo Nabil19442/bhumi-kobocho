@@ -1,8 +1,10 @@
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class LandPricePredictionRequest(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False, extra="forbid")
+
     land_area_decimal: float = Field(
         ...,
         gt=0.0,
@@ -104,6 +106,10 @@ class LandPricePredictionRequest(BaseModel):
     land_use_category: Optional[str] = Field(
         default="crop_farming",
         description="Current land use: crop_farming, residential, mixed_use, commercial, aquaculture, fallow."
+    )
+    transaction_period: Optional[str] = Field(
+        default=None,
+        description="Optional transaction period identifier (e.g. 2026-Q1)."
     )
 
 

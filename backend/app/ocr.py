@@ -243,6 +243,13 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
     and reads its sample file from backend/data/samples/.
     Engine is strictly reported as 'known_demo_specimen'.
     """
+    if not sample_id or not isinstance(sample_id, str):
+        raise ValueError("Invalid sample_id.")
+
+    clean_id = sample_id.strip()
+    if "/" in clean_id or "\\" in clean_id or ".." in clean_id:
+        raise ValueError("Invalid sample_id: Path traversal characters are not permitted.")
+
     if not os.path.exists(RECORDS_FILE):
         raise FileNotFoundError("Records dataset records.json not found.")
 
@@ -287,11 +294,15 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
             "disclaimer": "DEMO DATA — not a legal verdict. Degraded specimen requires manual entry."
         }
 
-    sample_filename = target_record.get("sample_file", "")
+    sample_filename = os.path.basename(target_record.get("sample_file", ""))
     if not sample_filename:
         raise FileNotFoundError(f"Record '{target_record.get('id')}' does not have a sample_file defined.")
 
-    sample_path = os.path.join(SAMPLES_DIR, sample_filename)
+    sample_path = os.path.abspath(os.path.join(SAMPLES_DIR, sample_filename))
+    samples_dir_abs = os.path.abspath(SAMPLES_DIR)
+    if not sample_path.startswith(samples_dir_abs + os.sep) and sample_path != samples_dir_abs:
+        raise ValueError("Invalid sample path: potential path traversal detected.")
+
     if not os.path.isfile(sample_path):
         raise FileNotFoundError(f"Demo specimen file '{sample_filename}' was not found on disk.")
 
@@ -381,7 +392,7 @@ def scan_uploaded_document(
                 "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},
                 "ocr_engine": "text_decoder_error",
                 "status": "error",
-                "message": f"Failed to decode text file: {str(e)}",
+                "message": "Failed to decode text file. Please ensure valid UTF-8 encoding.",
                 "uploaded_file_sha256": computed_hash,
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }
@@ -421,7 +432,7 @@ def scan_uploaded_document(
                 "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},
                 "ocr_engine": "pdf_parser_error",
                 "status": "error",
-                "message": f"Failed to parse PDF document: {str(e)}. It may be corrupt or encrypted.",
+                "message": "Failed to parse PDF document. It may be corrupt or encrypted.",
                 "uploaded_file_sha256": computed_hash,
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }
@@ -452,7 +463,7 @@ def scan_uploaded_document(
                 "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},
                 "ocr_engine": "tesseract_runtime_error",
                 "status": "error",
-                "message": f"Tesseract execution error: {str(e)}. Manual field entry is available.",
+                "message": "Optical character recognition execution encountered an error. Manual field entry is available.",
                 "uploaded_file_sha256": computed_hash,
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }

@@ -1,10 +1,16 @@
 import os
 import re
+import math
 import urllib.parse
+import logging
 from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request, Depends, Header, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
+
+logger = logging.getLogger("bhumi_app.main")
 
 from backend.app.limiter import limiter
 from backend.app.rules import compare_records
@@ -47,6 +53,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Sanitizes Pydantic validation errors before JSON serialization.
+    Replaces raw non-compliant float values (NaN, Infinity, -Infinity) in 'input'
+    with string representations so Starlette's JSONResponse does not crash.
+    """
+    sanitized_errors = []
+    for err in exc.errors():
+        err_copy = dict(err)
+        val = err_copy.get("input")
+        if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+            err_copy["input"] = str(val)
+        sanitized_errors.append(err_copy)
+    return JSONResponse(
+        status_code=422,
+        content={"detail": sanitized_errors}
+    )
+
 # Configurable CORS allowlist (SEC-04: No wildcard origins)
 _DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
@@ -86,7 +111,7 @@ class CompareRequest(BaseModel):
     area_tolerance_decimal: Optional[float] = Field(0.05, ge=0.0, le=100.0)
     language: Optional[str] = Field("bn", max_length=10)
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", allow_inf_nan=False)
 
 class ExplainRequest(BaseModel):
     comparison_result: Dict[str, Any]
@@ -260,8 +285,12 @@ async def scan_document(
     if sample_id and sample_id.strip():
         try:
             return load_known_demo_specimen(sample_id.strip())
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail=str(e))
+        except (FileNotFoundError, ValueError) as e:
+            logger.warning("Demo specimen request failed for sample_id '%s': %s", sample_id, e)
+            raise HTTPException(
+                status_code=404,
+                detail=f"Requested demo specimen is not available."
+            )
 
     # 2. Uploaded user file
     if file is not None:
@@ -680,10 +709,11 @@ def land_price_health():
             "disclaimer": "SYNTHETIC DATA — not a real market valuation"
         }
     except ModelNotAvailableError as e:
+        logger.warning("Land price model not available in health check: %s", e)
         return {
             "status": "degraded",
             "model_status": "unavailable",
-            "message": str(e),
+            "message": "Land price model artifact is currently unavailable or integrity check failed.",
             "disclaimer": "SYNTHETIC DATA — not a real market valuation"
         }
 
@@ -706,9 +736,10 @@ def land_price_model_info():
     try:
         return get_model_info()
     except ModelNotAvailableError as e:
+        logger.warning("Land price model unavailable: %s", e)
         raise HTTPException(
             status_code=503,
-            detail=f"Land price model is unavailable: {str(e)}"
+            detail="Land price model is unavailable: artifact missing or integrity check failed."
         )
 
 
@@ -724,13 +755,15 @@ def land_price_predict(prediction_req: LandPricePredictionRequest, request: Requ
     try:
         return predict_land_price(prediction_req)
     except ModelNotAvailableError as e:
+        logger.warning("Land price model unavailable for prediction: %s", e)
         raise HTTPException(
             status_code=503,
-            detail=f"Land price model is unavailable: {str(e)}. No fabricated estimate will be provided."
+            detail="Land price model is unavailable. No fabricated estimate will be provided."
         )
     except Exception as e:
+        logger.error("Unexpected error during land price prediction: %s", e, exc_info=True)
         raise HTTPException(
             status_code=400,
-            detail=f"Inference error: {str(e)}"
+            detail="Land price prediction failed due to an inference error."
         )
 
