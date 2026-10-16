@@ -16,6 +16,8 @@
     "file_hash_sha256": "07913647653f602004c31fa30728000171f061307ac630c319f7d5cb1b928e47",
     "sample_file": "deed_sample_001.png",
     "last_mutation_case": "MUT-2022-9014",
+    "prior_deed_no": "920/2005",
+    "parent_khatian_no": "RS-190",
     "disclaimer": "DEMO DATA — not a legal verdict"
   },
   {
@@ -31,6 +33,9 @@
     "area_decimal": 8.25,
     "document_date": "2019-11-20",
     "deed_no": "8901/2019",
+    "prior_deed_no": "710/2008",
+    "parent_khatian_no": "410",
+    "parent_record_id": "rec-demo-004",
     "dummy_nid_last4": "4431",
     "file_hash_sha256": "1e929d151eb2506068a04c62da2bf3886fecee91e0bb7ab1db58bbdbf8f526bd",
     "sample_file": "deed_sample_002.png",
@@ -54,6 +59,25 @@
     "file_hash_sha256": "d1d1d5b15349b6d569bc4fe02c23c4fa97b58725bc2db501f0fff57d2974824b",
     "sample_file": "deed_sample_003.png",
     "last_mutation_case": "MUT-2018-0512",
+    "disclaimer": "DEMO DATA — not a legal verdict"
+  },
+  {
+    "id": "rec-demo-004",
+    "owner_name_bn": "আবুল হোসেন তালুকদার",
+    "owner_name_en": "Abul Hossain Talukdar",
+    "khatian_no": "410",
+    "dag_no": "2490",
+    "mouza": "বাড্ডা (Badda), JL-12",
+    "district": "ঢাকা (Dhaka)",
+    "upazila": "গুলশান (Gulshan)",
+    "land_class": "ভিটি (Viti / Homestead)",
+    "area_decimal": 8.25,
+    "document_date": "2008-03-14",
+    "deed_no": "710/2008",
+    "dummy_nid_last4": "1209",
+    "file_hash_sha256": "9982c5618cdcbf673c9f0edd3c8f05b61a2c7eed9da5a45fdd149ac1eb4516a4",
+    "sample_file": "deed_sample_004.png",
+    "last_mutation_case": "MUT-2009-1102",
     "disclaimer": "DEMO DATA — not a legal verdict"
   }
 ]

@@ -20,6 +20,19 @@ from backend.app.ocr import (
     scan_uploaded_document,
     scan_document_bytes
 )
+from backend.app.graph import build_relationship_graph
+from backend.ml.schemas import (
+    LandPricePredictionRequest,
+    LandPricePredictionResponse,
+    ModelInfoResponse,
+    MetadataResponse
+)
+from backend.ml.predict import (
+    predict_land_price,
+    get_model_info,
+    get_metadata,
+    ModelNotAvailableError
+)
 
 # Constants for strict API validation
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB limit
@@ -66,6 +79,25 @@ def list_records():
         "disclaimer": "DEMO DATA — not a legal verdict",
         "records": records
     }
+
+@app.get("/api/records/graph")
+def get_records_graph(record_id: Optional[str] = Query(None)):
+    """
+    Returns the synthetic land record relationship graph.
+    - If record_id is provided, returns the focused graph for that record.
+    - If record_id is unknown, returns HTTP 404.
+    - If record_id is omitted, returns the complete relationship graph.
+    """
+    records = load_records()
+    if record_id:
+        rec_exists = any(r.get("id") == record_id for r in records)
+        if not rec_exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Record '{record_id}' not found."
+            )
+    events = load_events()
+    return build_relationship_graph(records, events=events, focus_record_id=record_id)
 
 @app.get("/api/records/{record_id}")
 def get_record(record_id: str):
@@ -325,17 +357,85 @@ async def check_integrity(
     return check_file_integrity(contents, clean_hash)
 
 @app.get("/api/integrity/qr/{record_id}")
-def get_integrity_qr(record_id: str):
+def get_integrity_qr(record_id: str, base_url: Optional[str] = Query(None)):
     records = load_records()
     rec = next((r for r in records if r.get("id") == record_id), None)
     if not rec:
         raise HTTPException(status_code=404, detail="Record not found")
-    qr_b64 = generate_record_qr_base64(rec)
+    
+    clean_base_url = base_url.strip() if base_url else os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    verification_url = f"{clean_base_url}/verify/{record_id}"
+    qr_b64 = generate_record_qr_base64(rec, base_url=clean_base_url)
+    
     return {
         "record_id": record_id,
         "qr_base64": qr_b64,
+        "qr_code_base64": qr_b64,
+        "verification_url": verification_url,
         "stored_hash": rec.get("file_hash_sha256"),
         "disclaimer": "DEMO DATA — not a legal verdict"
+    }
+
+@app.get("/api/records/verify/{record_id}")
+def verify_record_public(record_id: str):
+    """
+    Narrowly-scoped read-only endpoint for public demo QR verification.
+    Returns safe public metadata, reference hash, and deterministic graph findings.
+    Excludes private personal identifiers (e.g., dummy_nid_last4).
+    Returns HTTP 404 for unknown record IDs.
+    """
+    records = load_records()
+    rec = next((r for r in records if r.get("id") == record_id), None)
+    if not rec:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Record '{record_id}' not found."
+        )
+
+    # Public metadata omitting dummy_nid_last4
+    public_metadata = {
+        "id": rec["id"],
+        "is_synthetic": True,
+        "label": f"দলিল {rec.get('deed_no', 'N/A')} (দাগ {rec.get('dag_no', 'N/A')})",
+        "deed_no": rec.get("deed_no"),
+        "document_date": rec.get("document_date"),
+        "mouza": rec.get("mouza"),
+        "district": rec.get("district"),
+        "upazila": rec.get("upazila"),
+        "dag_no": str(rec.get("dag_no", "")),
+        "khatian_no": str(rec.get("khatian_no", "")),
+        "area_decimal": rec.get("area_decimal"),
+        "land_class": rec.get("land_class"),
+        "owner_name_bn": rec.get("owner_name_bn"),
+        "owner_name_en": rec.get("owner_name_en"),
+        "last_mutation_case": rec.get("last_mutation_case"),
+        "prior_deed_no": rec.get("prior_deed_no"),
+        "parent_khatian_no": rec.get("parent_khatian_no")
+    }
+
+    # Reference SHA-256 hash
+    reference_hash = rec.get("file_hash_sha256")
+
+    # Load relevant deterministic graph findings for this record
+    events = load_events()
+    graph = build_relationship_graph(records, events=events, focus_record_id=record_id)
+    relevant_findings = graph.get("findings", [])
+
+    from datetime import datetime, timezone
+    current_time_iso = datetime.now(timezone.utc).isoformat()
+
+    return {
+        "disclaimer": "DEMO DATA — not a legal verdict",
+        "disclaimer_bn": "ডেমো ডেটা — এটি আইনি সিদ্ধান্ত নয়। কিউআর কোড বা হ্যাশ ম্যাচ জমির মালিকানা বা দলিলের আইনগত সত্যতা প্রমাণ করে না।",
+        "record_id": record_id,
+        "is_synthetic": True,
+        "public_metadata": public_metadata,
+        "reference_sha256": reference_hash,
+        "file_hash_status": "Not checked",
+        "file_hash_notice": "ফাইল আপলোড করে বাইট স্তরে হ্যাশ মেলানো না হলে হ্যাশ স্ট্যাটাস 'Not checked' থাকবে।",
+        "graph_findings": relevant_findings,
+        "verification_timestamp": current_time_iso,
+        "allowed_statuses": ["Matched", "Mismatch", "Needs review", "Not checked"]
     }
 
 @app.get("/api/guardian/events")
@@ -374,3 +474,77 @@ def review_guardian_alert(alert_id: str):
         "disclaimer": "DEMO DATA — not a legal verdict",
         "alert": reviewed
     }
+
+
+# ============================================================================
+# RURAL LAND PRICE INTELLIGENCE (SYNTHETIC ML MODULE)
+# ============================================================================
+
+@app.get("/api/land-price/health")
+def land_price_health():
+    """
+    Health check for the Land Price Intelligence module.
+    Returns status of the model artifact without running blocking inference.
+    """
+    try:
+        info = get_model_info()
+        return {
+            "status": "healthy",
+            "model_status": "loaded",
+            "model_name": info.algorithm,
+            "dataset_version": info.dataset_version,
+            "disclaimer": "SYNTHETIC DATA — not a real market valuation"
+        }
+    except ModelNotAvailableError as e:
+        return {
+            "status": "degraded",
+            "model_status": "unavailable",
+            "message": str(e),
+            "disclaimer": "SYNTHETIC DATA — not a real market valuation"
+        }
+
+
+@app.get("/api/land-price/metadata", response_model=MetadataResponse)
+def land_price_metadata():
+    """
+    Returns allowable categories, valid numeric ranges, synthetic location hierarchies,
+    and synthetic provenance statements for UI form binding and API discovery.
+    """
+    return get_metadata()
+
+
+@app.get("/api/land-price/model-info", response_model=ModelInfoResponse)
+def land_price_model_info():
+    """
+    Returns full evaluation metrics, candidate benchmark comparisons, baseline performance,
+    feature schemas, and explicit limitations from the trained ML pipeline artifact.
+    """
+    try:
+        return get_model_info()
+    except ModelNotAvailableError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Land price model is unavailable: {str(e)}"
+        )
+
+
+@app.post("/api/land-price/predict", response_model=LandPricePredictionResponse)
+def land_price_predict(request: LandPricePredictionRequest):
+    """
+    Generates an ML-driven synthetic land price prediction based on rural parcel features.
+    Strictly verifies unit consistency: total_price = price_per_decimal * land_area.
+    Returns empirical validation uncertainty intervals and bilingual disclaimers.
+    """
+    try:
+        return predict_land_price(request)
+    except ModelNotAvailableError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Land price model is unavailable: {str(e)}. No fabricated estimate will be provided."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Inference error: {str(e)}"
+        )
+

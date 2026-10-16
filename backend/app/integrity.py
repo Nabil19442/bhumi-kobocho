@@ -35,19 +35,23 @@ def check_file_integrity(
         "notice": "Unchanged indicates only that byte data matches the reference file. File content changed indicates any byte modification."
     }
 
-def generate_record_qr_base64(record_data: Dict[str, Any]) -> str:
+def generate_record_qr_base64(record_data: Dict[str, Any], base_url: Optional[str] = None) -> str:
     """
-    Generates a secure QR code encoding record identification + demo hash.
-    Returns PNG image data as base64 string.
+    Generates a secure QR code encoding the canonical verification URL or safe record reference.
+    Returns PNG image data as a base64 data URL string.
+    Does not encode the entire land record or private personal identifiers.
     """
-    payload = (
-        f"BHUMI-KOBOCH-DEMO-RECORD\n"
-        f"ID: {record_data.get('id', 'N/A')}\n"
-        f"Khatian: {record_data.get('khatian_no', 'N/A')} | Dag: {record_data.get('dag_no', 'N/A')}\n"
-        f"Area: {record_data.get('area_decimal', 'N/A')} dec\n"
-        f"SHA-256: {record_data.get('file_hash_sha256', 'N/A')[:16]}...\n"
-        f"NOTICE: DEMO DATA — not a legal verdict"
-    )
+    import os
+    rec_id = record_data.get("id")
+    if not rec_id:
+        raise ValueError("Record data missing 'id'")
+
+    if not base_url:
+        base_url = os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    else:
+        base_url = base_url.rstrip("/")
+
+    verification_url = f"{base_url}/verify/{rec_id}"
 
     qr = qrcode.QRCode(
         version=1,
@@ -55,10 +59,10 @@ def generate_record_qr_base64(record_data: Dict[str, Any]) -> str:
         box_size=8,
         border=3,
     )
-    qr.add_data(payload)
+    qr.add_data(verification_url)
     qr.make(fit=True)
 
-    img = qr.make_image(fill_color="#1e3a1e", back_color="#ffffff")
+    img = qr.make_image(fill_color="#10272A", back_color="#FFFFFF")
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)

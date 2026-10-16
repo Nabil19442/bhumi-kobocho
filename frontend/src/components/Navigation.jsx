@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ScanText, GitCompareArrows, FileBadge, QrCode, ShieldAlert } from 'lucide-react';
+import { Home, ScanText, GitCompareArrows, FileBadge, QrCode, ShieldAlert, Network, TrendingUp } from 'lucide-react';
 
 export default function Navigation({ activeTab, setActiveTab, t }) {
   const navItems = [
@@ -7,8 +7,10 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
     { id: 'scanner', label: t.nav_scanner, icon: ScanText },
     { id: 'compare', label: t.nav_compare, icon: GitCompareArrows },
     { id: 'passport', label: t.nav_passport, icon: FileBadge },
+    { id: 'graph', label: t.nav_graph, icon: Network },
     { id: 'integrity', label: t.nav_integrity, icon: QrCode },
     { id: 'guardian', label: t.nav_guardian, icon: ShieldAlert, badge: 'SIMULATED' },
+    { id: 'landprice', label: t.nav_landprice || 'জমির সম্ভাব্য দর', icon: TrendingUp, badge: 'ML' },
   ];
 
   return (

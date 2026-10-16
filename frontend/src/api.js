@@ -75,8 +75,13 @@ export async function checkIntegrityApi(formData) {
   });
 }
 
-export async function fetchRecordQr(recordId) {
-  return request(`/integrity/qr/${recordId}`);
+export async function fetchRecordQr(recordId, baseUrl = null) {
+  const query = baseUrl ? `?base_url=${encodeURIComponent(baseUrl)}` : '';
+  return request(`/integrity/qr/${recordId}${query}`);
+}
+
+export async function fetchRecordVerification(recordId) {
+  return request(`/records/verify/${recordId}`);
 }
 
 export async function fetchSimulationEvents() {
@@ -98,4 +103,30 @@ export async function markAlertReviewedApi(alertId) {
     method: "POST",
   });
 }
+
+export async function fetchRecordGraph(recordId = null) {
+  const query = recordId ? `?record_id=${encodeURIComponent(recordId)}` : '';
+  return request(`/records/graph${query}`);
+}
+
+export async function fetchLandPriceHealth() {
+  return request("/land-price/health");
+}
+
+export async function fetchLandPriceMetadata() {
+  return request("/land-price/metadata");
+}
+
+export async function fetchLandPriceModelInfo() {
+  return request("/land-price/model-info");
+}
+
+export async function predictLandPriceApi(payload) {
+  return request("/land-price/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 

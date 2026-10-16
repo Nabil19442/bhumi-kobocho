@@ -19,12 +19,13 @@ import {
   FileCheck2,
   RefreshCw,
   Compass,
-  Info
+  Info,
+  Network
 } from 'lucide-react';
 import { fetchPlotPassport, fetchRecords } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
-export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-demo-001', comparisonResult, sharedExtractedData }) {
+export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-demo-001', comparisonResult, sharedExtractedData, onViewGraph }) {
   const isBn = lang === 'bn';
   const [plotId, setPlotId] = useState(selectedPlotId);
   const [passport, setPassport] = useState(null);
@@ -215,31 +216,61 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
             </div>
           </div>
 
-          <button
-            id="print-passport-btn"
-            type="button"
-            className="btn-secondary"
-            onClick={handlePrint}
-            style={{
-              height: '42px',
-              padding: '0 18px',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              fontFamily: 'var(--font-heading)',
-              borderRadius: 'var(--radius-std)',
-              border: '1.5px solid var(--text-main)',
-              background: '#FFFFFF',
-              color: 'var(--text-main)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              minHeight: '44px'
-            }}
-          >
-            <Printer size={16} />
-            <span>{isBn ? 'প্রিন্ট / পিডিএফ' : 'Print / Export PDF'}</span>
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {onViewGraph && (
+              <button
+                id="view-in-graph-btn"
+                type="button"
+                className="btn-primary"
+                onClick={() => onViewGraph(plotId)}
+                style={{
+                  height: '42px',
+                  padding: '0 16px',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-heading)',
+                  borderRadius: 'var(--radius-std)',
+                  background: 'var(--primary-accent)',
+                  color: '#FFFFFF',
+                  border: '1.5px solid var(--text-main)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  minHeight: '44px'
+                }}
+              >
+                <Network size={16} />
+                <span>{isBn ? 'সম্পর্ক গ্রাফে দেখুন' : 'View in Graph'}</span>
+              </button>
+            )}
+
+            <button
+              id="print-passport-btn"
+              type="button"
+              className="btn-secondary"
+              onClick={handlePrint}
+              style={{
+                height: '42px',
+                padding: '0 18px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-heading)',
+                borderRadius: 'var(--radius-std)',
+                border: '1.5px solid var(--text-main)',
+                background: '#FFFFFF',
+                color: 'var(--text-main)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                minHeight: '44px'
+              }}
+            >
+              <Printer size={16} />
+              <span>{isBn ? 'প্রিন্ট / পিডিএফ' : 'Print / Export PDF'}</span>
+            </button>
+          </div>
         </div>
       </div>
 

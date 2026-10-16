@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "model_id": "rural-land-price-histgradientboostingregressor-v1",
+    "algorithm": "HistGradientBoostingRegressor",
+    "selected_at_utc": "2026-10-16T18:49:43.691326+00:00",
+    "random_seed": 42,
+    "dataset_version": "synthetic_rural_land_prices_20k_v1",
+    "dataset_samples": 20000,
+    "split_counts": {
+      "train": 14000,
+      "validation": 3000,
+      "test": 3000
+    },
+    "target_column": "price_per_decimal_bdt",
+    "unit": "BDT per decimal (shotok)",
+    "features": [
+      "land_area_decimal",
+      "road_width_ft",
+      "distance_to_paved_road_m",
+      "distance_to_local_market_km",
+      "distance_to_upazila_center_km",
+      "distance_to_school_km",
+      "distance_to_healthcare_km",
+      "district_id",
+      "upazila_id",
+      "mouza_id",
+      "land_type",
+      "road_access_type",
+      "flood_risk_level",
+      "drainage_quality",
+      "plot_shape_category",
+      "land_use_category",
+      "transaction_period",
+      "access_road_available",
+      "electricity_available",
+      "water_access_available"
+    ],
+    "validation_metrics": {
+      "mae_bdt": 4941.5,
+      "rmse_bdt": 7776.86,
+      "r2_score": 0.9697,
+      "median_absolute_error_bdt": 3158.9,
+      "mape_percent": 8.17
+    },
+    "test_metrics": {
+      "mae_bdt": 4955.8,
+      "rmse_bdt": 7892.04,
+      "r2_score": 0.9698,
+      "median_absolute_error_bdt": 3066.55,
+      "mape_percent": 8.42
+    },
+    "baseline_test_metrics": {
+      "mae_bdt": 29995.5,
+      "rmse_bdt": 46403.55,
+      "r2_score": -0.0451,
+      "median_absolute_error_bdt": 21736.9,
+      "mape_percent": 64.92
+    },
+    "spatial_group_holdout_metrics": {
+      "mae_bdt": 5220.79,
+      "rmse_bdt": 8116.73,
+      "r2_score": 0.9708,
+      "median_absolute_error_bdt": 3312.88,
+      "mape_percent": 8.41
+    },
+    "calibrated_residual_ratio_80pct": 0.1318,
+    "disclaimer_en": "SYNTHETIC DATA & EXPERIMENTAL ML MODEL — NOT A REAL MARKET VALUATION. All records, locations, and prices are synthetically generated for demonstration. This output must not be used for actual financial transactions, legal appraisal, or court evidence.",
+    "disclaimer_bn": "এই মূল্যায়ন সম্পূর্ণ synthetic data দিয়ে তৈরি পরীক্ষামূলক ML model-এর output। এটি বাংলাদেশের প্রকৃত বাজারদর নয়, জমির valuation নয় এবং জমি কেনাবেচার আর্থিক সিদ্ধান্তের জন্য ব্যবহারযোগ্য নয়।",
+    "is_synthetic": true
+  },
+  "candidate_comparisons": {
+    "DummyRegressor_Baseline": {
+      "training_time_seconds": 0.06,
+      "train_metrics": {
+        "mae_bdt": 30772.03,
+        "rmse_bdt": 47190.52,
+        "r2_score": -0.0615,
+        "median_absolute_error_bdt": 22243.64,
+        "mape_percent": 63.76
+      },
+      "validation_metrics": {
+        "mae_bdt": 30310.03,
+        "rmse_bdt": 45998.99,
+        "r2_score": -0.0584,
+        "median_absolute_error_bdt": 22168.68,
+        "mape_percent": 63.35
+      },
+      "test_metrics": {
+        "mae_bdt": 29995.5,
+        "rmse_bdt": 46403.55,
+        "r2_score": -0.0451,
+        "median_absolute_error_bdt": 21736.9,
+        "mape_percent": 64.92
+      }
+    },
+    "HistGradientBoostingRegressor": {
+      "training_time_seconds": 1.35,
+      "train_metrics": {
+        "mae_bdt": 4213.46,
+        "rmse_bdt": 6610.56,
+        "r2_score": 0.9792,
+        "median_absolute_error_bdt": 2631.39,
+        "mape_percent": 6.87
+      },
+      "validation_metrics": {
+        "mae_bdt": 4941.5,
+        "rmse_bdt": 7776.86,
+        "r2_score": 0.9697,
+        "median_absolute_error_bdt": 3158.9,
+        "mape_percent": 8.17
+      },
+      "test_metrics": {
+        "mae_bdt": 4955.8,
+        "rmse_bdt": 7892.04,
+        "r2_score": 0.9698,
+        "median_absolute_error_bdt": 3066.55,
+        "mape_percent": 8.42
+      }
+    },
+    "RandomForestRegressor": {
+      "training_time_seconds": 1.56,
+      "train_metrics": {
+        "mae_bdt": 4095.7,
+        "rmse_bdt": 6164.49,
+        "r2_score": 0.9819,
+        "median_absolute_error_bdt": 2618.8,
+        "mape_percent": 6.9
+      },
+      "validation_metrics": {
+        "mae_bdt": 7425.77,
+        "rmse_bdt": 11348.49,
+        "r2_score": 0.9356,
+        "median_absolute_error_bdt": 4858.98,
+        "mape_percent": 12.52
+      }
+    },
+    "ExtraTreesRegressor": {
+      "training_time_seconds": 1.67,
+      "train_metrics": {
+        "mae_bdt": 3524.95,
+        "rmse_bdt": 5534.6,
+        "r2_score": 0.9854,
+        "median_absolute_error_bdt": 1999.29,
+        "mape_percent": 5.99
+      },
+      "validation_metrics": {
+        "mae_bdt": 7939.84,
+        "rmse_bdt": 12430.08,
+        "r2_score": 0.9227,
+        "median_absolute_error_bdt": 5145.62,
+        "mape_percent": 13.26
+      }
+    }
+  },
+  "subgroup_analysis": {
+    "by_land_type": {
+      "agricultural_nal": {
+        "count": 1362,
+        "mae_bdt": 3924.84,
+        "r2_score": 0.9595
+      },
+      "commercial_shop": {
+        "count": 222,
+        "mae_bdt": 12309.39,
+        "r2_score": 0.9543
+      },
+      "fallow_patit": {
+        "count": 144,
+        "mae_bdt": 2972.32,
+        "r2_score": 0.9463
+      },
+      "homestead_viti": {
+        "count": 659,
+        "mae_bdt": 6045.54,
+        "r2_score": 0.961
+      },
+      "orchard_bagan": {
+        "count": 305,
+        "mae_bdt": 4640.54,
+        "r2_score": 0.9574
+      },
+      "pond_doba": {
+        "count": 308,
+        "mae_bdt": 3122.43,
+        "r2_score": 0.9505
+      }
+    },
+    "by_road_access": {
+      "footpath_trail": {
+        "count": 332,
+        "mae_bdt": 2120.79,
+        "r2_score": 0.9301
+      },
+      "herringbone_brick_road": {
+        "count": 672,
+        "mae_bdt": 4840.02,
+        "r2_score": 0.9367
+      },
+      "national_highway_frontage": {
+        "count": 169,
+        "mae_bdt": 11418.77,
+        "r2_score": 0.9487
+      },
+      "no_direct_road": {
+        "count": 153,
+        "mae_bdt": 1621.21,
+        "r2_score": 0.923
+      },
+      "paved_pucca_road": {
+        "count": 894,
+        "mae_bdt": 6808.51,
+        "r2_score": 0.9526
+      },
+      "unpaved_katcha_road": {
+        "count": 780,
+        "mae_bdt": 3392.56,
+        "r2_score": 0.9327
+      }
+    }
+  }
+}

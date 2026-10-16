@@ -8,6 +8,9 @@ import ComparePage from './pages/ComparePage';
 import PassportPage from './pages/PassportPage';
 import IntegrityPage from './pages/IntegrityPage';
 import GuardianPage from './pages/GuardianPage';
+import GraphPage from './pages/GraphPage';
+import VerificationPage from './pages/VerificationPage';
+import LandPricePage from './pages/LandPricePage';
 
 import bnTranslations from './i18n/bn.json';
 import enTranslations from './i18n/en.json';
@@ -17,9 +20,40 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [sharedExtractedData, setSharedExtractedData] = useState(null);
   const [selectedPlotId, setSelectedPlotId] = useState('rec-demo-001');
+  const [verifyRecordId, setVerifyRecordId] = useState(null);
   const [latestComparisonResult, setLatestComparisonResult] = useState(null);
 
   const t = lang === 'bn' ? bnTranslations : enTranslations;
+
+  React.useEffect(() => {
+    const pathname = window.location.pathname;
+    const match = pathname.match(/^\/verify\/([a-zA-Z0-9_-]+)/);
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryVerify = searchParams.get('verify') || searchParams.get('record_id');
+
+    if (match) {
+      setVerifyRecordId(match[1]);
+      setSelectedPlotId(match[1]);
+      setActiveTab('verify');
+    } else if (queryVerify) {
+      setVerifyRecordId(queryVerify);
+      setSelectedPlotId(queryVerify);
+      setActiveTab('verify');
+    }
+
+    const handlePopState = () => {
+      const p = window.location.pathname;
+      const m = p.match(/^\/verify\/([a-zA-Z0-9_-]+)/);
+      if (m) {
+        setVerifyRecordId(m[1]);
+        setActiveTab('verify');
+      } else if (p === '/' || p === '') {
+        setActiveTab('landing');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleProceedToCompare = (extractedData) => {
     setSharedExtractedData(extractedData);
@@ -32,6 +66,26 @@ export default function App() {
       setLatestComparisonResult(comparisonResult);
     }
     setActiveTab('passport');
+  };
+
+  const handleViewGraph = (plotId) => {
+    if (plotId) {
+      setSelectedPlotId(plotId);
+    }
+    setActiveTab('graph');
+  };
+
+  const handleOpenVerification = (recordId) => {
+    const id = recordId || selectedPlotId;
+    setVerifyRecordId(id);
+    setSelectedPlotId(id);
+    setActiveTab('verify');
+    window.history.pushState(null, '', `/verify/${id}`);
+  };
+
+  const handleReturnFromVerification = () => {
+    setActiveTab('integrity');
+    window.history.pushState(null, '', '/');
   };
 
   const handleNavigateSection = (sec) => {
@@ -121,6 +175,17 @@ export default function App() {
             selectedPlotId={selectedPlotId}
             sharedExtractedData={sharedExtractedData}
             comparisonResult={latestComparisonResult}
+            onViewGraph={handleViewGraph}
+          />
+        )}
+
+        {activeTab === 'graph' && (
+          <GraphPage
+            t={t}
+            lang={lang}
+            initialRecordId={selectedPlotId}
+            onSelectRecord={(id) => setSelectedPlotId(id)}
+            onViewPassport={handleViewPassport}
           />
         )}
 
@@ -128,11 +193,29 @@ export default function App() {
           <IntegrityPage
             t={t}
             lang={lang}
+            onOpenVerification={handleOpenVerification}
+          />
+        )}
+
+        {activeTab === 'verify' && (
+          <VerificationPage
+            recordId={verifyRecordId || selectedPlotId}
+            lang={lang}
+            onBackToApp={handleReturnFromVerification}
+            onViewPassport={handleViewPassport}
+            onViewGraph={handleViewGraph}
           />
         )}
 
         {activeTab === 'guardian' && (
           <GuardianPage
+            t={t}
+            lang={lang}
+          />
+        )}
+
+        {activeTab === 'landprice' && (
+          <LandPricePage
             t={t}
             lang={lang}
           />

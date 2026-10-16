@@ -84,3 +84,18 @@ if __name__ == "__main__":
     ]
     path3, hash3 = generate_sample_deed("deed_sample_003.png", lines3)
     print(f"Generated {path3} with SHA-256: {hash3}")
+
+    lines4 = [
+        "দলিল নম্বর (Deed No): 710/2008 (বায়া দলিল / Baya Deed)",
+        "তারিখ (Date): 2008-03-14",
+        "মালিকের নাম (Owner Name): আবুল হোসেন তালুকদার (Abul Hossain Talukdar)",
+        "খতিয়ান নম্বর (Khatian No): 410",
+        "দাগ নম্বর (Dag No): 2490",
+        "মৌজা (Mouza): বাড্ডা (Badda), JL-12",
+        "জমির পরিমাণ (Area Decimal): 8.25 শতাংশ",
+        "জমির শ্রেণি (Class): ভিটি (Viti / Homestead)",
+        "এনআইডি শেষ ৪ সংখ্যা (NID Last 4): 1209",
+        "মূল দলিল বিবরণ: সাব-কবলা বায়া দলিল রেকর্ড (DEMO SPECIMEN)"
+    ]
+    path4, hash4 = generate_sample_deed("deed_sample_004.png", lines4)
+    print(f"Generated {path4} with SHA-256: {hash4}")
