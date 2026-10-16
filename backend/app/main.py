@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +15,16 @@ from backend.app.guardian import (
     mark_alert_reviewed
 )
 from backend.app.explain import explain_comparison
-from backend.app.ocr import scan_document_bytes
+from backend.app.ocr import (
+    load_known_demo_specimen,
+    scan_uploaded_document,
+    scan_document_bytes
+)
+
+# Constants for strict API validation
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB limit
+ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf", ".txt"}
+SHA256_HEX_REGEX = re.compile(r"^[a-fA-F0-9]{64}$")
 
 app = FastAPI(
     title="Bhumi Kobocho (ভূমি কবচ) API",
@@ -71,38 +81,61 @@ async def scan_document(
     sample_id: Optional[str] = Form(None)
 ):
     """
-    Scans uploaded document or demo sample and returns candidate fields with confidence.
+    Scans uploaded document or loads demo specimen.
+    - Explicitly distinguishes known demo specimens from arbitrary user-uploaded files.
+    - Known specimens are loaded from their actual files under backend/data/samples/.
+    - Arbitrary uploads are validated (non-empty, <=10MB, supported format).
+    - General upload path never relies on filename-based inference.
     """
-    filename = ""
-    file_bytes = b""
+    # 1. Explicitly selected demo specimen
+    if sample_id and sample_id.strip():
+        return load_known_demo_specimen(sample_id.strip())
 
-    if file:
+    # 2. Uploaded user file
+    if file is not None:
         filename = file.filename or ""
-        file_bytes = await file.read()
-    elif sample_id:
-        filename = f"deed_{sample_id}.png"
-        file_bytes = b"mock-sample-bytes"
-    else:
-        filename = "deed_sample_001.png"
-        file_bytes = b"default-specimen"
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file format '{ext}'. Supported formats: .png, .jpg, .jpeg, .pdf, .txt."
+            )
 
-    scan_result = scan_document_bytes(file_bytes, filename=filename)
-    computed_hash = calculate_sha256(file_bytes) if file_bytes else ""
-    scan_result["uploaded_file_sha256"] = computed_hash
-    return scan_result
+        file_bytes = await file.read()
+        if len(file_bytes) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file is empty (0 bytes)."
+            )
+        if len(file_bytes) > MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail="File size exceeds maximum allowed limit of 10 MB."
+            )
+
+        return scan_uploaded_document(file_bytes, filename=filename)
+
+    # 3. Neither provided
+    raise HTTPException(
+        status_code=400,
+        detail="Either a document file or a valid demo sample_id must be provided."
+    )
 
 @app.post("/api/compare")
 def compare_document(req: CompareRequest):
     """
     Compares extracted fields against reference dummy record.
     Returns strictly: Matched / Mismatch / Needs review / Not checked.
+    Returns HTTP 404 for unknown reference record IDs.
     """
     records = load_records()
     ref_record = next((r for r in records if r.get("id") == req.reference_record_id), None)
     
     if not ref_record:
-        # Fallback to first demo record
-        ref_record = records[0] if records else {}
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reference record '{req.reference_record_id}' not found."
+        )
 
     result = compare_records(
         extracted_data=req.extracted_data,
@@ -120,11 +153,15 @@ def compare_document(req: CompareRequest):
 def get_plot_passport(plot_id: str, lang: str = Query("bn")):
     """
     Returns complete Plot Passport package for a plot.
+    Returns HTTP 404 for unknown plot IDs.
     """
     records = load_records()
     rec = next((r for r in records if r.get("id") == plot_id), None)
     if not rec:
-        rec = records[0]
+        raise HTTPException(
+            status_code=404,
+            detail=f"Plot record '{plot_id}' not found."
+        )
 
     # Generate comparison with self as baseline
     comparison = compare_records(
@@ -191,9 +228,39 @@ async def check_integrity(
     """
     Checks uploaded file byte integrity via SHA-256 against expected hash.
     Status output: 'Unchanged' or 'File content changed'.
+    Enforces empty file rejection, 10MB limit, supported formats, and 64-hex hash validation.
     """
+    # 1. Validate SHA-256 format (exactly 64 hexadecimal characters)
+    clean_hash = (expected_hash or "").strip().lower()
+    if not SHA256_HEX_REGEX.match(clean_hash):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid SHA-256 hash format. Expected exactly 64 hexadecimal characters."
+        )
+
+    # 2. Validate file format if extension is present
+    filename = file.filename or ""
+    ext = os.path.splitext(filename)[1].lower()
+    if ext and ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format '{ext}'. Supported formats: .png, .jpg, .jpeg, .pdf, .txt."
+        )
+
+    # 3. Read and validate byte contents
     contents = await file.read()
-    return check_file_integrity(contents, expected_hash)
+    if len(contents) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is empty (0 bytes)."
+        )
+    if len(contents) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds maximum allowed limit of 10 MB."
+        )
+
+    return check_file_integrity(contents, clean_hash)
 
 @app.get("/api/integrity/qr/{record_id}")
 def get_integrity_qr(record_id: str):
