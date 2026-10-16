@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import hashlib
 import joblib
 import numpy as np
 import pandas as pd
@@ -238,9 +239,17 @@ def train_and_evaluate_all_models(
     print(f"[INFO] Saving selected model pipeline to: {MODEL_PIPELINE_PATH}")
     joblib.dump(best_pipeline, MODEL_PIPELINE_PATH, compress=3)
 
+    # Compute artifact SHA-256
+    hasher = hashlib.sha256()
+    with open(MODEL_PIPELINE_PATH, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            hasher.update(chunk)
+    model_sha256 = hasher.hexdigest()
+
     # Metadata
     metadata = {
         "model_id": f"rural-land-price-{best_candidate_name.lower()}-v1",
+        "model_sha256": model_sha256,
         "algorithm": best_candidate_name,
         "selected_at_utc": datetime.now(timezone.utc).isoformat(),
         "random_seed": random_seed,

@@ -1,10 +1,12 @@
 import os
 import re
+import urllib.parse
 from typing import Dict, Any, Optional, List
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request, Depends, Header, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
+from backend.app.limiter import limiter
 from backend.app.rules import compare_records
 from backend.app.integrity import check_file_integrity, generate_record_qr_base64, calculate_sha256
 from backend.app.guardian import (
@@ -45,24 +47,50 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
+# Configurable CORS allowlist (SEC-04: No wildcard origins)
+_DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+_ENV_CORS = os.getenv("CORS_ORIGINS", "")
+if _ENV_CORS:
+    ALLOWED_CORS_ORIGINS = [o.strip() for o in _ENV_CORS.split(",") if o.strip()]
+else:
+    ALLOWED_CORS_ORIGINS = _DEFAULT_CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "*"],
-    allow_credentials=False,
-    allow_methods=["*"],
+    allow_origins=ALLOWED_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
+# SEC-07: Strict typed schema for citizen-uploaded or extracted document fields
+class ExtractedDocumentData(BaseModel):
+    owner_name: Optional[str] = Field(None, max_length=150)
+    khatian_no: Optional[str] = Field(None, max_length=50)
+    dag_no: Optional[str] = Field(None, max_length=50)
+    area_decimal: Optional[str] = Field(None, max_length=50)
+    document_date: Optional[str] = Field(None, max_length=50)
+    deed_no: Optional[str] = Field(None, max_length=50)
+    raw_text: Optional[str] = Field(None, max_length=30000)
+
+    model_config = ConfigDict(extra="ignore")
+
 class CompareRequest(BaseModel):
-    reference_record_id: Optional[str] = "rec-demo-001"
-    extracted_data: Dict[str, Any]
-    area_tolerance_decimal: Optional[float] = 0.05
-    language: Optional[str] = "bn"
+    reference_record_id: Optional[str] = Field("rec-demo-001", max_length=100)
+    extracted_data: ExtractedDocumentData
+    area_tolerance_decimal: Optional[float] = Field(0.05, ge=0.0, le=100.0)
+    language: Optional[str] = Field("bn", max_length=10)
+
+    model_config = ConfigDict(extra="ignore")
 
 class ExplainRequest(BaseModel):
     comparison_result: Dict[str, Any]
-    language: Optional[str] = "bn"
+    language: Optional[str] = Field("bn", max_length=10)
 
 @app.get("/api/health")
 def health_check():
@@ -107,10 +135,66 @@ def get_record(record_id: str):
         raise HTTPException(status_code=404, detail="Demo record not found")
     return rec
 
+async def read_upload_file_safely(
+    file: UploadFile,
+    max_size: int = MAX_UPLOAD_SIZE,
+    chunk_size: int = 64 * 1024,
+    request: Optional[Request] = None
+) -> bytes:
+    """
+    Reads an uploaded file incrementally in chunks without buffering unbounded
+    payloads into memory. Rejects oversized uploads immediately with HTTP 413.
+    Safely cleans up underlying files on completion or error.
+    """
+    # 1. Content-Length header early rejection if declared oversized
+    if request:
+        req_cl = request.headers.get("content-length")
+        if req_cl:
+            try:
+                cl_int = int(req_cl)
+                if cl_int > max_size:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"Upload rejected: Content-Length {cl_int} exceeds maximum allowed limit of {max_size // (1024 * 1024)} MB."
+                    )
+            except ValueError:
+                pass
+
+    part_cl = file.headers.get("content-length")
+    if part_cl:
+        try:
+            cl_int = int(part_cl)
+            if cl_int > max_size:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"Upload rejected: Content-Length {cl_int} exceeds maximum allowed limit of {max_size // (1024 * 1024)} MB."
+                )
+        except ValueError:
+            pass
+
+    # 2. Incremental chunked streaming read
+    chunks = []
+    total_bytes = 0
+    try:
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > max_size:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File size exceeds maximum allowed limit of {max_size // (1024 * 1024)} MB."
+                )
+            chunks.append(chunk)
+        return b"".join(chunks)
+    finally:
+        await file.close()
+
 def validate_file_content(file_bytes: bytes, filename: str) -> None:
     """
     Validates uploaded file size, supported extension, and content signatures (magic bytes).
-    Rejects empty files, files > 10MB, unsupported extensions, and content signature mismatches.
+    Rejects empty files, files > 10MB (HTTP 413), unsupported extensions, and content signature mismatches.
     """
     if len(file_bytes) == 0:
         raise HTTPException(
@@ -119,7 +203,7 @@ def validate_file_content(file_bytes: bytes, filename: str) -> None:
         )
     if len(file_bytes) > MAX_UPLOAD_SIZE:
         raise HTTPException(
-            status_code=400,
+            status_code=413,
             detail="File size exceeds maximum allowed limit of 10 MB."
         )
 
@@ -158,6 +242,7 @@ def validate_file_content(file_bytes: bytes, filename: str) -> None:
 
 @app.post("/api/scan")
 async def scan_document(
+    request: Request,
     file: Optional[UploadFile] = File(None),
     sample_id: Optional[str] = Form(None)
 ):
@@ -165,9 +250,12 @@ async def scan_document(
     Scans uploaded document or loads demo specimen.
     - Explicitly distinguishes known demo specimens from arbitrary user-uploaded files.
     - Known specimens are loaded from their actual files under backend/data/samples/.
-    - Arbitrary uploads are validated (non-empty, <=10MB, supported format, content signatures).
+    - Arbitrary uploads are streamed and validated (non-empty, <=10MB, supported format, content signatures).
     - General upload path never relies on filename-based inference.
+    - Rate-limited to protect OCR resources.
     """
+    limiter.check_rate_limit(request, "scan", max_requests=30, window_seconds=60)
+
     # 1. Explicitly selected demo specimen
     if sample_id and sample_id.strip():
         try:
@@ -178,7 +266,7 @@ async def scan_document(
     # 2. Uploaded user file
     if file is not None:
         filename = file.filename or ""
-        file_bytes = await file.read()
+        file_bytes = await read_upload_file_safely(file, max_size=MAX_UPLOAD_SIZE, request=request)
         validate_file_content(file_bytes, filename)
         return scan_uploaded_document(file_bytes, filename=filename)
 
@@ -205,7 +293,7 @@ def compare_document(req: CompareRequest):
         )
 
     result = compare_records(
-        extracted_data=req.extracted_data,
+        extracted_data=req.extracted_data.model_dump(),
         reference_data=ref_record,
         area_tolerance_decimal=req.area_tolerance_decimal or 0.05
     )
@@ -333,14 +421,18 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
 
 @app.post("/api/integrity/check")
 async def check_integrity(
+    request: Request,
     file: UploadFile = File(...),
     expected_hash: str = Form(...)
 ):
     """
     Checks uploaded file byte integrity via SHA-256 against expected hash.
     Status output: 'Unchanged' or 'File content changed'.
-    Enforces empty file rejection, 10MB limit, supported formats, and 64-hex hash validation.
+    Enforces empty file rejection, 10MB limit (HTTP 413), supported formats, and 64-hex hash validation.
+    Rate-limited to protect hashing resources.
     """
+    limiter.check_rate_limit(request, "integrity_check", max_requests=30, window_seconds=60)
+
     # 1. Validate SHA-256 format (exactly 64 hexadecimal characters)
     clean_hash = (expected_hash or "").strip().lower()
     if not SHA256_HEX_REGEX.match(clean_hash):
@@ -349,21 +441,85 @@ async def check_integrity(
             detail="Invalid SHA-256 hash format. Expected exactly 64 hexadecimal characters."
         )
 
-    # 2. Read and validate byte contents and signature
+    # 2. Stream and validate byte contents and signature
     filename = file.filename or ""
-    contents = await file.read()
+    contents = await read_upload_file_safely(file, max_size=MAX_UPLOAD_SIZE, request=request)
     validate_file_content(contents, filename)
 
     return check_file_integrity(contents, clean_hash)
 
+def validate_qr_base_url(base_url: Optional[str]) -> str:
+    """
+    Validates QR base_url against approved frontend origins.
+    Rejects unexpected external origins, malformed URLs, credentials, or invalid schemes with HTTP 400.
+    Normalizes trailing slashes safely.
+    """
+    if not base_url or not base_url.strip():
+        return os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    
+    clean_url = base_url.strip()
+
+    try:
+        parsed = urllib.parse.urlparse(clean_url)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Malformed base_url parameter.")
+
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid URL scheme '{parsed.scheme}'. Only http and https schemes are permitted."
+        )
+
+    if parsed.username or parsed.password:
+        raise HTTPException(
+            status_code=400,
+            detail="URL credentials (userinfo) are not permitted in base_url."
+        )
+
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Missing hostname in base_url.")
+
+    allowed_hosts = {"localhost", "127.0.0.1", "bhumikobocho.bangladesh.gov"}
+    frontend_env = os.getenv("FRONTEND_BASE_URL")
+    if frontend_env:
+        try:
+            fh = urllib.parse.urlparse(frontend_env).hostname
+            if fh:
+                allowed_hosts.add(fh.lower())
+        except Exception:
+            pass
+
+    for orig in ALLOWED_CORS_ORIGINS:
+        try:
+            oh = urllib.parse.urlparse(orig).hostname
+            if oh:
+                allowed_hosts.add(oh.lower())
+        except Exception:
+            pass
+
+    if hostname not in allowed_hosts and not hostname.endswith(".bangladesh.gov"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Origin host '{hostname}' is not in the approved frontend allowlist."
+        )
+
+    port_part = f":{parsed.port}" if parsed.port and (
+        (parsed.scheme == "http" and parsed.port != 80) or
+        (parsed.scheme == "https" and parsed.port != 443)
+    ) else ""
+    path_part = parsed.path.rstrip("/")
+    return f"{parsed.scheme}://{hostname}{port_part}{path_part}".rstrip("/")
+
 @app.get("/api/integrity/qr/{record_id}")
 def get_integrity_qr(record_id: str, base_url: Optional[str] = Query(None)):
+    clean_base_url = validate_qr_base_url(base_url)
+
     records = load_records()
     rec = next((r for r in records if r.get("id") == record_id), None)
     if not rec:
         raise HTTPException(status_code=404, detail="Record not found")
     
-    clean_base_url = base_url.strip() if base_url else os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
     verification_url = f"{clean_base_url}/verify/{record_id}"
     qr_b64 = generate_record_qr_base64(rec, base_url=clean_base_url)
     
@@ -446,11 +602,30 @@ def list_simulation_events():
         "events": events
     }
 
+def verify_guardian_key(x_guardian_key: Optional[str] = Header(None)) -> str:
+    """
+    SEC-06: Validates demo admin key for mutating in-memory simulation demo state.
+    Configurable via GUARDIAN_API_KEY environment variable.
+    """
+    expected_key = os.getenv("GUARDIAN_API_KEY", "demo-zenox-2026")
+    if not x_guardian_key or x_guardian_key.strip() != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Missing or invalid X-Guardian-Key header for simulation state mutation."
+        )
+    return x_guardian_key
+
 @app.post("/api/guardian/simulate/{event_id}")
-def simulate_guardian_event(event_id: str):
+def simulate_guardian_event(
+    event_id: str,
+    request: Request,
+    _auth: str = Depends(verify_guardian_key)
+):
     """
     Simulates an event on demo data and emits a SIMULATED alert.
+    Requires X-Guardian-Key header authentication and is rate limited.
     """
+    limiter.check_rate_limit(request, "guardian_simulate", max_requests=20, window_seconds=60)
     try:
         alert = trigger_simulation_event(event_id)
         return alert
@@ -466,7 +641,16 @@ def get_guardian_alerts():
     }
 
 @app.post("/api/guardian/alerts/{alert_id}/review")
-def review_guardian_alert(alert_id: str):
+def review_guardian_alert(
+    alert_id: str,
+    request: Request,
+    _auth: str = Depends(verify_guardian_key)
+):
+    """
+    Marks simulated demo alert as reviewed.
+    Requires X-Guardian-Key header authentication and is rate limited.
+    """
+    limiter.check_rate_limit(request, "guardian_review", max_requests=30, window_seconds=60)
     reviewed = mark_alert_reviewed(alert_id)
     if not reviewed:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -529,14 +713,16 @@ def land_price_model_info():
 
 
 @app.post("/api/land-price/predict", response_model=LandPricePredictionResponse)
-def land_price_predict(request: LandPricePredictionRequest):
+def land_price_predict(prediction_req: LandPricePredictionRequest, request: Request):
     """
     Generates an ML-driven synthetic land price prediction based on rural parcel features.
     Strictly verifies unit consistency: total_price = price_per_decimal * land_area.
     Returns empirical validation uncertainty intervals and bilingual disclaimers.
+    Rate limited to prevent CPU resource exhaustion.
     """
+    limiter.check_rate_limit(request, "land_price_predict", max_requests=60, window_seconds=60)
     try:
-        return predict_land_price(request)
+        return predict_land_price(prediction_req)
     except ModelNotAvailableError as e:
         raise HTTPException(
             status_code=503,

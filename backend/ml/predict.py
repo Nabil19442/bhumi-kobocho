@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import hashlib
 from typing import Dict, Any, Optional, Tuple, List
 import joblib
 import pandas as pd
@@ -108,6 +109,23 @@ class ModelNotAvailableError(Exception):
     pass
 
 
+def reset_model_cache() -> None:
+    """Reset cached pipeline and metadata (useful for tests)."""
+    global _CACHED_PIPELINE, _CACHED_METADATA, _MODEL_LOAD_ATTEMPTED
+    _CACHED_PIPELINE = None
+    _CACHED_METADATA = None
+    _MODEL_LOAD_ATTEMPTED = False
+
+
+def compute_file_sha256(filepath: str) -> str:
+    """Compute SHA-256 digest of a file in streaming chunks."""
+    hasher = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
 def load_model_and_metadata(force_reload: bool = False) -> Tuple[Any, Dict[str, Any]]:
     global _CACHED_PIPELINE, _CACHED_METADATA, _MODEL_LOAD_ATTEMPTED
     
@@ -128,16 +146,51 @@ def load_model_and_metadata(force_reload: bool = False) -> Tuple[Any, Dict[str, 
         raise ModelNotAvailableError("Model metadata artifact missing.")
 
     try:
-        pipeline = joblib.load(BEST_MODEL_PATH)
         with open(MODEL_METADATA_PATH, "r", encoding="utf-8") as f:
             metadata = json.load(f)
-        
+    except Exception as e:
+        logger.error("Failed to parse ML metadata JSON: %s", e)
+        raise ModelNotAvailableError(f"Malformed model metadata file: {str(e)}")
+
+    expected_sha256 = metadata.get("model_sha256")
+    if not expected_sha256 or not isinstance(expected_sha256, str) or len(expected_sha256.strip()) != 64:
+        logger.error("Model metadata missing valid 'model_sha256' digest.")
+        raise ModelNotAvailableError("Model metadata is missing a valid 64-character SHA-256 digest.")
+
+    expected_sha256 = expected_sha256.strip().lower()
+
+    # Verify SHA-256 BEFORE deserialization
+    try:
+        actual_sha256 = compute_file_sha256(BEST_MODEL_PATH).lower()
+    except Exception as e:
+        logger.error("Failed to read model artifact for checksum verification: %s", e)
+        raise ModelNotAvailableError(f"Cannot read model artifact: {str(e)}")
+
+    if actual_sha256 != expected_sha256:
+        logger.critical(
+            "SECURITY ALERT: Model artifact integrity verification failed! "
+            "Expected SHA-256: %s, Actual SHA-256: %s. Deserialization aborted.",
+            expected_sha256,
+            actual_sha256,
+        )
+        raise ModelNotAvailableError(
+            f"Model artifact checksum mismatch: expected {expected_sha256[:12]}..., got {actual_sha256[:12]}..."
+        )
+
+    # Safe to deserialize verified artifact
+    try:
+        pipeline = joblib.load(BEST_MODEL_PATH)
         _CACHED_PIPELINE = pipeline
         _CACHED_METADATA = metadata
-        logger.info("Successfully loaded ML model '%s' (%s)", metadata.get("best_candidate"), metadata.get("dataset_version"))
+        logger.info(
+            "Successfully verified (SHA-256: %s...) and loaded ML model '%s' (%s)",
+            actual_sha256[:12],
+            metadata.get("best_candidate"),
+            metadata.get("dataset_version"),
+        )
         return _CACHED_PIPELINE, _CACHED_METADATA
     except Exception as e:
-        logger.error("Failed to load ML artifacts: %s", e)
+        logger.error("Failed to deserialize verified ML artifact: %s", e)
         raise ModelNotAvailableError(f"Error loading ML model artifact: {str(e)}")
 
 

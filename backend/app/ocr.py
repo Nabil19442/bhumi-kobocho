@@ -1,5 +1,6 @@
 import re
 import os
+import io
 import shutil
 import tempfile
 import subprocess
@@ -324,6 +325,27 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         "disclaimer": "DEMO DATA — not a legal verdict"
     }
 
+def extract_text_from_pdf(file_bytes: bytes) -> Tuple[str, bool]:
+    """
+    Extracts text from PDF bytes using pypdf.
+    Returns (extracted_text, is_scanned_or_empty).
+    """
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+        full_text = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                full_text.append(t)
+        combined = "\n".join(full_text).strip()
+        if not combined:
+            return "", True
+        return combined, False
+    except Exception as e:
+        raise ValueError(f"Could not parse PDF: {str(e)}")
+
+
 def scan_uploaded_document(
     file_bytes: bytes,
     filename: str = ""
@@ -332,7 +354,9 @@ def scan_uploaded_document(
     Primary processing path for citizen-uploaded documents.
     CRITICAL: Does NOT infer demo specimen results from arbitrary filenames.
     - If .txt: parses plain text with deterministic regex rules.
-    - If image: invokes Tesseract OCR if installed and available.
+    - If .pdf: parses text-based PDFs via pypdf. Scanned/image-only PDFs return
+      an honest engine_unavailable status without fabricating OCR fields.
+    - If image (.png, .jpg, .jpeg): invokes Tesseract OCR if installed and available.
     - If Tesseract is unavailable: reports honestly without fabricating confidence scores,
       leaving candidate fields empty for manual citizen correction.
     """
@@ -362,7 +386,47 @@ def scan_uploaded_document(
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }
 
-    # 2. Image files (.png, .jpg, .jpeg)
+    # 2. PDF documents (.pdf)
+    if fn_lower.endswith(".pdf"):
+        try:
+            pdf_text, is_scanned_or_empty = extract_text_from_pdf(file_bytes)
+            if is_scanned_or_empty:
+                return {
+                    "extracted_fields": {
+                        "owner_name": None, "khatian_no": None, "dag_no": None,
+                        "area_decimal": None, "document_date": None, "deed_no": None,
+                        "raw_text": ""
+                    },
+                    "confidence_scores": {},
+                    "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},
+                    "ocr_engine": "scanned_pdf_unsupported",
+                    "status": "engine_unavailable",
+                    "message": "The uploaded PDF appears to be a scanned image without embedded text. Direct OCR on scanned PDFs is not supported without rasterization. Please upload a high-resolution PNG/JPEG image or enter details manually.",
+                    "uploaded_file_sha256": computed_hash,
+                    "disclaimer": "DEMO DATA — not a legal verdict. Optical recognition engine unavailable for scanned PDFs; please enter values manually."
+                }
+            
+            res = extract_fields_from_text(pdf_text, ocr_engine="pdf_text_extractor")
+            res["uploaded_file_sha256"] = computed_hash
+            res["status"] = "success"
+            return res
+        except Exception as e:
+            return {
+                "extracted_fields": {
+                    "owner_name": None, "khatian_no": None, "dag_no": None,
+                    "area_decimal": None, "document_date": None, "deed_no": None,
+                    "raw_text": ""
+                },
+                "confidence_scores": {},
+                "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},
+                "ocr_engine": "pdf_parser_error",
+                "status": "error",
+                "message": f"Failed to parse PDF document: {str(e)}. It may be corrupt or encrypted.",
+                "uploaded_file_sha256": computed_hash,
+                "disclaimer": "DEMO DATA — not a legal verdict"
+            }
+
+    # 3. Image files (.png, .jpg, .jpeg)
     is_avail, tess_bin, langs = is_tesseract_available()
 
     if is_avail and tess_bin:
@@ -393,7 +457,7 @@ def scan_uploaded_document(
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }
 
-    # 3. Honest fallback when Tesseract binary is not installed
+    # 4. Honest fallback when Tesseract binary is not installed
     return {
         "extracted_fields": {
             "owner_name": None,

@@ -224,9 +224,9 @@ export default function ScannerPage({ t, lang = 'bn', onProceedToCompare, setSha
   };
 
   return (
-    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
+    <div className="app-viewport">
       {/* Page Header */}
-      <div className="page-header-block" style={{ marginBottom: '32px' }}>
+      <div className="page-header-block" style={{ marginBottom: '22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div style={{
             background: 'var(--accent-tint)',

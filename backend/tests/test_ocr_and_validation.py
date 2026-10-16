@@ -111,13 +111,13 @@ def test_api_scan_empty_upload():
     assert "empty" in res.json()["detail"].lower()
 
 def test_api_scan_oversized_upload():
-    """Validates that uploads exceeding 10 MB return HTTP 400."""
+    """Validates that uploads exceeding 10 MB return HTTP 413 (Payload Too Large)."""
     oversized_bytes = b"x" * (10 * 1024 * 1024 + 10)
     res = client.post(
         "/api/scan",
         files={"file": ("large.png", oversized_bytes, "image/png")}
     )
-    assert res.status_code == 400
+    assert res.status_code == 413
     assert "exceeds" in res.json()["detail"].lower()
 
 def test_api_scan_unsupported_file_type():
@@ -205,7 +205,7 @@ def test_api_integrity_content_validation():
         data={"expected_hash": "a" * 64},
         files={"file": ("big.png", b"x" * (10 * 1024 * 1024 + 1), "image/png")}
     )
-    assert res_oversized.status_code == 400
+    assert res_oversized.status_code == 413
     assert "exceeds" in res_oversized.json()["detail"].lower()
 
     # Unsupported extension

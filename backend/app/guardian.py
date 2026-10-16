@@ -3,11 +3,14 @@ import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
+import threading
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 EVENTS_FILE = os.path.join(DATA_DIR, "events.json")
 RECORDS_FILE = os.path.join(DATA_DIR, "records.json")
 
-# In-memory store for active alerts in demo session
+# In-memory store for active alerts in demo session protected by threading.Lock
+_LOCK = threading.Lock()
 _ACTIVE_ALERTS: List[Dict[str, Any]] = []
 
 def load_events() -> List[Dict[str, Any]]:
@@ -71,20 +74,31 @@ def trigger_simulation_event(event_id: str) -> Dict[str, Any]:
         "disclaimer": "DEMO DATA — not a legal verdict. This alert is a synthetic simulation for demonstration purposes."
     }
 
-    _ACTIVE_ALERTS.insert(0, alert)
+    with _LOCK:
+        _ACTIVE_ALERTS.insert(0, alert)
     return alert
 
 def get_alerts() -> List[Dict[str, Any]]:
     # If no alerts triggered yet, initialize with the default simulated event
-    if not _ACTIVE_ALERTS:
+    with _LOCK:
+        has_alerts = len(_ACTIVE_ALERTS) > 0
+    if not has_alerts:
         events = load_events()
         if events:
             trigger_simulation_event(events[0]["event_id"])
-    return _ACTIVE_ALERTS
+    with _LOCK:
+        return [dict(a) for a in _ACTIVE_ALERTS]
 
 def mark_alert_reviewed(alert_id: str) -> Optional[Dict[str, Any]]:
-    for a in _ACTIVE_ALERTS:
-        if a["alert_id"] == alert_id:
-            a["is_reviewed"] = True
-            return a
+    with _LOCK:
+        for a in _ACTIVE_ALERTS:
+            if a["alert_id"] == alert_id:
+                a["is_reviewed"] = True
+                return dict(a)
     return None
+
+def reset_alerts() -> None:
+    """Reset active alerts for test isolation."""
+    with _LOCK:
+        _ACTIVE_ALERTS.clear()
+

@@ -88,9 +88,14 @@ export async function fetchSimulationEvents() {
   return request("/guardian/events");
 }
 
+const DEMO_GUARDIAN_KEY = "demo-zenox-2026";
+
 export async function triggerSimulationApi(eventId) {
   return request(`/guardian/simulate/${eventId}`, {
     method: "POST",
+    headers: {
+      "X-Guardian-Key": DEMO_GUARDIAN_KEY,
+    },
   });
 }
 
@@ -101,6 +106,9 @@ export async function fetchGuardianAlerts() {
 export async function markAlertReviewedApi(alertId) {
   return request(`/guardian/alerts/${alertId}/review`, {
     method: "POST",
+    headers: {
+      "X-Guardian-Key": DEMO_GUARDIAN_KEY,
+    },
   });
 }
 

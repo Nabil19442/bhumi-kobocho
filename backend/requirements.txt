@@ -11,3 +11,5 @@ numpy>=2.0.0
 pandas>=2.2.0
 scikit-learn>=1.5.0
 joblib>=1.4.0
+pypdf>=5.0.0
+

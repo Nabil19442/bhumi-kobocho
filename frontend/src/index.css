@@ -228,29 +228,41 @@ textarea:focus-visible {
   background: var(--paper);
   border-bottom: 1.5px solid var(--line);
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.app-nav-bar::-webkit-scrollbar {
-  display: none;
+  position: relative;
+  z-index: 20;
 }
 
 .app-nav-container {
   width: 100%;
-  max-width: var(--max-content-width, 1240px);
+  max-width: var(--max-content-width, 1260px);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   overflow-x: auto;
-  scrollbar-width: none;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(39, 66, 160, 0.25) transparent;
 }
 
 .app-nav-container::-webkit-scrollbar {
-  display: none;
+  height: 3px;
+}
+
+.app-nav-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-nav-container::-webkit-scrollbar-thumb {
+  background: rgba(39, 66, 160, 0.25);
+  border-radius: 3px;
+}
+
+.app-nav-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .nav-item-btn {
@@ -259,16 +271,17 @@ textarea:focus-visible {
   border-bottom: 3px solid transparent;
   color: var(--muted);
   font-family: var(--font-heading);
-  padding: 12px 16px;
-  font-size: 0.92rem;
+  padding: 10px 11px;
+  font-size: 0.88rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  line-height: 1.25;
 }
 
 .nav-item-btn:hover {
@@ -284,11 +297,13 @@ textarea:focus-visible {
 }
 
 .nav-item-badge {
-  font-size: 0.65rem;
-  padding: 1px 6px;
+  font-size: 0.62rem;
+  padding: 1px 5px;
   border-radius: var(--radius-xs);
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .nav-item-badge.simulated {
@@ -297,11 +312,29 @@ textarea:focus-visible {
   border: 1px solid #C4D6F5;
 }
 
+@media (max-width: 1100px) {
+  .app-nav-container {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-nav-container {
+    padding: 0 8px;
+    gap: 2px;
+  }
+  .nav-item-btn {
+    padding: 8px 8px;
+    font-size: 0.82rem;
+    gap: 4px;
+  }
+}
+
 /* MAIN CONTAINER & GRID SYSTEM */
 .app-viewport {
-  max-width: 1240px;
+  max-width: var(--max-content-width, 1260px);
   margin: 0 auto;
-  padding: 28px 24px 60px;
+  padding: 24px var(--gutter-desktop, 24px) 56px;
 }
 
 /* PAGE HEADER BLOCK */

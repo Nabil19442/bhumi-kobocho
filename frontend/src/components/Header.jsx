@@ -49,11 +49,11 @@ export default function Header({ lang, setLang, t, onReturnToLanding }) {
         className="app-header"
         style={{
           background: 'var(--bg-paper)',
-          padding: '10px 24px',
+          padding: '10px var(--gutter-desktop, 24px)',
         }}
       >
         <div style={{
-          maxWidth: 'var(--max-content-width, 1240px)',
+          maxWidth: 'var(--max-content-width, 1260px)',
           width: '100%',
           margin: '0 auto',
           display: 'flex',

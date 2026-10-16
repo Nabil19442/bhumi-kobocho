@@ -67,7 +67,11 @@
   --shadow-hard-sm: 4px 4px 0 #10272A;
 
   /* Layout */
-  --max-content-width: 1200px;
-  --gutter-desktop: 32px;
+  --max-content-width: 1260px;
+  --gutter-desktop: 24px;
   --gutter-mobile: 16px;
+  --section-spacing: 24px;
+  --card-padding: 22px;
+  --input-height: 44px;
+  --button-height: 44px;
 }

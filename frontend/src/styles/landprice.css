@@ -8,38 +8,38 @@
 /* 1. Page Viewport Container */
 .landprice-page-container {
   width: 100%;
-  max-width: var(--max-content-width, 1240px);
+  max-width: var(--max-content-width, 1260px);
   margin: 0 auto;
-  padding: 32px var(--gutter-desktop, 24px) 64px;
+  padding: 24px var(--gutter-desktop, 24px) 56px;
   box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
   .landprice-page-container {
-    padding: 20px var(--gutter-mobile, 16px) 48px;
+    padding: 16px var(--gutter-mobile, 16px) 40px;
   }
 }
 
 /* 2. Page Header Block */
 .landprice-header-block {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .landprice-badges-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .landprice-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 8px;
   border-radius: var(--radius-std, 6px);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.3px;
@@ -62,13 +62,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .landprice-icon-box {
   background: var(--accent-tint, #E7EEFB);
   color: var(--accent, #2742A0);
-  padding: 10px;
+  padding: 8px;
   border-radius: var(--radius-std, 6px);
   border: 1.5px solid #C4D6F5;
   display: flex;
@@ -78,20 +78,20 @@
 }
 
 .landprice-title {
-  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-size: clamp(1.4rem, 2.5vw, 1.95rem);
   font-weight: 800;
   color: var(--ink, #10272A);
   font-family: var(--font-heading, sans-serif);
-  line-height: 1.25;
+  line-height: 1.22;
   margin: 0;
   letter-spacing: -0.3px;
 }
 
 .landprice-subtitle {
-  font-size: 0.96rem;
+  font-size: 0.92rem;
   color: var(--ink-soft, #2D4649);
   font-family: var(--font-body, sans-serif);
-  line-height: 1.55;
+  line-height: 1.5;
   margin: 0;
   max-width: 840px;
 }
@@ -102,18 +102,18 @@
   border: 1.5px solid #FCA5A5;
   border-left: 5px solid #DC2626;
   border-radius: var(--radius-std, 6px);
-  padding: 18px 22px;
-  margin-bottom: 28px;
+  padding: 13px 18px;
+  margin-bottom: 22px;
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.06);
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.05);
 }
 
 .landprice-disclaimer-icon {
   color: #DC2626;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .landprice-disclaimer-content {
@@ -122,24 +122,24 @@
 }
 
 .landprice-disclaimer-heading {
-  font-size: 1.02rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: #991B1B;
   font-family: var(--font-heading, sans-serif);
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .landprice-disclaimer-body {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: #7F1D1D;
   font-family: var(--font-body, sans-serif);
-  line-height: 1.6;
-  margin: 0 0 4px 0;
+  line-height: 1.55;
+  margin: 0 0 3px 0;
   word-break: break-word;
 }
 
 .landprice-disclaimer-sub {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #991B1B;
   font-family: var(--font-body, sans-serif);
   font-style: italic;
@@ -150,15 +150,15 @@
 /* 4. Two-Column Dashboard Layout */
 .landprice-layout-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.95fr);
+  gap: 22px;
   align-items: start;
 }
 
 @media (max-width: 1024px) {
   .landprice-layout-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
 }
 
@@ -175,7 +175,7 @@
 .landprice-card-header {
   background: var(--paper, #FBFCFA);
   border-bottom: 1.5px solid var(--line, #CBD8D2);
-  padding: 16px 20px;
+  padding: 13px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,7 +184,7 @@
 }
 
 .landprice-card-title {
-  font-size: 1.12rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--ink, #10272A);
   font-family: var(--font-heading, sans-serif);
@@ -195,18 +195,18 @@
 }
 
 .landprice-card-body {
-  padding: 22px 20px;
+  padding: 18px;
 }
 
 @media (max-width: 768px) {
   .landprice-card-body {
-    padding: 18px 14px;
+    padding: 14px 12px;
   }
 }
 
 /* 6. Form Field Elements */
 .landprice-form-group {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .landprice-form-group:last-child {
@@ -215,23 +215,23 @@
 
 .landprice-label {
   display: block;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--ink, #10272A);
   font-family: var(--font-heading, sans-serif);
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .landprice-input,
 .landprice-select {
   width: 100%;
-  height: 44px;
-  padding: 0 12px;
+  height: 42px;
+  padding: 0 11px;
   border-radius: var(--radius-std, 6px);
   border: 1.5px solid var(--line, #CBD8D2);
   background: var(--paper, #FBFCFA);
   color: var(--ink, #10272A);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-family: var(--font-body, sans-serif);
   box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -254,20 +254,20 @@
 .landprice-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
 }
 
 .landprice-grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 @media (max-width: 640px) {
   .landprice-grid-2,
   .landprice-grid-3 {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 }
 
@@ -276,18 +276,18 @@
   background: var(--ground, #F1F5F0);
   border: 1px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  padding: 14px 16px;
-  margin-bottom: 22px;
+  padding: 11px 14px;
+  margin-bottom: 16px;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
 }
 
 .landprice-checkbox-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.86rem;
+  gap: 7px;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--ink, #10272A);
   font-family: var(--font-body, sans-serif);
@@ -296,8 +296,8 @@
 }
 
 .landprice-checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
   cursor: pointer;
   accent-color: var(--accent, #2742A0);
 }
@@ -305,12 +305,12 @@
 /* Primary Form Submit Button */
 .landprice-submit-btn {
   width: 100%;
-  min-height: 48px;
-  padding: 12px 20px;
+  min-height: 44px;
+  padding: 10px 18px;
   background: var(--accent, #2742A0);
   color: var(--white, #FFFFFF);
   font-family: var(--font-heading, sans-serif);
-  font-size: 1rem;
+  font-size: 0.96rem;
   font-weight: 700;
   border: 1.5px solid var(--ink, #10272A);
   border-radius: var(--radius-std, 6px);
@@ -348,38 +348,38 @@
   background: var(--paper, #FBFCFA);
   border: 1.5px dashed var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  padding: 44px 24px;
+  padding: 26px 18px;
   text-align: center;
   box-sizing: border-box;
 }
 
 .landprice-empty-icon {
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--accent-tint, #E7EEFB);
   color: var(--accent, #2742A0);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto 12px;
   border: 1px solid #C4D6F5;
 }
 
 .landprice-empty-title {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--ink, #10272A);
   font-family: var(--font-heading, sans-serif);
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
 }
 
 .landprice-empty-desc {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--ink-soft, #2D4649);
   font-family: var(--font-body, sans-serif);
-  line-height: 1.5;
-  max-width: 420px;
+  line-height: 1.48;
+  max-width: 400px;
   margin: 0 auto;
 }
 
@@ -396,7 +396,7 @@
 .landprice-result-topbar {
   background: var(--dark-band, #0D2B2E);
   color: var(--white, #FFFFFF);
-  padding: 12px 18px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -429,23 +429,23 @@
   background: var(--paper, #FBFCFA);
   border: 1px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  padding: 22px 18px;
-  margin-bottom: 16px;
+  padding: 16px 14px;
+  margin-bottom: 12px;
   text-align: center;
 }
 
 .landprice-total-label {
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   color: var(--muted, #3C5558);
   font-weight: 700;
   font-family: var(--font-heading, sans-serif);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .landprice-total-figure {
-  font-size: clamp(2rem, 3.5vw, 2.7rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
   font-weight: 900;
   color: var(--accent, #2742A0);
   font-family: var(--font-heading, sans-serif);
@@ -454,9 +454,9 @@
 }
 
 .landprice-interval-text {
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   color: var(--ink-soft, #2D4649);
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: var(--font-body, sans-serif);
 }
 
@@ -464,26 +464,26 @@
 .landprice-metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .landprice-metric-tile {
   background: var(--paper, #FBFCFA);
   border: 1px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .landprice-metric-tile-title {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--muted, #3C5558);
   font-weight: 600;
   font-family: var(--font-body, sans-serif);
 }
 
 .landprice-metric-tile-value {
-  font-size: 1.28rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: var(--ink, #10272A);
   font-family: var(--font-heading, sans-serif);
@@ -491,25 +491,25 @@
 }
 
 .landprice-metric-tile-sub {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--muted, #3C5558);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* Input Chips Summary */
 .landprice-summary-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: 5px;
+  margin-bottom: 12px;
 }
 
 .landprice-chip {
   background: var(--ground, #F1F5F0);
   border: 1px solid var(--line, #CBD8D2);
-  border-radius: 14px;
-  padding: 2px 10px;
-  font-size: 0.78rem;
+  border-radius: 12px;
+  padding: 2px 9px;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--ink-soft, #2D4649);
   font-family: var(--font-body, sans-serif);
@@ -520,27 +520,27 @@
   background: var(--status-review-bg, #FBEBC4);
   border: 1px solid var(--status-review-border, #F2D48E);
   border-radius: var(--radius-std, 6px);
-  padding: 12px 14px;
-  margin-bottom: 16px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
 }
 
 .landprice-warning-header {
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--status-review-text, #7A4E00);
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 5px;
+  margin-bottom: 3px;
   font-family: var(--font-heading, sans-serif);
 }
 
 .landprice-warning-list {
   margin: 0;
-  padding-left: 18px;
-  font-size: 0.8rem;
+  padding-left: 16px;
+  font-size: 0.78rem;
   color: var(--status-review-text, #7A4E00);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* 8. Validated Model Metrics Card */
@@ -549,7 +549,7 @@
   border: 1.5px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
   box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
-  margin-top: 24px;
+  margin-top: 18px;
   overflow: hidden;
   box-sizing: border-box;
 }

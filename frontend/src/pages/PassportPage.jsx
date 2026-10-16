@@ -178,9 +178,9 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
   const activeComparison = comparisonResult || passport.comparison_summary;
 
   return (
-    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
+    <div className="app-viewport">
       {/* Page Header */}
-      <div className="page-header-block" style={{ marginBottom: '28px' }}>
+      <div className="page-header-block" style={{ marginBottom: '22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{

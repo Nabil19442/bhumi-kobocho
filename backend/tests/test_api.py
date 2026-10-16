@@ -46,7 +46,10 @@ def test_api_compare():
     assert data["status_counts"]["Matched"] == 5
 
 def test_api_guardian_simulation():
-    res = client.post("/api/guardian/simulate/evt-001")
+    res = client.post(
+        "/api/guardian/simulate/evt-001",
+        headers={"X-Guardian-Key": "demo-zenox-2026"}
+    )
     assert res.status_code == 200
     data = res.json()
     assert data["status_label"] == "SIMULATED"

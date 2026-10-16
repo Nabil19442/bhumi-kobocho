@@ -71,9 +71,9 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
   const summary = graphData?.summary || { total_nodes: 0, total_edges: 0, missing_references_count: 0 };
 
   return (
-    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
+    <div className="app-viewport">
       {/* Page Header */}
-      <div className="page-header-block" style={{ marginBottom: '28px' }}>
+      <div className="page-header-block" style={{ marginBottom: '22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div style={{
             background: 'var(--accent-tint)',

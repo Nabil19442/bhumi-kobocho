@@ -177,7 +177,7 @@ export default function LandPricePage({ t, lang = 'bn' }) {
   };
 
   return (
-    <div className="landprice-page-container">
+    <div className="app-viewport landprice-page-container">
       {/* 1. Page Header Block */}
       <div className="landprice-header-block">
         <div className="landprice-badges-row">
