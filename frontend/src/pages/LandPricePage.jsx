@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   AlertTriangle,
@@ -15,7 +15,8 @@ import {
   RotateCcw,
   ShieldCheck,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 import {
   fetchLandPriceMetadata,
@@ -23,6 +24,7 @@ import {
   predictLandPriceApi
 } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
+import LandPriceResultModal from '../components/LandPriceResultModal';
 
 export default function LandPricePage({ t, lang = 'bn' }) {
   const isBn = lang === 'bn';
@@ -34,6 +36,8 @@ export default function LandPricePage({ t, lang = 'bn' }) {
   const [estimating, setEstimating] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const submitBtnRef = useRef(null);
 
   // Form Fields Initial State
   const defaultValues = {
@@ -134,6 +138,7 @@ export default function LandPricePage({ t, lang = 'bn' }) {
     setElectricityAvail(defaultValues.electricityAvail);
     setWaterAccessAvail(defaultValues.waterAccessAvail);
     setPredictionResult(null);
+    setIsModalOpen(false);
     setApiError(null);
   };
 
@@ -163,9 +168,11 @@ export default function LandPricePage({ t, lang = 'bn' }) {
     try {
       const result = await predictLandPriceApi(payload);
       setPredictionResult(result);
+      setIsModalOpen(true);
     } catch (err) {
       setApiError(err);
       setPredictionResult(null);
+      setIsModalOpen(false);
     } finally {
       setEstimating(false);
     }
@@ -553,6 +560,7 @@ export default function LandPricePage({ t, lang = 'bn' }) {
 
             {/* Submit Button */}
             <button
+              ref={submitBtnRef}
               id="btn-run-prediction"
               type="submit"
               disabled={estimating}
@@ -573,140 +581,76 @@ export default function LandPricePage({ t, lang = 'bn' }) {
           </form>
         </div>
 
-        {/* Right Column: Results & Model Info */}
+        {/* Right Column: Model Specs & Guidance */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Prediction Output Card or Intentional Empty State */}
-          {predictionResult ? (
-            <div className="landprice-result-card">
-              {/* Result Top Bar */}
-              <div className="landprice-result-topbar">
-                <span className="landprice-status-badge">
-                  <CheckCircle2 size={13} aria-hidden="true" />
-                  <span>{isBn ? 'সফল প্রাক্কলন' : 'Inference Successful'}</span>
-                </span>
-                <span className="landprice-model-id-tag">
-                  {predictionResult.model_identifier}
-                </span>
-              </div>
-
-              <div className="landprice-card-body">
-                {/* Total Price Highlight */}
-                <div className="landprice-total-box">
-                  <div className="landprice-total-label">
-                    {isBn ? 'মোট আনুমানিক জমির মূল্য' : 'Estimated Total Parcel Price'}
-                  </div>
-                  <div className="landprice-total-figure">
-                    {formatBdt(predictionResult.predicted_total_price_bdt)} ৳
-                  </div>
-                  {predictionResult.total_price_interval && (
-                    <div className="landprice-interval-text">
-                      {isBn ? '৮০% সম্ভাব্য বিচ্যুতির পরিসীমা: ' : '80% Empirical Interval: '}
-                      <strong>{formatBdt(predictionResult.total_price_interval.lower)} ৳</strong> —{' '}
-                      <strong>{formatBdt(predictionResult.total_price_interval.upper)} ৳</strong>
-                    </div>
-                  )}
+          {/* Latest Result Banner if prediction exists */}
+          {predictionResult && (
+            <div style={{
+              background: 'var(--white)',
+              border: '1px solid #B8DDD0',
+              borderRadius: 'var(--radius-std)',
+              padding: '18px 20px',
+              boxShadow: '0 1px 3px rgba(16, 39, 42, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'var(--status-matched-text)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-heading)',
+                  marginBottom: '2px'
+                }}>
+                  <CheckCircle2 size={15} />
+                  <span>{isBn ? 'মূল্যায়ন সম্পন্ন হয়েছে' : 'Valuation Computed'}</span>
                 </div>
-
-                {/* Per Decimal Rate & Strict Unit Check */}
-                <div className="landprice-metrics-grid">
-                  <div className="landprice-metric-tile">
-                    <div className="landprice-metric-tile-title">
-                      {isBn ? 'প্রতি শতকের আনুমানিক দর' : 'Price per Decimal'}
-                    </div>
-                    <div className="landprice-metric-tile-value">
-                      {formatBdt(predictionResult.predicted_price_per_decimal_bdt)} ৳
-                    </div>
-                    {predictionResult.price_per_decimal_interval && (
-                      <div className="landprice-metric-tile-sub">
-                        ±{formatBdt(predictionResult.price_per_decimal_interval.upper - predictionResult.predicted_price_per_decimal_bdt)} ৳ (80% bound)
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="landprice-metric-tile">
-                    <div className="landprice-metric-tile-title">
-                      {isBn ? 'একক সমতা যাচাই' : 'Unit Consistency Check'}
-                    </div>
-                    <div style={{
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      color: 'var(--status-matched-text)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      marginTop: '6px'
-                    }}>
-                      <CheckCircle2 size={15} />
-                      <span>VERIFIED STRICT</span>
-                    </div>
-                    <div className="landprice-metric-tile-sub">
-                      total = rate × {predictionResult.land_area_decimal} decimal
-                    </div>
-                  </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 800,
+                  color: 'var(--ink)',
+                  fontFamily: 'var(--font-heading)'
+                }}>
+                  {formatBdt(predictionResult.predicted_total_price_bdt)} ৳
                 </div>
-
-                {/* Selected Input Summary Chips */}
-                <div className="landprice-summary-chips">
-                  <span className="landprice-chip">
-                    {predictionResult.land_area_decimal} {isBn ? 'শতক' : 'Decimal'}
-                  </span>
-                  <span className="landprice-chip">
-                    {landType.replace('_', ' ')}
-                  </span>
-                  <span className="landprice-chip">
-                    {roadAccessType.replace(/_/g, ' ')} ({roadWidthFt} ft)
-                  </span>
-                  <span className="landprice-chip">
-                    {mouzaId}
-                  </span>
-                </div>
-
-                {/* Warnings if any */}
-                {predictionResult.warnings && predictionResult.warnings.length > 0 && (
-                  <div className="landprice-warning-box">
-                    <div className="landprice-warning-header">
-                      <AlertTriangle size={14} />
-                      <span>{isBn ? 'মডেলের ডোমেইন প্রযোজ্যতা সতর্কতা' : 'Applicability Warnings'}</span>
-                    </div>
-                    <ul className="landprice-warning-list">
-                      {predictionResult.warnings.map((w, idx) => (
-                        <li key={idx}>{w}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Provenance note */}
-                <div className="landprice-provenance-text">
-                  <strong>Provenance:</strong> {predictionResult.data_provenance}
+                <div style={{ fontSize: '0.78rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                  {formatBdt(predictionResult.predicted_price_per_decimal_bdt)} ৳ / {isBn ? 'শতক' : 'dec'}
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Intentional Empty State Card */
-            <div className="landprice-empty-state">
-              <div className="landprice-empty-icon" aria-hidden="true">
-                <TrendingUp size={26} />
-              </div>
-              <h2 className="landprice-empty-title">
-                {isBn ? 'জমির বৈশিষ্ট্য ইনপুট দিয়ে মূল্যায়ন শুরু করুন' : 'Ready for ML Land Valuation'}
-              </h2>
-              <p className="landprice-empty-desc">
-                {isBn
-                  ? 'বামের ফর্মে জমির ক্ষেত্রফল, রাস্তার অবস্থা, ও ভৌগোলিক দূরত্বসমূহ পূরণ করে "সম্ভাব্য মূল্য নির্ণয় করুন" বাটনে ক্লিক করুন।'
-                  : 'Select synthetic cadastral parcel features on the left and click "Compute ML Valuation" to generate regression outputs.'}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
-                <span className="landprice-chip">Road Width Frontage</span>
-                <span className="landprice-chip">Market Proximity</span>
-                <span className="landprice-chip">Drainage Quality</span>
-                <span className="landprice-chip">Empirical Bounds</span>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                style={{
+                  background: 'var(--accent)',
+                  color: 'var(--white)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-std)',
+                  padding: '9px 16px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-heading)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background-color 0.15s ease'
+                }}
+              >
+                <span>{isBn ? 'ফলাফল পপআপ দেখুন' : 'View Full Result'}</span>
+                <ExternalLink size={14} />
+              </button>
             </div>
           )}
 
-          {/* Validated Model Performance Card (Always visible beneath results/empty state) */}
+          {/* Validated Model Performance Card */}
           {modelInfo && (
             <div className="landprice-model-metrics-card">
               <div className="landprice-card-header">
@@ -747,10 +691,10 @@ export default function LandPricePage({ t, lang = 'bn' }) {
                 </div>
 
                 <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: '1.55' }}>
-                  <div style={{ marginBottom: '3px' }}>
+                  <div style={{ marginBottom: '4px' }}>
                     <strong>Selected Algorithm:</strong> {modelInfo.algorithm} (TransformedTargetRegressor)
                   </div>
-                  <div style={{ marginBottom: '3px' }}>
+                  <div style={{ marginBottom: '4px' }}>
                     <strong>Baseline Comparison:</strong> 83.5% error reduction over DummyRegressor (Median Baseline: 29,996 ৳)
                   </div>
                   <div>
@@ -761,8 +705,59 @@ export default function LandPricePage({ t, lang = 'bn' }) {
             </div>
           )}
 
+          {/* Model Evaluation Guide */}
+          <div style={{
+            background: 'var(--white)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius-std)',
+            padding: '20px'
+          }}>
+            <h3 style={{
+              fontSize: '0.98rem',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              fontFamily: 'var(--font-heading)',
+              margin: '0 0 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Info size={16} color="var(--primary-accent)" />
+              <span>{isBn ? 'মডেল মূল্যায়ন নির্দেশিকা' : 'How Model Estimates Price'}</span>
+            </h3>
+
+            <p style={{
+              fontSize: '0.85rem',
+              color: 'var(--muted)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.55,
+              margin: 0
+            }}>
+              {isBn
+                ? 'এই রিগ্রেশন মডেলটি মৌজার ভৌগোলিক দূরত্বের পাশাপাশি রাস্তার প্রশস্ততা (ফিট), পাকা রাস্তার সংযোগ, প্লাবন ঝুঁকি এবং বিদ্যুৎ ও সেচ সুবিধার মতো বাস্তবমুখী বৈশিষ্ট্য বিবেচনা করে প্রাক্কলন করে।'
+                : 'The regression pipeline factors mouza location weights, frontage road width, distance to paved roads, elevation/drainage quality, and utility access to compute calibrated estimates.'}
+            </p>
+          </div>
+
         </div>
       </div>
+
+      {/* Centered Results Modal */}
+      <LandPriceResultModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        result={predictionResult}
+        submittedInputs={{
+          landAreaDecimal,
+          landType,
+          roadAccessType,
+          roadWidthFt,
+          mouzaId,
+          districtId
+        }}
+        lang={lang}
+        triggerRef={submitBtnRef}
+      />
     </div>
   );
 }

@@ -165,16 +165,16 @@
 /* 5. Cadastral Card Container */
 .landprice-card {
   background: var(--white, #FFFFFF);
-  border: 1.5px solid var(--line, #CBD8D2);
+  border: 1px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  box-shadow: var(--shadow-card, 0 1px 4px rgba(16, 39, 42, 0.07));
   overflow: hidden;
   box-sizing: border-box;
 }
 
 .landprice-card-header {
   background: var(--paper, #FBFCFA);
-  border-bottom: 1.5px solid var(--line, #CBD8D2);
+  border-bottom: 1px solid var(--line, #CBD8D2);
   padding: 13px 18px;
   display: flex;
   align-items: center;
@@ -228,7 +228,7 @@
   height: 42px;
   padding: 0 11px;
   border-radius: var(--radius-std, 6px);
-  border: 1.5px solid var(--line, #CBD8D2);
+  border: 1px solid var(--line, #CBD8D2);
   background: var(--paper, #FBFCFA);
   color: var(--ink, #10272A);
   font-size: 0.9rem;
@@ -312,9 +312,9 @@
   font-family: var(--font-heading, sans-serif);
   font-size: 0.96rem;
   font-weight: 700;
-  border: 1.5px solid var(--ink, #10272A);
+  border: 1px solid var(--accent, #2742A0);
   border-radius: var(--radius-std, 6px);
-  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  box-shadow: 0 2px 6px rgba(39, 66, 160, 0.22);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -326,12 +326,12 @@
 .landprice-submit-btn:hover:not(:disabled) {
   background: #1B3284;
   transform: translateY(-1px);
-  box-shadow: 5px 5px 0 #10272A;
+  box-shadow: 0 4px 12px rgba(39, 66, 160, 0.32);
 }
 
 .landprice-submit-btn:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 2px 2px 0 #10272A;
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(39, 66, 160, 0.2);
 }
 
 .landprice-submit-btn:disabled {
@@ -386,9 +386,9 @@
 /* Prediction Output Card (Active) */
 .landprice-result-card {
   background: var(--white, #FFFFFF);
-  border: 2px solid var(--accent, #2742A0);
+  border: 1px solid var(--accent, #2742A0);
   border-radius: var(--radius-std, 6px);
-  box-shadow: var(--shadow-hard, 6px 6px 0 #10272A);
+  box-shadow: 0 4px 16px rgba(39, 66, 160, 0.08);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -546,9 +546,9 @@
 /* 8. Validated Model Metrics Card */
 .landprice-model-metrics-card {
   background: var(--white, #FFFFFF);
-  border: 1.5px solid var(--line, #CBD8D2);
+  border: 1px solid var(--line, #CBD8D2);
   border-radius: var(--radius-std, 6px);
-  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  box-shadow: var(--shadow-card, 0 1px 4px rgba(16, 39, 42, 0.07));
   margin-top: 18px;
   overflow: hidden;
   box-sizing: border-box;

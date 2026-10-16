@@ -146,6 +146,7 @@ export default function App() {
             onViewPassport={(id) => handleViewPassport(id || 'rec-demo-001')}
             onViewIntegrity={() => setActiveTab('integrity')}
             onViewGuardian={() => setActiveTab('guardian')}
+            onViewLandPrice={() => setActiveTab('landprice')}
           />
         )}
 

@@ -75,11 +75,11 @@ button,
   }
 }
 
-/* Hard Shadows for Hero, Plot Passport, and Alert Cards */
+/* Cards Elevation */
 .hero-passport-card,
 .cadastral-map-card,
 .alert-card-hard {
-  box-shadow: var(--shadow-hard, 6px 6px 0 #10272A);
+  box-shadow: var(--shadow-hard, 0 4px 16px rgba(16, 39, 42, 0.08));
   border-radius: var(--radius-std, 6px);
 }
 

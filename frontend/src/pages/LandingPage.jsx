@@ -6,6 +6,7 @@ import ComparisonPreviewSection from '../components/ComparisonPreviewSection';
 import GuardianPreviewSection from '../components/GuardianPreviewSection';
 import IntegrityPreviewSection from '../components/IntegrityPreviewSection';
 import ScopeSection from '../components/ScopeSection';
+import LandPricePreviewSection from '../components/LandPricePreviewSection';
 import FinalCtaSection from '../components/FinalCtaSection';
 import LandingFooter from '../components/LandingFooter';
 
@@ -16,7 +17,8 @@ export default function LandingPage({
   onStartCompare,
   onViewPassport,
   onViewIntegrity,
-  onViewGuardian
+  onViewGuardian,
+  onViewLandPrice
 }) {
   const handleScrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);
@@ -51,6 +53,12 @@ export default function LandingPage({
       <ComparisonPreviewSection
         lang={lang}
         onStartCompare={onStartCompare}
+      />
+
+      {/* 6.1. Rural Land Price Intelligence Preview */}
+      <LandPricePreviewSection
+        lang={lang}
+        onViewLandPrice={onViewLandPrice}
       />
 
       {/* 7. Land Guardian simulated alert example */}

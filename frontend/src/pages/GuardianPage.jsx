@@ -10,10 +10,12 @@ import {
   ShieldCheck, 
   RefreshCw,
   Bell,
-  ArrowRightLeft
+  ArrowRightLeft,
+  ExternalLink
 } from 'lucide-react';
 import { fetchSimulationEvents, triggerSimulationApi, fetchGuardianAlerts, markAlertReviewedApi } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
+import GuardianAlertModal from '../components/GuardianAlertModal';
 
 export default function GuardianPage({ t, lang = 'bn' }) {
   const isBn = lang === 'bn';
@@ -23,6 +25,7 @@ export default function GuardianPage({ t, lang = 'bn' }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
 
   const loadGuardianData = async () => {
     setIsLoading(true);
@@ -123,24 +126,24 @@ export default function GuardianPage({ t, lang = 'bn' }) {
       {/* Mandatory Prominent Disclaimer Banner */}
       <div style={{
         background: '#FEF4F0',
-        border: '1.5px solid #F3BFB3',
+        border: '1px solid #F3BFB3',
         borderRadius: 'var(--radius-std)',
         padding: '12px 18px',
-        marginBottom: '28px',
+        marginBottom: '24px',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        gap: '12px'
       }}>
         <ShieldAlert size={18} style={{ color: '#9A2C14', flexShrink: 0 }} />
         <span style={{
-          fontSize: '0.9rem',
+          fontSize: '0.88rem',
           fontWeight: 700,
           color: '#9A2C14',
           fontFamily: 'var(--font-heading)'
         }}>
           {isBn
-            ? 'সিমুলেটেড ঘটনা — কোনো সরকারি সিস্টেম পর্যবেক্ষণ করা হচ্ছে না।'
-            : 'SIMULATED EVENT — No live government system is being monitored.'}
+            ? 'সিমুলেটেড সতর্কতা ব্যবস্থা — কোনো লাইভ সরকারি সিস্টেম পর্যবেক্ষণ করা হচ্ছে না।'
+            : 'SIMULATED EVENT MONITORING — No live government system is being observed.'}
         </span>
       </div>
 
@@ -150,9 +153,9 @@ export default function GuardianPage({ t, lang = 'bn' }) {
       <div style={{
         background: 'var(--white)',
         borderRadius: 'var(--radius-std)',
-        border: '1px solid #CAD7CF',
-        boxShadow: 'var(--shadow-hard-sm)',
-        padding: '24px',
+        border: '1px solid var(--line)',
+        boxShadow: '0 1px 3px rgba(16, 39, 42, 0.05)',
+        padding: '20px 24px',
         marginBottom: '28px'
       }}>
         <div style={{
@@ -161,9 +164,9 @@ export default function GuardianPage({ t, lang = 'bn' }) {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '12px',
-          paddingBottom: '16px',
-          borderBottom: '1px solid #CAD7CF',
-          marginBottom: '20px'
+          paddingBottom: '14px',
+          borderBottom: '1px solid var(--line)',
+          marginBottom: '18px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
@@ -178,22 +181,22 @@ export default function GuardianPage({ t, lang = 'bn' }) {
             }}>
               {isBn ? 'সিমুলেশন কন্ট্রোল' : 'SIMULATION'}
             </span>
-            <h3 style={{
-              fontSize: '1.14rem',
+            <h2 style={{
+              fontSize: '1.08rem',
               fontWeight: 700,
-              color: 'var(--text-main)',
+              color: 'var(--ink)',
               fontFamily: 'var(--font-heading)',
               margin: 0
             }}>
               {isBn ? 'সিমুলেশন সিনারিও কমান্ড সেন্টার' : 'Simulation Scenario Hub'}
-            </h3>
+            </h2>
           </div>
           <span style={{
             fontSize: '0.74rem',
             fontFamily: 'var(--font-mono)',
             padding: '3px 8px',
             background: 'var(--ground)',
-            border: '1px solid #CBD8D2',
+            border: '1px solid var(--line)',
             borderRadius: '4px',
             color: 'var(--muted)',
             fontWeight: 700
@@ -204,17 +207,17 @@ export default function GuardianPage({ t, lang = 'bn' }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          gap: '16px',
           alignItems: 'flex-end'
         }}>
-          <div className="form-field">
+          <div>
             <label htmlFor="simulation-scenario-select" style={{
               display: 'block',
-              fontSize: '0.86rem',
+              fontSize: '0.84rem',
               fontWeight: 700,
               fontFamily: 'var(--font-heading)',
-              color: 'var(--text-main)',
+              color: 'var(--ink)',
               marginBottom: '6px'
             }}>
               {isBn ? 'সিমুলেশন সিনারিও নির্বাচন করুন:' : 'Select Simulation Scenario:'}
@@ -225,13 +228,13 @@ export default function GuardianPage({ t, lang = 'bn' }) {
               onChange={(e) => setSelectedEventId(e.target.value)}
               style={{
                 width: '100%',
-                height: '46px',
+                height: '44px',
                 padding: '0 12px',
                 borderRadius: 'var(--radius-std)',
-                border: '1.5px solid #CAD7CF',
+                border: '1px solid var(--line)',
                 background: 'var(--paper)',
-                color: 'var(--text-main)',
-                fontSize: '0.94rem',
+                color: 'var(--ink)',
+                fontSize: '0.92rem',
                 fontFamily: 'var(--font-body)',
                 cursor: 'pointer'
               }}
@@ -248,26 +251,27 @@ export default function GuardianPage({ t, lang = 'bn' }) {
             <button
               id="trigger-simulation-btn"
               type="button"
-              className="btn-primary"
               onClick={handleTriggerSimulation}
               disabled={isSimulating}
               style={{
-                width: '100%',
-                height: '46px',
-                fontSize: '0.96rem',
+                height: '44px',
+                padding: '0 20px',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 fontFamily: 'var(--font-heading)',
                 borderRadius: 'var(--radius-std)',
-                boxShadow: 'var(--shadow-hard-sm)',
+                border: 'none',
+                background: 'var(--accent)',
+                color: 'var(--white)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 cursor: 'pointer',
-                minHeight: '44px'
+                whiteSpace: 'nowrap'
               }}
             >
-              <RefreshCw size={16} className={isSimulating ? 'spin' : ''} />
+              <RefreshCw size={15} className={isSimulating ? 'spin' : ''} />
               <span>{isBn ? 'সিমুলেশন ইভেন্ট শুরু করুন' : 'Trigger Simulated Event'}</span>
             </button>
           </div>
@@ -283,9 +287,9 @@ export default function GuardianPage({ t, lang = 'bn' }) {
           marginBottom: '16px'
         }}>
           <h2 style={{
-            fontSize: '1.24rem',
+            fontSize: '1.18rem',
             fontWeight: 800,
-            color: 'var(--text-main)',
+            color: 'var(--ink)',
             fontFamily: 'var(--font-heading)',
             margin: 0
           }}>
@@ -293,7 +297,7 @@ export default function GuardianPage({ t, lang = 'bn' }) {
           </h2>
           <span style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.78rem',
+            fontSize: '0.76rem',
             color: 'var(--muted)',
             fontWeight: 700
           }}>
@@ -305,20 +309,20 @@ export default function GuardianPage({ t, lang = 'bn' }) {
           <div style={{
             background: 'var(--white)',
             borderRadius: 'var(--radius-std)',
-            border: '1px solid #CAD7CF',
-            padding: '40px 20px',
+            border: '1px solid var(--line)',
+            padding: '36px 20px',
             textAlign: 'center',
             color: 'var(--muted)'
           }}>
-            <Bell size={32} style={{ margin: '0 auto 10px', color: '#9AAFAA' }} />
-            <p style={{ margin: 0, fontSize: '0.92rem' }}>
+            <Bell size={28} style={{ margin: '0 auto 8px', color: 'var(--muted)' }} />
+            <p style={{ margin: 0, fontSize: '0.9rem' }}>
               {isBn 
                 ? 'বর্তমানে কোনো সিমুলেটেড সতর্কতা নেই। ওপরের কমান্ড সেন্টার থেকে একটি ইভেন্ট শুরু করুন।' 
                 : 'No active simulated alerts. Trigger an event from the command center above.'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {activeAlerts.map((alert) => {
               const isReviewed = alert.is_reviewed;
 
@@ -328,192 +332,189 @@ export default function GuardianPage({ t, lang = 'bn' }) {
                   style={{
                     background: 'var(--white)',
                     borderRadius: 'var(--radius-std)',
-                    border: '1.5px solid var(--text-main)',
-                    boxShadow: 'var(--shadow-hard)',
-                    overflow: 'hidden'
+                    border: '1px solid var(--line)',
+                    boxShadow: '0 1px 3px rgba(16, 39, 42, 0.04)',
+                    overflow: 'hidden',
+                    transition: 'border-color 0.15s ease'
                   }}
                 >
-                  {/* Alert Header Bar */}
+                  {/* Alert Header Row */}
                   <div style={{
-                    background: '#FFF4E5',
-                    borderBottom: '1px solid #FFE0B2',
-                    padding: '14px 20px',
+                    padding: '16px 20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
-                    gap: '10px'
+                    gap: '12px',
+                    borderBottom: '1px solid var(--line)',
+                    background: isReviewed ? 'var(--paper)' : '#FFFAF5'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{
                         background: '#B45309',
                         color: '#FFFFFF',
                         fontFamily: 'var(--font-mono)',
-                        fontSize: '0.72rem',
+                        fontSize: '0.7rem',
                         fontWeight: 800,
-                        padding: '3px 8px',
+                        padding: '2px 7px',
                         borderRadius: '4px',
-                        letterSpacing: '0.5px'
+                        letterSpacing: '0.4px'
                       }}>
-                        {isBn ? 'সিমুলেটেড ঘটনা' : 'SIMULATED'}
+                        {isBn ? 'সিমুলেটেড' : 'SIMULATED'}
                       </span>
                       <strong style={{
                         fontSize: '1rem',
                         fontFamily: 'var(--font-heading)',
-                        color: '#9A3412'
+                        color: 'var(--ink)'
                       }}>
                         {isBn ? alert.title_bn : alert.title_en}
                       </strong>
                     </div>
 
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      fontSize: '0.78rem',
-                      color: 'var(--muted)',
-                      fontFamily: 'var(--font-mono)'
-                    }}>
-                      <Clock size={14} />
-                      <span>{alert.timestamp || 'N/A'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontSize: '0.76rem',
+                        color: 'var(--muted)',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        <Clock size={13} />
+                        <span>{alert.timestamp || 'N/A'}</span>
+                      </div>
+
+                      <span style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-heading)',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        background: isReviewed ? 'var(--status-matched-bg)' : 'var(--status-review-bg)',
+                        color: isReviewed ? 'var(--status-matched-text)' : 'var(--status-review-text)',
+                        border: isReviewed ? '1px solid var(--status-matched-border)' : '1px solid var(--status-review-border)'
+                      }}>
+                        {isReviewed ? (isBn ? '✓ পর্যালোচিত' : 'Reviewed') : (isBn ? 'সক্রিয় পর্যালোচনা' : 'Active')}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Alert Content */}
-                  <div style={{ padding: '24px' }}>
+                  {/* Alert Body Snippet */}
+                  <div style={{ padding: '16px 20px' }}>
                     <p style={{
-                      fontSize: '0.94rem',
-                      color: 'var(--text-main)',
+                      fontSize: '0.9rem',
+                      color: 'var(--ink-soft)',
                       fontFamily: 'var(--font-body)',
-                      lineHeight: 1.6,
-                      marginBottom: '20px'
+                      lineHeight: 1.55,
+                      margin: '0 0 14px'
                     }}>
                       {isBn ? alert.description_bn : alert.description_en}
                     </p>
 
-                    {/* Diff Reports Grid */}
+                    {/* Quick Diff Pill Tags */}
                     {alert.diff_report && alert.diff_report.length > 0 && (
                       <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                        gap: '16px',
-                        marginBottom: '20px'
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        marginBottom: '16px'
                       }}>
-                        {alert.diff_report.map((diff, dIdx) => (
-                          <div
+                        {alert.diff_report.map((d, dIdx) => (
+                          <span
                             key={dIdx}
                             style={{
-                              background: '#F8FAF8',
-                              border: '1px solid #CAD7CF',
-                              borderRadius: 'var(--radius-std)',
-                              padding: '14px'
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'var(--paper)',
+                              border: '1px solid var(--line)',
+                              borderRadius: '4px',
+                              padding: '4px 10px',
+                              fontSize: '0.78rem',
+                              fontFamily: 'var(--font-mono)',
+                              color: 'var(--ink)'
                             }}
                           >
-                            <span style={{
-                              fontSize: '0.74rem',
-                              fontFamily: 'var(--font-mono)',
-                              color: 'var(--muted)',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              display: 'block',
-                              marginBottom: '6px'
-                            }}>
-                              {isBn ? 'পরিবর্তিত ক্ষেত্র:' : 'Changed Field:'} {diff.field}
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                              <div>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--muted)', display: 'block' }}>
-                                  {isBn ? 'পূর্বের মান:' : 'Old Value:'}
-                                </span>
-                                <strong style={{ fontSize: '0.94rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-                                  {String(diff.old_value)}
-                                </strong>
-                              </div>
-                              <ArrowRightLeft size={16} color="var(--primary-accent)" />
-                              <div style={{ textAlign: 'right' }}>
-                                <span style={{ fontSize: '0.7rem', color: '#B45309', display: 'block' }}>
-                                  {isBn ? 'নতুন মান:' : 'New Value:'}
-                                </span>
-                                <strong style={{ fontSize: '0.94rem', color: '#B45309', fontFamily: 'var(--font-mono)' }}>
-                                  {String(diff.new_value)}
-                                </strong>
-                              </div>
-                            </div>
-                            {(diff.note_bn || diff.note_en) && (
-                              <div style={{ fontSize: '0.78rem', color: 'var(--text-body)', marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #CBD8D2' }}>
-                                {isBn ? diff.note_bn : diff.note_en}
-                              </div>
-                            )}
-                          </div>
+                            <span>{d.field}:</span>
+                            <span style={{ color: 'var(--muted)' }}>{String(d.old_value)}</span>
+                            <ArrowRightLeft size={12} style={{ color: 'var(--primary-accent)' }} />
+                            <strong style={{ color: '#B45309' }}>{String(d.new_value)}</strong>
+                          </span>
                         ))}
                       </div>
                     )}
 
-                    {/* Citizen Action Recommendation */}
-                    {(alert.action_recommendation_bn || alert.action_recommendation_en) && (
-                      <div style={{
-                        background: '#EBF3FB',
-                        border: '1px solid #C4D6F5',
-                        borderRadius: 'var(--radius-std)',
-                        padding: '12px 16px',
-                        marginBottom: '20px',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '8px'
-                      }}>
-                        <Info size={16} style={{ color: 'var(--primary-accent)', flexShrink: 0, marginTop: '2px' }} />
-                        <div style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
-                          <strong>{isBn ? 'নাগরিকের করণীয়:' : 'Recommended Action:'} </strong>
-                          {isBn ? alert.action_recommendation_bn : alert.action_recommendation_en}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Bottom Action Row: Review Toggle */}
+                    {/* Bottom Action Row */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       flexWrap: 'wrap',
                       gap: '12px',
-                      paddingTop: '16px',
-                      borderTop: '1px solid #E3EAE6'
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--line)'
                     }}>
-                      <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
-                        {isBn ? 'প্লট আইডি:' : 'Plot ID:'} {alert.record_id}
+                      <span style={{ fontSize: '0.76rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
+                        {isBn ? 'প্লট আইডি:' : 'Plot ID:'} <strong>{alert.record_id}</strong>
                       </span>
 
-                      <button
-                        type="button"
-                        id={`mark-reviewed-${alert.alert_id}`}
-                        onClick={() => handleMarkReviewed(alert.alert_id)}
-                        disabled={isReviewed}
-                        style={{
-                          height: '42px',
-                          padding: '0 16px',
-                          fontSize: '0.88rem',
-                          fontWeight: 700,
-                          fontFamily: 'var(--font-heading)',
-                          borderRadius: 'var(--radius-std)',
-                          border: isReviewed ? '1.5px solid #14633A' : '1.5px solid var(--text-main)',
-                          background: isReviewed ? 'var(--status-matched-bg)' : '#FFFFFF',
-                          color: isReviewed ? 'var(--status-matched-text)' : 'var(--text-main)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          cursor: isReviewed ? 'default' : 'pointer',
-                          minHeight: '44px',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <CheckCircle2 size={16} />
-                        <span>
-                          {isReviewed 
-                            ? (isBn ? '✓ পর্যালোচিত হয়েছে (Reviewed)' : '✓ Reviewed')
-                            : (isBn ? 'পর্যালোচিত হিসেবে চিহ্নিত করুন' : 'Mark as Reviewed')}
-                        </span>
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Detail Modal Trigger Button */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAlertForModal(alert)}
+                          style={{
+                            height: '38px',
+                            padding: '0 14px',
+                            fontSize: '0.84rem',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-heading)',
+                            borderRadius: 'var(--radius-std)',
+                            border: '1px solid var(--line)',
+                            background: 'var(--paper)',
+                            color: 'var(--ink)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>{isBn ? 'বিস্তারিত পরিবর্তন দেখুন' : 'View Full Details'}</span>
+                          <ExternalLink size={14} />
+                        </button>
+
+                        {/* Inline Review Toggle */}
+                        <button
+                          type="button"
+                          id={`mark-reviewed-${alert.alert_id}`}
+                          onClick={() => handleMarkReviewed(alert.alert_id)}
+                          disabled={isReviewed}
+                          style={{
+                            height: '38px',
+                            padding: '0 14px',
+                            fontSize: '0.84rem',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-heading)',
+                            borderRadius: 'var(--radius-std)',
+                            border: isReviewed ? '1px solid var(--status-matched-border)' : '1px solid var(--accent)',
+                            background: isReviewed ? 'var(--status-matched-bg)' : 'var(--accent)',
+                            color: isReviewed ? 'var(--status-matched-text)' : 'var(--white)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: isReviewed ? 'default' : 'pointer'
+                          }}
+                        >
+                          <CheckCircle2 size={14} />
+                          <span>
+                            {isReviewed 
+                              ? (isBn ? '✓ পর্যালোচিত' : '✓ Reviewed')
+                              : (isBn ? 'পর্যালোচিত চিহ্নিত করুন' : 'Mark Reviewed')}
+                          </span>
+                        </button>
+                      </div>
                     </div>
+
                   </div>
                 </div>
               );
@@ -521,6 +522,15 @@ export default function GuardianPage({ t, lang = 'bn' }) {
           </div>
         )}
       </div>
+
+      {/* Alert Details Modal Popup */}
+      <GuardianAlertModal
+        isOpen={Boolean(selectedAlertForModal)}
+        alert={selectedAlertForModal}
+        onClose={() => setSelectedAlertForModal(null)}
+        onMarkReviewed={handleMarkReviewed}
+        lang={lang}
+      />
     </div>
   );
 }

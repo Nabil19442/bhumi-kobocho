@@ -910,18 +910,19 @@ textarea:focus-visible {
   width: 90%;
   max-width: 440px;
   background: var(--paper);
-  border: 1.5px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: var(--radius-std);
-  box-shadow: var(--shadow-hard);
+  box-shadow: var(--shadow-card);
   padding: 16px 18px;
   z-index: 10;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .floating-passport-card:hover {
   transform: translateY(-2px);
-  box-shadow: 8px 8px 0 var(--ink);
+  border-color: var(--primary-accent);
+  box-shadow: 0 8px 24px rgba(16, 39, 42, 0.12);
 }
 
 .card-top-row {

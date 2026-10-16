@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { fetchPlotPassport, fetchRecords } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
+import TimelineDetailModal from '../components/TimelineDetailModal';
 
 export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-demo-001', comparisonResult, sharedExtractedData, onViewGraph }) {
   const isBn = lang === 'bn';
@@ -32,6 +33,7 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedTimelineEvent, setSelectedTimelineEvent] = useState(null);
 
   const loadData = () => {
     setIsLoading(true);
@@ -684,43 +686,72 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
           gap: '16px'
         }}>
           {passport.timeline?.map((step, idx) => (
-            <div
+            <button
               key={idx}
+              type="button"
+              onClick={() => setSelectedTimelineEvent(step)}
               style={{
                 background: 'var(--paper)',
                 border: '1px solid #CAD7CF',
                 borderRadius: 'var(--radius-std)',
                 padding: '16px',
-                position: 'relative'
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary-accent)';
+                e.currentTarget.style.boxShadow = '0 3px 8px rgba(39, 66, 160, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#CAD7CF';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <div style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.74rem',
-                fontWeight: 700,
-                color: 'var(--primary-accent)',
-                marginBottom: '4px'
-              }}>
-                {step.year} — {step.date}
+              <div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  color: 'var(--primary-accent)',
+                  marginBottom: '4px'
+                }}>
+                  {step.year} — {step.date}
+                </div>
+                <strong style={{
+                  fontSize: '0.98rem',
+                  color: 'var(--text-main)',
+                  fontFamily: 'var(--font-heading)',
+                  display: 'block',
+                  marginBottom: '4px'
+                }}>
+                  {isBn ? step.title_bn : step.title_en}
+                </strong>
+                <p style={{
+                  fontSize: '0.84rem',
+                  color: 'var(--text-body)',
+                  lineHeight: 1.5,
+                  margin: 0
+                }}>
+                  {isBn ? step.detail_bn : step.detail_en}
+                </p>
               </div>
-              <strong style={{
-                fontSize: '0.98rem',
-                color: 'var(--text-main)',
-                fontFamily: 'var(--font-heading)',
-                display: 'block',
-                marginBottom: '4px'
+              <div style={{
+                marginTop: '12px',
+                fontSize: '0.74rem',
+                color: 'var(--primary-accent)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
               }}>
-                {isBn ? step.title_bn : step.title_en}
-              </strong>
-              <p style={{
-                fontSize: '0.84rem',
-                color: 'var(--text-body)',
-                lineHeight: 1.5,
-                margin: 0
-              }}>
-                {isBn ? step.detail_bn : step.detail_en}
-              </p>
-            </div>
+                <span>{isBn ? 'বিস্তারিত নথি দেখুন' : 'Inspect record detail'}</span>
+                <span>→</span>
+              </div>
+            </button>
           ))}
         </div>
       </div>
@@ -781,6 +812,13 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
           </ul>
         </div>
       </div>
+
+      <TimelineDetailModal
+        isOpen={Boolean(selectedTimelineEvent)}
+        event={selectedTimelineEvent}
+        onClose={() => setSelectedTimelineEvent(null)}
+        lang={lang}
+      />
     </div>
   );
 }

@@ -62,9 +62,13 @@
   --border-dark: 1px solid #10272A;
   --border-dashed: 1px dashed #9AAFAA;
 
-  /* Hard Shadows (Applied exclusively to Hero, Plot Passport, and Alert cards) */
-  --shadow-hard: 6px 6px 0 #10272A;
-  --shadow-hard-sm: 4px 4px 0 #10272A;
+  /* Restrained Modern Shadow System */
+  --shadow-subtle: 0 1px 3px rgba(16, 39, 42, 0.05);
+  --shadow-card: 0 1px 4px rgba(16, 39, 42, 0.07);
+  --shadow-elevated: 0 4px 16px rgba(16, 39, 42, 0.08);
+  --shadow-hard: 0 2px 8px rgba(16, 39, 42, 0.07);
+  --shadow-hard-md: 0 3px 10px rgba(16, 39, 42, 0.08);
+  --shadow-hard-sm: 0 1px 4px rgba(16, 39, 42, 0.06);
 
   /* Layout */
   --max-content-width: 1260px;
