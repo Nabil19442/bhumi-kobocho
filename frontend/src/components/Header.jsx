@@ -50,14 +50,19 @@ export default function Header({ lang, setLang, t, onReturnToLanding }) {
         style={{
           background: 'var(--bg-paper)',
           padding: '10px 24px',
+        }}
+      >
+        <div style={{
+          maxWidth: 'var(--max-content-width, 1240px)',
+          width: '100%',
+          margin: '0 auto',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '16px'
-        }}
-      >
-        <div 
-          className="brand-section"
+        }}>
+          <div 
+            className="brand-section"
           onClick={onReturnToLanding}
           style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: onReturnToLanding ? 'pointer' : 'default' }}
           title={isBn ? 'ল্যান্ডিং পেজে ফিরে যান' : 'Back to landing page'}
@@ -145,6 +150,7 @@ export default function Header({ lang, setLang, t, onReturnToLanding }) {
           </button>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
   );
 }

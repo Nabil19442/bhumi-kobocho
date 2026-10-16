@@ -1,0 +1,612 @@
+/* ==========================================================================
+   BHUMI KOBOCHO (ভূমি কবচ) — RURAL LAND PRICE INTELLIGENCE STYLES
+   Theme: Cadastral Map & Survey Ink Aesthetic
+   Palette: Ground (#F1F5F0), Paper (#FBFCFA), White (#FFFFFF), Ink (#10272A),
+            Ink-Soft (#2D4649), Line (#CBD8D2), Accent (#2742A0), Accent-Tint (#E7EEFB)
+   ========================================================================== */
+
+/* 1. Page Viewport Container */
+.landprice-page-container {
+  width: 100%;
+  max-width: var(--max-content-width, 1240px);
+  margin: 0 auto;
+  padding: 32px var(--gutter-desktop, 24px) 64px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .landprice-page-container {
+    padding: 20px var(--gutter-mobile, 16px) 48px;
+  }
+}
+
+/* 2. Page Header Block */
+.landprice-header-block {
+  margin-bottom: 24px;
+}
+
+.landprice-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.landprice-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-std, 6px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.landprice-badge.ml-benchmark {
+  background: var(--accent-tint, #E7EEFB);
+  color: var(--accent, #2742A0);
+  border: 1px solid #C4D6F5;
+}
+
+.landprice-badge.synthetic {
+  background: var(--status-review-bg, #FBEBC4);
+  color: var(--status-review-text, #7A4E00);
+  border: 1px solid var(--status-review-border, #F2D48E);
+}
+
+.landprice-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.landprice-icon-box {
+  background: var(--accent-tint, #E7EEFB);
+  color: var(--accent, #2742A0);
+  padding: 10px;
+  border-radius: var(--radius-std, 6px);
+  border: 1.5px solid #C4D6F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.landprice-title {
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-weight: 800;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.landprice-subtitle {
+  font-size: 0.96rem;
+  color: var(--ink-soft, #2D4649);
+  font-family: var(--font-body, sans-serif);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 840px;
+}
+
+/* 3. Strict Synthetic Disclaimer Banner */
+.landprice-disclaimer-card {
+  background: #FFF5F5;
+  border: 1.5px solid #FCA5A5;
+  border-left: 5px solid #DC2626;
+  border-radius: var(--radius-std, 6px);
+  padding: 18px 22px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.06);
+}
+
+.landprice-disclaimer-icon {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.landprice-disclaimer-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.landprice-disclaimer-heading {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #991B1B;
+  font-family: var(--font-heading, sans-serif);
+  margin: 0 0 6px 0;
+}
+
+.landprice-disclaimer-body {
+  font-size: 0.92rem;
+  color: #7F1D1D;
+  font-family: var(--font-body, sans-serif);
+  line-height: 1.6;
+  margin: 0 0 4px 0;
+  word-break: break-word;
+}
+
+.landprice-disclaimer-sub {
+  font-size: 0.82rem;
+  color: #991B1B;
+  font-family: var(--font-body, sans-serif);
+  font-style: italic;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* 4. Two-Column Dashboard Layout */
+.landprice-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .landprice-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* 5. Cadastral Card Container */
+.landprice-card {
+  background: var(--white, #FFFFFF);
+  border: 1.5px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.landprice-card-header {
+  background: var(--paper, #FBFCFA);
+  border-bottom: 1.5px solid var(--line, #CBD8D2);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.landprice-card-title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.landprice-card-body {
+  padding: 22px 20px;
+}
+
+@media (max-width: 768px) {
+  .landprice-card-body {
+    padding: 18px 14px;
+  }
+}
+
+/* 6. Form Field Elements */
+.landprice-form-group {
+  margin-bottom: 18px;
+}
+
+.landprice-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.landprice-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+  margin-bottom: 6px;
+}
+
+.landprice-input,
+.landprice-select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-std, 6px);
+  border: 1.5px solid var(--line, #CBD8D2);
+  background: var(--paper, #FBFCFA);
+  color: var(--ink, #10272A);
+  font-size: 0.92rem;
+  font-family: var(--font-body, sans-serif);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.landprice-input:hover,
+.landprice-select:hover {
+  border-color: #9AAFAA;
+}
+
+.landprice-input:focus,
+.landprice-select:focus {
+  outline: none;
+  border-color: var(--accent, #2742A0);
+  background: var(--white, #FFFFFF);
+  box-shadow: 0 0 0 3px var(--accent-tint, #E7EEFB);
+}
+
+/* Sub-grids for inputs */
+.landprice-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.landprice-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .landprice-grid-2,
+  .landprice-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* Infrastructure Toggles */
+.landprice-infra-box {
+  background: var(--ground, #F1F5F0);
+  border: 1px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.landprice-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink, #10272A);
+  font-family: var(--font-body, sans-serif);
+  cursor: pointer;
+  user-select: none;
+}
+
+.landprice-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent, #2742A0);
+}
+
+/* Primary Form Submit Button */
+.landprice-submit-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  background: var(--accent, #2742A0);
+  color: var(--white, #FFFFFF);
+  font-family: var(--font-heading, sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1.5px solid var(--ink, #10272A);
+  border-radius: var(--radius-std, 6px);
+  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.landprice-submit-btn:hover:not(:disabled) {
+  background: #1B3284;
+  transform: translateY(-1px);
+  box-shadow: 5px 5px 0 #10272A;
+}
+
+.landprice-submit-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 0 #10272A;
+}
+
+.landprice-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 7. Result Panel Elements */
+
+/* Empty State */
+.landprice-empty-state {
+  background: var(--paper, #FBFCFA);
+  border: 1.5px dashed var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  padding: 44px 24px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.landprice-empty-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--accent-tint, #E7EEFB);
+  color: var(--accent, #2742A0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 1px solid #C4D6F5;
+}
+
+.landprice-empty-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+  margin: 0 0 8px 0;
+}
+
+.landprice-empty-desc {
+  font-size: 0.88rem;
+  color: var(--ink-soft, #2D4649);
+  font-family: var(--font-body, sans-serif);
+  line-height: 1.5;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Prediction Output Card (Active) */
+.landprice-result-card {
+  background: var(--white, #FFFFFF);
+  border: 2px solid var(--accent, #2742A0);
+  border-radius: var(--radius-std, 6px);
+  box-shadow: var(--shadow-hard, 6px 6px 0 #10272A);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.landprice-result-topbar {
+  background: var(--dark-band, #0D2B2E);
+  color: var(--white, #FFFFFF);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.landprice-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  background: var(--status-matched-bg, #DFF1E6);
+  color: var(--status-matched-text, #14633A);
+  border: 1px solid var(--status-matched-border, #B7DFCA);
+}
+
+.landprice-model-id-tag {
+  font-size: 0.74rem;
+  font-family: var(--font-mono, monospace);
+  color: #CBD8D2;
+}
+
+/* Total Price Highlight Box */
+.landprice-total-box {
+  background: var(--paper, #FBFCFA);
+  border: 1px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  padding: 22px 18px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.landprice-total-label {
+  font-size: 0.86rem;
+  color: var(--muted, #3C5558);
+  font-weight: 700;
+  font-family: var(--font-heading, sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.landprice-total-figure {
+  font-size: clamp(2rem, 3.5vw, 2.7rem);
+  font-weight: 900;
+  color: var(--accent, #2742A0);
+  font-family: var(--font-heading, sans-serif);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.landprice-interval-text {
+  font-size: 0.84rem;
+  color: var(--ink-soft, #2D4649);
+  margin-top: 6px;
+  font-family: var(--font-body, sans-serif);
+}
+
+/* Metrics Row */
+.landprice-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.landprice-metric-tile {
+  background: var(--paper, #FBFCFA);
+  border: 1px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  padding: 12px 14px;
+}
+
+.landprice-metric-tile-title {
+  font-size: 0.78rem;
+  color: var(--muted, #3C5558);
+  font-weight: 600;
+  font-family: var(--font-body, sans-serif);
+}
+
+.landprice-metric-tile-value {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+  margin-top: 2px;
+}
+
+.landprice-metric-tile-sub {
+  font-size: 0.74rem;
+  color: var(--muted, #3C5558);
+  margin-top: 2px;
+}
+
+/* Input Chips Summary */
+.landprice-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.landprice-chip {
+  background: var(--ground, #F1F5F0);
+  border: 1px solid var(--line, #CBD8D2);
+  border-radius: 14px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft, #2D4649);
+  font-family: var(--font-body, sans-serif);
+}
+
+/* Warnings Box */
+.landprice-warning-box {
+  background: var(--status-review-bg, #FBEBC4);
+  border: 1px solid var(--status-review-border, #F2D48E);
+  border-radius: var(--radius-std, 6px);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.landprice-warning-header {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--status-review-text, #7A4E00);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-family: var(--font-heading, sans-serif);
+}
+
+.landprice-warning-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  color: var(--status-review-text, #7A4E00);
+  line-height: 1.45;
+}
+
+/* 8. Validated Model Metrics Card */
+.landprice-model-metrics-card {
+  background: var(--white, #FFFFFF);
+  border: 1.5px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  box-shadow: var(--shadow-hard-sm, 4px 4px 0 #10272A);
+  margin-top: 24px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.landprice-model-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 640px) {
+  .landprice-model-specs-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.landprice-spec-tile {
+  background: var(--paper, #FBFCFA);
+  border: 1px solid var(--line, #CBD8D2);
+  border-radius: var(--radius-std, 6px);
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.landprice-spec-label {
+  font-size: 0.72rem;
+  color: var(--muted, #3C5558);
+  font-family: var(--font-body, sans-serif);
+}
+
+.landprice-spec-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink, #10272A);
+  font-family: var(--font-heading, sans-serif);
+}
+
+.landprice-spec-sub {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.landprice-spec-sub.green {
+  color: #14633A;
+}
+
+.landprice-spec-sub.blue {
+  color: var(--accent, #2742A0);
+}
+
+.landprice-provenance-text {
+  font-size: 0.78rem;
+  color: var(--muted, #3C5558);
+  line-height: 1.5;
+  border-top: 1px solid var(--line, #CBD8D2);
+  padding-top: 10px;
+  margin-top: 12px;
+}

@@ -12,14 +12,12 @@ import {
   Compass,
   Zap,
   Droplets,
-  HelpCircle,
-  ExternalLink,
-  ChevronRight,
+  RotateCcw,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  ArrowRight
 } from 'lucide-react';
 import {
-  fetchLandPriceHealth,
   fetchLandPriceMetadata,
   fetchLandPriceModelInfo,
   predictLandPriceApi
@@ -37,22 +35,40 @@ export default function LandPricePage({ t, lang = 'bn' }) {
   const [apiError, setApiError] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
 
-  // Form Fields
-  const [districtId, setDistrictId] = useState('dist_north_rangpur');
-  const [upazilaId, setUpazilaId] = useState('upz_pirgacha');
-  const [mouzaId, setMouzaId] = useState('mouza_chhatra_01');
-  const [landAreaDecimal, setLandAreaDecimal] = useState(10.0);
-  const [landType, setLandType] = useState('agricultural_nal');
-  const [roadAccessType, setRoadAccessType] = useState('paved_pucca_road');
-  const [roadWidthFt, setRoadWidthFt] = useState(12.0);
-  const [distPavedRoadM, setDistPavedRoadM] = useState(100.0);
-  const [distMarketKm, setDistMarketKm] = useState(1.5);
-  const [distUpazilaKm, setDistUpazilaKm] = useState(6.0);
-  const [floodRisk, setFloodRisk] = useState('none');
-  const [drainage, setDrainage] = useState('moderate_sloped');
-  const [accessRoadAvail, setAccessRoadAvail] = useState(true);
-  const [electricityAvail, setElectricityAvail] = useState(true);
-  const [waterAccessAvail, setWaterAccessAvail] = useState(true);
+  // Form Fields Initial State
+  const defaultValues = {
+    districtId: 'dist_north_rangpur',
+    upazilaId: 'upz_pirgacha',
+    mouzaId: 'mouza_chhatra_01',
+    landAreaDecimal: 10.0,
+    landType: 'agricultural_nal',
+    roadAccessType: 'paved_pucca_road',
+    roadWidthFt: 12.0,
+    distPavedRoadM: 100.0,
+    distMarketKm: 1.5,
+    distUpazilaKm: 6.0,
+    floodRisk: 'none',
+    drainage: 'moderate_sloped',
+    accessRoadAvail: true,
+    electricityAvail: true,
+    waterAccessAvail: true
+  };
+
+  const [districtId, setDistrictId] = useState(defaultValues.districtId);
+  const [upazilaId, setUpazilaId] = useState(defaultValues.upazilaId);
+  const [mouzaId, setMouzaId] = useState(defaultValues.mouzaId);
+  const [landAreaDecimal, setLandAreaDecimal] = useState(defaultValues.landAreaDecimal);
+  const [landType, setLandType] = useState(defaultValues.landType);
+  const [roadAccessType, setRoadAccessType] = useState(defaultValues.roadAccessType);
+  const [roadWidthFt, setRoadWidthFt] = useState(defaultValues.roadWidthFt);
+  const [distPavedRoadM, setDistPavedRoadM] = useState(defaultValues.distPavedRoadM);
+  const [distMarketKm, setDistMarketKm] = useState(defaultValues.distMarketKm);
+  const [distUpazilaKm, setDistUpazilaKm] = useState(defaultValues.distUpazilaKm);
+  const [floodRisk, setFloodRisk] = useState(defaultValues.floodRisk);
+  const [drainage, setDrainage] = useState(defaultValues.drainage);
+  const [accessRoadAvail, setAccessRoadAvail] = useState(defaultValues.accessRoadAvail);
+  const [electricityAvail, setElectricityAvail] = useState(defaultValues.electricityAvail);
+  const [waterAccessAvail, setWaterAccessAvail] = useState(defaultValues.waterAccessAvail);
 
   // Load Metadata & Model Info on Mount
   useEffect(() => {
@@ -94,15 +110,31 @@ export default function LandPricePage({ t, lang = 'bn' }) {
       if (upzEntries.length > 0) {
         const firstUpz = upzEntries[0][0];
         setUpazilaId(firstUpz);
-        // Also select first mouza
-        const matchingMouzas = metadata.synthetic_locations.mouzas.filter((m) =>
-          m.includes(firstUpz.replace('upz_', '')) || true
-        );
-        if (matchingMouzas.length > 0) {
-          setMouzaId(matchingMouzas[0]);
+        if (metadata.synthetic_locations.mouzas && metadata.synthetic_locations.mouzas.length > 0) {
+          setMouzaId(metadata.synthetic_locations.mouzas[0]);
         }
       }
     }
+  };
+
+  const handleReset = () => {
+    setDistrictId(defaultValues.districtId);
+    setUpazilaId(defaultValues.upazilaId);
+    setMouzaId(defaultValues.mouzaId);
+    setLandAreaDecimal(defaultValues.landAreaDecimal);
+    setLandType(defaultValues.landType);
+    setRoadAccessType(defaultValues.roadAccessType);
+    setRoadWidthFt(defaultValues.roadWidthFt);
+    setDistPavedRoadM(defaultValues.distPavedRoadM);
+    setDistMarketKm(defaultValues.distMarketKm);
+    setDistUpazilaKm(defaultValues.distUpazilaKm);
+    setFloodRisk(defaultValues.floodRisk);
+    setDrainage(defaultValues.drainage);
+    setAccessRoadAvail(defaultValues.accessRoadAvail);
+    setElectricityAvail(defaultValues.electricityAvail);
+    setWaterAccessAvail(defaultValues.waterAccessAvail);
+    setPredictionResult(null);
+    setApiError(null);
   };
 
   const handlePredict = async (e) => {
@@ -145,72 +177,54 @@ export default function LandPricePage({ t, lang = 'bn' }) {
   };
 
   return (
-    <div className="landing-container" style={{ paddingTop: '24px', paddingBottom: '60px' }}>
-      {/* Header Banner */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{
-            background: 'rgba(16, 185, 129, 0.15)',
-            color: '#10B981',
-            padding: '4px 10px',
-            borderRadius: '16px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            <Cpu size={14} />
-            ML REGRESSION BENCHMARK
+    <div className="landprice-page-container">
+      {/* 1. Page Header Block */}
+      <div className="landprice-header-block">
+        <div className="landprice-badges-row">
+          <span className="landprice-badge ml-benchmark">
+            <Cpu size={13} aria-hidden="true" />
+            <span>ML REGRESSION BENCHMARK</span>
           </span>
-          <span style={{
-            background: 'rgba(234, 179, 8, 0.15)',
-            color: '#CA8A04',
-            padding: '4px 10px',
-            borderRadius: '16px',
-            fontSize: '0.8rem',
-            fontWeight: 700
-          }}>
-            SYNTHETIC DATASET ONLY
+          <span className="landprice-badge synthetic">
+            <AlertTriangle size={13} aria-hidden="true" />
+            <span>SYNTHETIC DATASET ONLY</span>
           </span>
         </div>
 
-        <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
-          {isBn ? t.landprice_heading || 'গ্রামীণ জমির সম্ভাব্য মূল্য বুদ্ধিমত্তা' : 'Rural Land Price Intelligence'}
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.98rem', maxWidth: '850px' }}>
-          {isBn
-            ? t.landprice_subheading || 'কৃত্রিম ডেটাসেটে প্রশিক্ষিত রিগ্রেশন মডেলের মাধ্যমে গ্রামীণ জমির বহু-মাত্রিক ভৌগোলিক ও যোগাযোগ বৈশিষ্ট্য-ভিত্তিক আনুমানিক দর প্রাক্কলন।'
-            : 'Multi-factor regression model predicting per-decimal valuation from synthetic Bangladeshi rural parcel characteristics.'}
-        </p>
+        <div className="landprice-title-row">
+          <div className="landprice-icon-box" aria-hidden="true">
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <h1 className="landprice-title">
+              {isBn ? 'গ্রামীণ জমির সম্ভাব্য মূল্য বুদ্ধিমত্তা' : 'Rural Land Price Intelligence'}
+            </h1>
+            <p className="landprice-subtitle">
+              {isBn
+                ? 'কৃত্রিম ডেটাসেটে প্রশিক্ষিত রিগ্রেশন মডেলের মাধ্যমে গ্রামীণ জমির বহু-মাত্রিক ভৌগোলিক ও যোগাযোগ বৈশিষ্ট্য-ভিত্তিক আনুমানিক দর বিশ্লেষণ।'
+                : 'Multi-factor regression intelligence estimating per-decimal rural parcel value from synthetic cadastral datasets.'}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* MANDATORY PROMINENT DISCLAIMER CALLOUT */}
-      <div style={{
-        background: '#FEF2F2',
-        border: '2px solid #F87171',
-        borderRadius: '12px',
-        padding: '16px 20px',
-        marginBottom: '28px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '14px'
-      }}>
-        <ShieldAlert size={26} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div>
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#991B1B', margin: '0 0 6px 0' }}>
+      {/* 2. Mandatory Synthetic Data Disclaimer Banner */}
+      <div className="landprice-disclaimer-card" role="alert">
+        <ShieldAlert className="landprice-disclaimer-icon" size={24} aria-hidden="true" />
+        <div className="landprice-disclaimer-content">
+          <h2 className="landprice-disclaimer-heading">
             {isBn ? 'সতর্কবার্তা: সম্পূর্ণ কৃত্রিম ডেটাসেট ভিত্তিক পরীক্ষামূলক মডেল' : 'Strict Disclaimer: Synthetic Data Simulation Only'}
           </h2>
-          <p style={{ margin: '0 0 4px 0', fontSize: '0.92rem', color: '#B91C1C', lineHeight: '1.5' }}>
+          <p className="landprice-disclaimer-body">
             {isBn
               ? 'এই মূল্যায়ন সম্পূর্ণ synthetic data দিয়ে তৈরি পরীক্ষামূলক ML model-এর output। এটি বাংলাদেশের প্রকৃত বাজারদর নয়, জমির valuation নয় এবং জমি কেনাবেচার আর্থিক সিদ্ধান্তের জন্য ব্যবহারযোগ্য নয়।'
               : 'Experimental prediction from synthetic data only. Not a real Bangladesh market valuation and not suitable for actual land purchase decisions.'}
           </p>
-          <div style={{ fontSize: '0.82rem', color: '#7F1D1D', fontStyle: 'italic', marginTop: '4px' }}>
+          <p className="landprice-disclaimer-sub">
             {isBn
               ? 'নমুনা জেলা, মৌজা ও লেনদেন মূল্যসমূহ অ্যালগরিদমিক গবেষণার উদ্দেশ্যে সিমুলেট করা হয়েছে; কোনো সরকারি সাব-রেজিস্ট্রি বা ভূমি মন্ত্রণালয়ের নথি নয়।'
               : 'All districts, mouzas, and transaction figures are mathematically simulated for academic research and demo purposes.'}
-          </div>
+          </p>
         </div>
       </div>
 
@@ -221,33 +235,51 @@ export default function LandPricePage({ t, lang = 'bn' }) {
         </div>
       )}
 
-      {/* Main Grid: Input Form & Prediction Result */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(320px, 1.1fr) minmax(320px, 0.9fr)',
-        gap: '24px',
-        alignItems: 'start'
-      }}>
-        {/* Form Card */}
-        <div className="cadastral-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-            <Compass size={20} color="var(--primary-color)" />
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-              {isBn ? 'জমির বৈশিষ্ট্য নির্বাচন ফর্ম' : 'Parcel Characteristics Input'}
+      {/* 3. Main Two-Column Layout Grid */}
+      <div className="landprice-layout-grid">
+        
+        {/* Left Column: Form Card */}
+        <div className="landprice-card">
+          <div className="landprice-card-header">
+            <h2 className="landprice-card-title">
+              <Compass size={18} color="var(--accent)" aria-hidden="true" />
+              <span>{isBn ? 'জমির বৈশিষ্ট্য নির্বাচন ফর্ম' : 'Parcel Characteristics Input'}</span>
             </h2>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="btn-secondary"
+              style={{
+                height: '32px',
+                padding: '0 10px',
+                fontSize: '0.78rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                borderRadius: 'var(--radius-std)',
+                border: '1px solid var(--line)',
+                background: 'var(--paper)',
+                color: 'var(--ink-soft)',
+                cursor: 'pointer'
+              }}
+              title={isBn ? 'ফর্মের মান রিসেট করুন' : 'Reset form fields'}
+            >
+              <RotateCcw size={13} />
+              <span>{isBn ? 'রিসেট' : 'Reset'}</span>
+            </button>
           </div>
 
-          <form onSubmit={handlePredict}>
-            {/* Geographic Cluster (Synthetic) */}
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                {isBn ? 'ডেমো জেলা অঞ্চল (Synthetic Zone)' : 'Demo District Zone (Synthetic)'}
+          <form onSubmit={handlePredict} className="landprice-card-body">
+            {/* Geographic Cluster (Synthetic District) */}
+            <div className="landprice-form-group">
+              <label htmlFor="select-district" className="landprice-label">
+                {isBn ? 'ডেমো জেলা অঞ্চল (Synthetic District Zone)' : 'Demo District Zone (Synthetic)'}
               </label>
               <select
                 id="select-district"
                 value={districtId}
                 onChange={(e) => handleDistrictChange(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
+                className="landprice-select"
               >
                 {metadata?.synthetic_locations?.districts ? (
                   metadata.synthetic_locations.districts.map((d) => (
@@ -267,252 +299,255 @@ export default function LandPricePage({ t, lang = 'bn' }) {
               </select>
             </div>
 
-            {/* Upazila & Mouza row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'ডেমো উপজেলা' : 'Demo Upazila'}
-                </label>
-                <select
-                  id="select-upazila"
-                  value={upazilaId}
-                  onChange={(e) => setUpazilaId(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  {metadata?.synthetic_locations?.upazilas ? (
-                    Object.entries(metadata.synthetic_locations.upazilas)
-                      .filter(([_, uData]) => uData.district_id === districtId)
-                      .map(([uId, uData]) => (
-                        <option key={uId} value={uId}>
-                          {isBn ? uData.name_bn : uData.name_en}
-                        </option>
+            {/* Upazila & Mouza Sub-grid */}
+            <div className="landprice-form-group">
+              <div className="landprice-grid-2">
+                <div>
+                  <label htmlFor="select-upazila" className="landprice-label">
+                    {isBn ? 'ডেমো উপজেলা' : 'Demo Upazila'}
+                  </label>
+                  <select
+                    id="select-upazila"
+                    value={upazilaId}
+                    onChange={(e) => setUpazilaId(e.target.value)}
+                    className="landprice-select"
+                  >
+                    {metadata?.synthetic_locations?.upazilas ? (
+                      Object.entries(metadata.synthetic_locations.upazilas)
+                        .filter(([_, uData]) => uData.district_id === districtId)
+                        .map(([uId, uData]) => (
+                          <option key={uId} value={uId}>
+                            {isBn ? uData.name_bn : uData.name_en}
+                          </option>
+                        ))
+                    ) : (
+                      <option value="upz_pirgacha">পীরগাছা ডেমো উপজেলা</option>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="select-mouza" className="landprice-label">
+                    {isBn ? 'মৌজা ক্লাস্টার' : 'Mouza Cluster'}
+                  </label>
+                  <select
+                    id="select-mouza"
+                    value={mouzaId}
+                    onChange={(e) => setMouzaId(e.target.value)}
+                    className="landprice-select"
+                  >
+                    {metadata?.synthetic_locations?.mouzas ? (
+                      metadata.synthetic_locations.mouzas.map((m) => (
+                        <option key={m} value={m}>{m}</option>
                       ))
-                  ) : (
-                    <option value="upz_pirgacha">পীরগাছা ডেমো উপজেলা</option>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'মৌজা আইডি' : 'Mouza Cluster'}
-                </label>
-                <select
-                  id="select-mouza"
-                  value={mouzaId}
-                  onChange={(e) => setMouzaId(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  {metadata?.synthetic_locations?.mouzas ? (
-                    metadata.synthetic_locations.mouzas.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))
-                  ) : (
-                    <option value="mouza_chhatra_01">mouza_chhatra_01</option>
-                  )}
-                </select>
+                    ) : (
+                      <option value="mouza_chhatra_01">mouza_chhatra_01</option>
+                    )}
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Land Area & Land Type */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'জমির পরিমাণ (শতক)' : 'Land Area (Decimal)'} *
-                </label>
-                <input
-                  id="input-land-area"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="250.0"
-                  required
-                  value={landAreaDecimal}
-                  onChange={(e) => setLandAreaDecimal(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                />
-              </div>
+            {/* Land Area & Land Type Sub-grid */}
+            <div className="landprice-form-group">
+              <div className="landprice-grid-2">
+                <div>
+                  <label htmlFor="input-land-area" className="landprice-label">
+                    {isBn ? 'জমির পরিমাণ (শতক)' : 'Land Area (Decimal)'} *
+                  </label>
+                  <input
+                    id="input-land-area"
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="250.0"
+                    required
+                    value={landAreaDecimal}
+                    onChange={(e) => setLandAreaDecimal(e.target.value)}
+                    className="landprice-input"
+                    placeholder="e.g. 10.0"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'জমির শ্রেণি (Land Type)' : 'Land Type'}
-                </label>
-                <select
-                  id="select-land-type"
-                  value={landType}
-                  onChange={(e) => setLandType(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  <option value="agricultural_nal">{isBn ? 'নাল / কৃষিজমি (Agricultural)' : 'Agricultural Lowland'}</option>
-                  <option value="homestead_viti">{isBn ? 'ভিটি / বাড়ি (Homestead)' : 'Homestead Ground'}</option>
-                  <option value="commercial_shop">{isBn ? 'বাণিজ্যিক / বাজারমুখীন (Commercial)' : 'Commercial Frontage'}</option>
-                  <option value="orchard_bagan">{isBn ? 'বাগান / ফলদ ভূমি (Orchard)' : 'Orchard Plantation'}</option>
-                  <option value="pond_doba">{isBn ? 'পুকুর / মৎস্য খামার (Pond/Aqua)' : 'Pond Waterbody'}</option>
-                  <option value="fallow_patit">{isBn ? 'পতিত জমি (Fallow)' : 'Fallow Land'}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Road Access & Road Width */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '14px', marginBottom: '18px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'রাস্তার ধরন (Road Access)' : 'Road Access Type'}
-                </label>
-                <select
-                  id="select-road-access"
-                  value={roadAccessType}
-                  onChange={(e) => setRoadAccessType(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  <option value="national_highway_frontage">{isBn ? 'মহাসড়ক সংলগ্ন (National Highway)' : 'Highway Frontage'}</option>
-                  <option value="paved_pucca_road">{isBn ? 'পাকা পিচ ঢালাই রাস্তা (Paved Pucca)' : 'Paved Bitumen Road'}</option>
-                  <option value="herringbone_brick_road">{isBn ? 'ইটের সলিং / হেরিংবোন (Brick HBB)' : 'Brick HBB Road'}</option>
-                  <option value="unpaved_katcha_road">{isBn ? 'কাঁচা মেঠোপথ (Unpaved Mud)' : 'Unpaved Mud Road'}</option>
-                  <option value="footpath_trail">{isBn ? 'আইল / পায়ে হাঁটা পথ (Footpath)' : 'Footpath Trail'}</option>
-                  <option value="no_direct_road">{isBn ? 'সরাসরি রাস্তা নেই (No Direct Road)' : 'Landlocked'}</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'রাস্তার প্রশস্ততা (ফুট)' : 'Road Width (ft)'}
-                </label>
-                <input
-                  id="input-road-width"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="100"
-                  value={roadWidthFt}
-                  onChange={(e) => setRoadWidthFt(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                />
+                <div>
+                  <label htmlFor="select-land-type" className="landprice-label">
+                    {isBn ? 'জমির শ্রেণি (Land Type)' : 'Land Classification'}
+                  </label>
+                  <select
+                    id="select-land-type"
+                    value={landType}
+                    onChange={(e) => setLandType(e.target.value)}
+                    className="landprice-select"
+                  >
+                    <option value="agricultural_nal">{isBn ? 'নাল / কৃষিজমি (Agricultural)' : 'Agricultural Lowland'}</option>
+                    <option value="homestead_viti">{isBn ? 'ভিটি / বাড়ি (Homestead)' : 'Homestead Ground'}</option>
+                    <option value="commercial_shop">{isBn ? 'বাণিজ্যিক / বাজারমুখীন (Commercial)' : 'Commercial Frontage'}</option>
+                    <option value="orchard_bagan">{isBn ? 'বাগান / ফলদ ভূমি (Orchard)' : 'Orchard Plantation'}</option>
+                    <option value="pond_doba">{isBn ? 'পুকুর / মৎস্য খামার (Pond/Aqua)' : 'Pond Waterbody'}</option>
+                    <option value="fallow_patit">{isBn ? 'পতিত জমি (Fallow)' : 'Fallow Land'}</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Distances (Paved Road, Market, Upazila) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '18px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'পাকা রাস্তার দূরত্ব (মিটার)' : 'Dist. Paved (m)'}
-                </label>
-                <input
-                  id="input-dist-paved"
-                  type="number"
-                  step="10"
-                  min="0"
-                  value={distPavedRoadM}
-                  onChange={(e) => setDistPavedRoadM(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
-                />
-              </div>
+            {/* Road Access & Road Width Sub-grid */}
+            <div className="landprice-form-group">
+              <div className="landprice-grid-2">
+                <div>
+                  <label htmlFor="select-road-access" className="landprice-label">
+                    {isBn ? 'রাস্তার ধরন (Road Access)' : 'Road Access Type'}
+                  </label>
+                  <select
+                    id="select-road-access"
+                    value={roadAccessType}
+                    onChange={(e) => setRoadAccessType(e.target.value)}
+                    className="landprice-select"
+                  >
+                    <option value="national_highway_frontage">{isBn ? 'মহাসড়ক সংলগ্ন (National Highway)' : 'Highway Frontage'}</option>
+                    <option value="paved_pucca_road">{isBn ? 'পাকা পিচ ঢালাই রাস্তা (Paved Pucca)' : 'Paved Bitumen Road'}</option>
+                    <option value="herringbone_brick_road">{isBn ? 'ইটের সলিং / হেরিংবোন (Brick HBB)' : 'Brick HBB Road'}</option>
+                    <option value="unpaved_katcha_road">{isBn ? 'কাঁচা মেঠোপথ (Unpaved Mud)' : 'Unpaved Mud Road'}</option>
+                    <option value="footpath_trail">{isBn ? 'আইল / পায়ে হাঁটা পথ (Footpath)' : 'Footpath Trail'}</option>
+                    <option value="no_direct_road">{isBn ? 'সরাসরি রাস্তা নেই (No Direct Road)' : 'Landlocked'}</option>
+                  </select>
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'হাট-বাজারের দূরত্ব (কিমি)' : 'Dist. Market (km)'}
-                </label>
-                <input
-                  id="input-dist-market"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={distMarketKm}
-                  onChange={(e) => setDistMarketKm(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'উপজেলা সদরের দূরত্ব' : 'Dist. Upazila (km)'}
-                </label>
-                <input
-                  id="input-dist-upazila"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={distUpazilaKm}
-                  onChange={(e) => setDistUpazilaKm(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
-                />
+                <div>
+                  <label htmlFor="input-road-width" className="landprice-label">
+                    {isBn ? 'রাস্তার প্রশস্ততা (ফুট)' : 'Road Width (ft)'}
+                  </label>
+                  <input
+                    id="input-road-width"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="100"
+                    value={roadWidthFt}
+                    onChange={(e) => setRoadWidthFt(e.target.value)}
+                    className="landprice-input"
+                    placeholder="e.g. 12"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Flood & Drainage */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'বন্যা ঝুঁকি (Flood Risk)' : 'Flood Risk'}
-                </label>
-                <select
-                  id="select-flood-risk"
-                  value={floodRisk}
-                  onChange={(e) => setFloodRisk(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  <option value="none">{isBn ? 'ঝুঁকিমুক্ত উঁচু জমি (None)' : 'Highland / None'}</option>
-                  <option value="seasonal_shallow">{isBn ? 'মৌসুমি অগভীর প্লাবন (Seasonal Shallow)' : 'Seasonal Shallow'}</option>
-                  <option value="moderate_regular">{isBn ? 'নিয়মিত মাঝারি প্লাবন (Moderate Regular)' : 'Moderate Regular'}</option>
-                  <option value="high_flash_flood">{isBn ? 'উচ্চ প্লাবন / জলমগ্নতা (High Flash Flood)' : 'High Flash Flood'}</option>
-                </select>
-              </div>
+            {/* Distances Sub-grid (Paved Road, Market, Upazila) */}
+            <div className="landprice-form-group">
+              <div className="landprice-grid-3">
+                <div>
+                  <label htmlFor="input-dist-paved" className="landprice-label" style={{ fontSize: '0.8rem' }}>
+                    {isBn ? 'পাকা রাস্তার দূরত্ব (মিটার)' : 'Dist. Paved Road (m)'}
+                  </label>
+                  <input
+                    id="input-dist-paved"
+                    type="number"
+                    step="10"
+                    min="0"
+                    value={distPavedRoadM}
+                    onChange={(e) => setDistPavedRoadM(e.target.value)}
+                    className="landprice-input"
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                  {isBn ? 'নিষ্কাশন ব্যবস্থা (Drainage)' : 'Drainage Quality'}
-                </label>
-                <select
-                  id="select-drainage"
-                  value={drainage}
-                  onChange={(e) => setDrainage(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-                >
-                  <option value="excellent_highland">{isBn ? 'উত্তম ঢালু নিষ্কাশন (Excellent)' : 'Excellent Highland'}</option>
-                  <option value="moderate_sloped">{isBn ? 'মাঝারি নিষ্কাশন (Moderate)' : 'Moderate Sloped'}</option>
-                  <option value="poor_waterlogged">{isBn ? 'ধীর নিষ্কাশন / জলাবদ্ধ (Poor)' : 'Poor Waterlogged'}</option>
-                </select>
+                <div>
+                  <label htmlFor="input-dist-market" className="landprice-label" style={{ fontSize: '0.8rem' }}>
+                    {isBn ? 'হাট-বাজারের দূরত্ব (কিমি)' : 'Dist. Market (km)'}
+                  </label>
+                  <input
+                    id="input-dist-market"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={distMarketKm}
+                    onChange={(e) => setDistMarketKm(e.target.value)}
+                    className="landprice-input"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="input-dist-upazila" className="landprice-label" style={{ fontSize: '0.8rem' }}>
+                    {isBn ? 'উপজেলা সদর (কিমি)' : 'Dist. Upazila (km)'}
+                  </label>
+                  <input
+                    id="input-dist-upazila"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={distUpazilaKm}
+                    onChange={(e) => setDistUpazilaKm(e.target.value)}
+                    className="landprice-input"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Infrastructure toggles */}
-            <div style={{
-              background: 'var(--bg-surface)',
-              padding: '12px 14px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-light)',
-              marginBottom: '22px',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '16px'
-            }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', cursor: 'pointer' }}>
+            {/* Flood & Drainage Sub-grid */}
+            <div className="landprice-form-group">
+              <div className="landprice-grid-2">
+                <div>
+                  <label htmlFor="select-flood-risk" className="landprice-label">
+                    {isBn ? 'বন্যা ঝুঁকি (Flood Risk)' : 'Flood Vulnerability'}
+                  </label>
+                  <select
+                    id="select-flood-risk"
+                    value={floodRisk}
+                    onChange={(e) => setFloodRisk(e.target.value)}
+                    className="landprice-select"
+                  >
+                    <option value="none">{isBn ? 'ঝুঁকিমুক্ত উঁচু জমি (None)' : 'Highland / None'}</option>
+                    <option value="seasonal_shallow">{isBn ? 'মৌসুমি অগভীর প্লাবন (Seasonal Shallow)' : 'Seasonal Shallow'}</option>
+                    <option value="moderate_regular">{isBn ? 'নিয়মিত মাঝারি প্লাবন (Moderate Regular)' : 'Moderate Regular'}</option>
+                    <option value="high_flash_flood">{isBn ? 'উচ্চ প্লাবন / জলমগ্নতা (High Flash Flood)' : 'High Flash Flood'}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="select-drainage" className="landprice-label">
+                    {isBn ? 'নিষ্কাশন ব্যবস্থা (Drainage)' : 'Drainage Performance'}
+                  </label>
+                  <select
+                    id="select-drainage"
+                    value={drainage}
+                    onChange={(e) => setDrainage(e.target.value)}
+                    className="landprice-select"
+                  >
+                    <option value="excellent_highland">{isBn ? 'উত্তম ঢালু নিষ্কাশন (Excellent)' : 'Excellent Highland'}</option>
+                    <option value="moderate_sloped">{isBn ? 'মাঝারি নিষ্কাশন (Moderate)' : 'Moderate Sloped'}</option>
+                    <option value="poor_waterlogged">{isBn ? 'ধীর নিষ্কাশন / জলাবদ্ধ (Poor)' : 'Poor Waterlogged'}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Infrastructure Toggles */}
+            <div className="landprice-infra-box">
+              <label className="landprice-checkbox-label">
                 <input
                   type="checkbox"
                   checked={accessRoadAvail}
                   onChange={(e) => setAccessRoadAvail(e.target.checked)}
                 />
-                <span>{isBn ? 'রাস্তা সংযোগ আছে' : 'Access Road'}</span>
+                <span>{isBn ? 'রাস্তা সংযোগ আছে' : 'Direct Road Access'}</span>
               </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', cursor: 'pointer' }}>
+              <label className="landprice-checkbox-label">
                 <input
                   type="checkbox"
                   checked={electricityAvail}
                   onChange={(e) => setElectricityAvail(e.target.checked)}
                 />
-                <Zap size={14} color="#F59E0B" />
-                <span>{isBn ? 'পল্লী বিদ্যুৎ সংযোগ' : 'Electricity'}</span>
+                <Zap size={14} color="#D97706" aria-hidden="true" />
+                <span>{isBn ? 'পল্লী বিদ্যুৎ সংযোগ' : 'Electricity Grid'}</span>
               </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', cursor: 'pointer' }}>
+              <label className="landprice-checkbox-label">
                 <input
                   type="checkbox"
                   checked={waterAccessAvail}
                   onChange={(e) => setWaterAccessAvail(e.target.checked)}
                 />
-                <Droplets size={14} color="#3B82F6" />
-                <span>{isBn ? 'গভীর নলকূপ / সেচ সুবিধা' : 'Irrigation/Water'}</span>
+                <Droplets size={14} color="#2563EB" aria-hidden="true" />
+                <span>{isBn ? 'গভীর নলকূপ / সেচ সুবিধা' : 'Deep Tubewell / Irrigation'}</span>
               </label>
             </div>
 
@@ -521,31 +556,16 @@ export default function LandPricePage({ t, lang = 'bn' }) {
               id="btn-run-prediction"
               type="submit"
               disabled={estimating}
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '8px',
-                background: estimating ? '#9CA3AF' : 'var(--primary-color)',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '1rem',
-                border: 'none',
-                cursor: estimating ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'background 0.2s'
-              }}
+              className="landprice-submit-btn"
             >
               {estimating ? (
                 <>
-                  <RefreshCw size={18} className="animate-spin" />
+                  <RefreshCw size={18} className="animate-spin" aria-hidden="true" />
                   <span>{isBn ? 'মডেল ইনফারেন্স চলছে...' : 'Computing ML Inference...'}</span>
                 </>
               ) : (
                 <>
-                  <TrendingUp size={18} />
+                  <TrendingUp size={18} aria-hidden="true" />
                   <span>{isBn ? 'সম্ভাব্য মূল্য নির্ণয় করুন (ML Inference)' : 'Compute ML Valuation'}</span>
                 </>
               )}
@@ -553,156 +573,194 @@ export default function LandPricePage({ t, lang = 'bn' }) {
           </form>
         </div>
 
-        {/* Prediction Results Card */}
+        {/* Right Column: Results & Model Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Prediction Output Card or Intentional Empty State */}
           {predictionResult ? (
-            <div className="cadastral-card" style={{ padding: '24px', border: '2px solid #10B981', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <span style={{
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#059669',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <CheckCircle2 size={14} />
-                  {isBn ? 'সফল প্রাক্কলন' : 'Inference Succeeded'}
+            <div className="landprice-result-card">
+              {/* Result Top Bar */}
+              <div className="landprice-result-topbar">
+                <span className="landprice-status-badge">
+                  <CheckCircle2 size={13} aria-hidden="true" />
+                  <span>{isBn ? 'সফল প্রাক্কলন' : 'Inference Successful'}</span>
                 </span>
-
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <span className="landprice-model-id-tag">
                   {predictionResult.model_identifier}
                 </span>
               </div>
 
-              {/* Total Estimated Price */}
-              <div style={{ background: 'var(--bg-surface)', padding: '18px', borderRadius: '12px', marginBottom: '16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>
-                  {isBn ? 'মোট আনুমানিক জমির মূল্য (Total Valuation)' : 'Estimated Total Parcel Price'}
-                </div>
-                <div style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--primary-color)', letterSpacing: '-0.5px' }}>
-                  {formatBdt(predictionResult.predicted_total_price_bdt)} ৳
-                </div>
-                {predictionResult.total_price_interval && (
-                  <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: '4px' }}>
-                    {isBn ? '৮০% সম্ভাব্য পরিসীমা:' : '80% Empirical Interval:'}{' '}
-                    <strong>{formatBdt(predictionResult.total_price_interval.lower)} ৳</strong> —{' '}
-                    <strong>{formatBdt(predictionResult.total_price_interval.upper)} ৳</strong>
+              <div className="landprice-card-body">
+                {/* Total Price Highlight */}
+                <div className="landprice-total-box">
+                  <div className="landprice-total-label">
+                    {isBn ? 'মোট আনুমানিক জমির মূল্য' : 'Estimated Total Parcel Price'}
                   </div>
-                )}
-              </div>
-
-              {/* Price Per Decimal & Unit Consistency Verification */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {isBn ? 'প্রতি শতক দর (BDT/decimal)' : 'Price per Decimal'}
+                  <div className="landprice-total-figure">
+                    {formatBdt(predictionResult.predicted_total_price_bdt)} ৳
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
-                    {formatBdt(predictionResult.predicted_price_per_decimal_bdt)} ৳
-                  </div>
-                  {predictionResult.price_per_decimal_interval && (
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      ±{formatBdt(predictionResult.price_per_decimal_interval.upper - predictionResult.predicted_price_per_decimal_bdt)} ৳ (80% bound)
+                  {predictionResult.total_price_interval && (
+                    <div className="landprice-interval-text">
+                      {isBn ? '৮০% সম্ভাব্য বিচ্যুতির পরিসীমা: ' : '80% Empirical Interval: '}
+                      <strong>{formatBdt(predictionResult.total_price_interval.lower)} ৳</strong> —{' '}
+                      <strong>{formatBdt(predictionResult.total_price_interval.upper)} ৳</strong>
                     </div>
                   )}
                 </div>
 
-                <div style={{ background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {isBn ? 'গাণিতিক একক সমতা (Unit Check)' : 'Unit Consistency'}
+                {/* Per Decimal Rate & Strict Unit Check */}
+                <div className="landprice-metrics-grid">
+                  <div className="landprice-metric-tile">
+                    <div className="landprice-metric-tile-title">
+                      {isBn ? 'প্রতি শতকের আনুমানিক দর' : 'Price per Decimal'}
+                    </div>
+                    <div className="landprice-metric-tile-value">
+                      {formatBdt(predictionResult.predicted_price_per_decimal_bdt)} ৳
+                    </div>
+                    {predictionResult.price_per_decimal_interval && (
+                      <div className="landprice-metric-tile-sub">
+                        ±{formatBdt(predictionResult.price_per_decimal_interval.upper - predictionResult.predicted_price_per_decimal_bdt)} ৳ (80% bound)
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    <CheckCircle2 size={16} />
-                    <span>VERIFIED STRICT</span>
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    total = rate × {predictionResult.land_area_decimal} decimal
+
+                  <div className="landprice-metric-tile">
+                    <div className="landprice-metric-tile-title">
+                      {isBn ? 'একক সমতা যাচাই' : 'Unit Consistency Check'}
+                    </div>
+                    <div style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                      color: 'var(--status-matched-text)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      marginTop: '6px'
+                    }}>
+                      <CheckCircle2 size={15} />
+                      <span>VERIFIED STRICT</span>
+                    </div>
+                    <div className="landprice-metric-tile-sub">
+                      total = rate × {predictionResult.land_area_decimal} decimal
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Warnings if any */}
-              {predictionResult.warnings && predictionResult.warnings.length > 0 && (
-                <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#B45309', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                    <AlertTriangle size={14} />
-                    {isBn ? 'মডেলের ডোমেইন প্রযোজ্যতা সতর্কতা' : 'Applicability Warnings'}
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.78rem', color: '#92400E' }}>
-                    {predictionResult.warnings.map((w, idx) => (
-                      <li key={idx}>{w}</li>
-                    ))}
-                  </ul>
+                {/* Selected Input Summary Chips */}
+                <div className="landprice-summary-chips">
+                  <span className="landprice-chip">
+                    {predictionResult.land_area_decimal} {isBn ? 'শতক' : 'Decimal'}
+                  </span>
+                  <span className="landprice-chip">
+                    {landType.replace('_', ' ')}
+                  </span>
+                  <span className="landprice-chip">
+                    {roadAccessType.replace(/_/g, ' ')} ({roadWidthFt} ft)
+                  </span>
+                  <span className="landprice-chip">
+                    {mouzaId}
+                  </span>
                 </div>
-              )}
 
-              {/* Provenance note */}
-              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Provenance:</strong> {predictionResult.data_provenance}
+                {/* Warnings if any */}
+                {predictionResult.warnings && predictionResult.warnings.length > 0 && (
+                  <div className="landprice-warning-box">
+                    <div className="landprice-warning-header">
+                      <AlertTriangle size={14} />
+                      <span>{isBn ? 'মডেলের ডোমেইন প্রযোজ্যতা সতর্কতা' : 'Applicability Warnings'}</span>
+                    </div>
+                    <ul className="landprice-warning-list">
+                      {predictionResult.warnings.map((w, idx) => (
+                        <li key={idx}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Provenance note */}
+                <div className="landprice-provenance-text">
+                  <strong>Provenance:</strong> {predictionResult.data_provenance}
+                </div>
               </div>
             </div>
           ) : (
-            /* Empty state prompt */
-            <div className="cadastral-card" style={{ padding: '36px 24px', textAlign: 'center', border: '2px dashed var(--border-color)' }}>
-              <TrendingUp size={44} color="#9CA3AF" style={{ margin: '0 auto 14px' }} />
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+            /* Intentional Empty State Card */
+            <div className="landprice-empty-state">
+              <div className="landprice-empty-icon" aria-hidden="true">
+                <TrendingUp size={26} />
+              </div>
+              <h2 className="landprice-empty-title">
                 {isBn ? 'জমির বৈশিষ্ট্য ইনপুট দিয়ে মূল্যায়ন শুরু করুন' : 'Ready for ML Land Valuation'}
               </h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto' }}>
+              <p className="landprice-empty-desc">
                 {isBn
-                  ? 'বামের ফর্মে জমির ক্ষেত্রফল, রাস্তার অবস্থা, ও ভৌগোলিক দূরত্বসমূহ পূরণ করে ইনফারেন্স বাটনে ক্লিক করুন।'
-                  : 'Select synthetic cadastral parcel features on the left and click "Compute ML Valuation" to view regression outputs.'}
+                  ? 'বামের ফর্মে জমির ক্ষেত্রফল, রাস্তার অবস্থা, ও ভৌগোলিক দূরত্বসমূহ পূরণ করে "সম্ভাব্য মূল্য নির্ণয় করুন" বাটনে ক্লিক করুন।'
+                  : 'Select synthetic cadastral parcel features on the left and click "Compute ML Valuation" to generate regression outputs.'}
               </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
+                <span className="landprice-chip">Road Width Frontage</span>
+                <span className="landprice-chip">Market Proximity</span>
+                <span className="landprice-chip">Drainage Quality</span>
+                <span className="landprice-chip">Empirical Bounds</span>
+              </div>
             </div>
           )}
 
-          {/* Model Card / Architecture Summary */}
+          {/* Validated Model Performance Card (Always visible beneath results/empty state) */}
           {modelInfo && (
-            <div className="cadastral-card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <BarChart3 size={18} color="var(--primary-color)" />
-                <h2 style={{ fontSize: '1.02rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                  {isBn ? 'মডেল পারফরম্যান্স ও যাচাইকৃত সূচকসমূহ' : 'Model Architecture & Validation Metrics'}
+            <div className="landprice-model-metrics-card">
+              <div className="landprice-card-header">
+                <h2 className="landprice-card-title">
+                  <BarChart3 size={17} color="var(--accent)" aria-hidden="true" />
+                  <span>{isBn ? 'মডেল পারফরম্যান্স ও যাচাইকৃত সূচকসমূহ' : 'Model Architecture & Validated Metrics'}</span>
                 </h2>
+                <span style={{ fontSize: '0.74rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
+                  Dataset: {Number(modelInfo.dataset_samples).toLocaleString()} samples
+                </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px', textAlign: 'center' }}>
-                <div style={{ background: 'var(--bg-surface)', padding: '10px 6px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Test MAE</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                    {formatBdt(modelInfo.test_metrics?.mae_bdt)} ৳
+              <div className="landprice-card-body">
+                <div className="landprice-model-specs-grid">
+                  <div className="landprice-spec-tile">
+                    <div className="landprice-spec-label">Test MAE</div>
+                    <div className="landprice-spec-val">
+                      {formatBdt(modelInfo.test_metrics?.mae_bdt)} ৳
+                    </div>
+                    <div className="landprice-spec-sub green">Per Decimal</div>
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#10B981' }}>Per Decimal</div>
+
+                  <div className="landprice-spec-tile">
+                    <div className="landprice-spec-label">Test R² Score</div>
+                    <div className="landprice-spec-val">
+                      {modelInfo.test_metrics?.r2_score}
+                    </div>
+                    <div className="landprice-spec-sub green">Synthetic Test Set</div>
+                  </div>
+
+                  <div className="landprice-spec-tile">
+                    <div className="landprice-spec-label">Spatial Mouza R²</div>
+                    <div className="landprice-spec-val">
+                      {modelInfo.spatial_group_holdout_metrics?.r2_score || '0.9708'}
+                    </div>
+                    <div className="landprice-spec-sub blue">5 Held-Out Mouzas</div>
+                  </div>
                 </div>
 
-                <div style={{ background: 'var(--bg-surface)', padding: '10px 6px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Test R² Score</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                    {modelInfo.test_metrics?.r2_score}
+                <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: '1.55' }}>
+                  <div style={{ marginBottom: '3px' }}>
+                    <strong>Selected Algorithm:</strong> {modelInfo.algorithm} (TransformedTargetRegressor)
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#10B981' }}>Synthetic Test Set</div>
-                </div>
-
-                <div style={{ background: 'var(--bg-surface)', padding: '10px 6px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Spatial Mouza R²</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                    {modelInfo.spatial_group_holdout_metrics?.r2_score || '0.9708'}
+                  <div style={{ marginBottom: '3px' }}>
+                    <strong>Baseline Comparison:</strong> 83.5% error reduction over DummyRegressor (Median Baseline: 29,996 ৳)
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#6366F1' }}>5 Held-Out Mouzas</div>
+                  <div>
+                    <strong>Split Protocol:</strong> 70% Train (14,000) / 15% Validation (3,000) / 15% Final Test (3,000)
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                <div><strong>Selected Model:</strong> {modelInfo.algorithm} (TransformedTargetRegressor)</div>
-                <div><strong>Baseline Comparison:</strong> 83.5% error reduction over DummyRegressor (Median Baseline MAE: 29,995 ৳)</div>
-                <div><strong>Dataset Size:</strong> {Number(modelInfo.dataset_samples).toLocaleString()} synthetic parcels (70% Train / 15% Val / 15% Test)</div>
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>

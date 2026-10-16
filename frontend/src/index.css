@@ -1,4 +1,5 @@
 @import './styles/tokens.css';
+@import './styles/landprice.css';
 
 /* 
   Bhumi Kobocho (ভূমি কবচ) — Cadastral Map & Survey Ink Design System
@@ -226,14 +227,29 @@ textarea:focus-visible {
 .app-nav-bar {
   background: var(--paper);
   border-bottom: 1.5px solid var(--line);
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.app-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.app-nav-container {
+  width: 100%;
+  max-width: var(--max-content-width, 1240px);
+  margin: 0 auto;
   padding: 0 24px;
   display: flex;
+  align-items: center;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.app-nav-bar::-webkit-scrollbar {
+.app-nav-container::-webkit-scrollbar {
   display: none;
 }
 
@@ -251,6 +267,7 @@ textarea:focus-visible {
   gap: 8px;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
