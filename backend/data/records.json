@@ -51,7 +51,8 @@
     "document_date": "2018-02-15",
     "deed_no": "2311/2018",
     "dummy_nid_last4": "6023",
-    "file_hash_sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+    "file_hash_sha256": "d1d1d5b15349b6d569bc4fe02c23c4fa97b58725bc2db501f0fff57d2974824b",
+    "sample_file": "deed_sample_003.png",
     "last_mutation_case": "MUT-2018-0512",
     "disclaimer": "DEMO DATA — not a legal verdict"
   }

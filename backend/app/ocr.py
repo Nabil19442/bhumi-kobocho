@@ -287,14 +287,16 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         }
 
     sample_filename = target_record.get("sample_file", "")
-    sample_path = os.path.join(SAMPLES_DIR, sample_filename)
+    if not sample_filename:
+        raise FileNotFoundError(f"Record '{target_record.get('id')}' does not have a sample_file defined.")
 
-    file_bytes = b""
-    actual_sha256 = target_record.get("file_hash_sha256", "")
-    if os.path.isfile(sample_path):
-        with open(sample_path, "rb") as sf:
-            file_bytes = sf.read()
-        actual_sha256 = calculate_sha256(file_bytes)
+    sample_path = os.path.join(SAMPLES_DIR, sample_filename)
+    if not os.path.isfile(sample_path):
+        raise FileNotFoundError(f"Demo specimen file '{sample_filename}' was not found on disk.")
+
+    with open(sample_path, "rb") as sf:
+        file_bytes = sf.read()
+    actual_sha256 = calculate_sha256(file_bytes)
 
     return {
         "extracted_fields": {

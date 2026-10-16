@@ -138,7 +138,10 @@ async def scan_document(
     """
     # 1. Explicitly selected demo specimen
     if sample_id and sample_id.strip():
-        return load_known_demo_specimen(sample_id.strip())
+        try:
+            return load_known_demo_specimen(sample_id.strip())
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
 
     # 2. Uploaded user file
     if file is not None:

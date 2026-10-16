@@ -69,3 +69,18 @@ if __name__ == "__main__":
     ]
     path2, hash2 = generate_sample_deed("deed_sample_002.png", lines2)
     print(f"Generated {path2} with SHA-256: {hash2}")
+
+    lines3 = [
+        "দলিল নম্বর (Deed No): 2311/2018",
+        "তারিখ (Date): 2018-02-15",
+        "মালিকের নাম (Owner Name): আব্দুল করিম শেখ (Abdul Karim Sheikh)",
+        "খতিয়ান নম্বর (Khatian No): 129",
+        "দাগ নম্বর (Dag No): 784",
+        "মৌজা (Mouza): সাভার (Savar), JL-45",
+        "জমির পরিমাণ (Area Decimal): 24.0 শতাংশ",
+        "জমির শ্রেণি (Class): বাগান (Orchard)",
+        "এনআইডি শেষ ৪ সংখ্যা (NID Last 4): 6023",
+        "স্বত্ব বিবরণ: পৈতৃক সূত্রে প্রাপ্ত ও ভোগদখলকার (DEMO SPECIMEN)"
+    ]
+    path3, hash3 = generate_sample_deed("deed_sample_003.png", lines3)
+    print(f"Generated {path3} with SHA-256: {hash3}")
