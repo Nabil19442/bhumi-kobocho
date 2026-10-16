@@ -17,12 +17,15 @@ import {
   AlertTriangle,
   HelpCircle,
   FileCheck2,
-  RefreshCw
+  RefreshCw,
+  Compass,
+  Info
 } from 'lucide-react';
 import { fetchPlotPassport, fetchRecords } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
-export default function PassportPage({ t, lang, selectedPlotId = 'rec-demo-001', comparisonResult, sharedExtractedData }) {
+export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-demo-001', comparisonResult, sharedExtractedData }) {
+  const isBn = lang === 'bn';
   const [plotId, setPlotId] = useState(selectedPlotId);
   const [passport, setPassport] = useState(null);
   const [records, setRecords] = useState([]);
@@ -60,34 +63,88 @@ export default function PassportPage({ t, lang, selectedPlotId = 'rec-demo-001',
     window.print();
   };
 
+  // 4 official statuses only — each must have an icon and text label
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'Matched':
         return (
-          <span className="status-pill matched">
-            <CheckCircle2 size={13} aria-hidden="true" />
-            <span>{t.status_matched}</span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 8px',
+            borderRadius: '14px',
+            background: 'var(--status-matched-bg)',
+            border: '1px solid var(--status-matched-border)',
+            color: 'var(--status-matched-text)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap'
+          }}>
+            <CheckCircle2 size={12} aria-hidden="true" />
+            <span>{isBn ? 'মিলেছে (Matched)' : 'Matched'}</span>
           </span>
         );
       case 'Mismatch':
         return (
-          <span className="status-pill mismatch">
-            <XCircle size={13} aria-hidden="true" />
-            <span>{t.status_mismatch}</span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 8px',
+            borderRadius: '14px',
+            background: 'var(--status-mismatch-bg)',
+            border: '1px solid var(--status-mismatch-border)',
+            color: 'var(--status-mismatch-text)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap'
+          }}>
+            <XCircle size={12} aria-hidden="true" />
+            <span>{isBn ? 'অমিল (Mismatch)' : 'Mismatch'}</span>
           </span>
         );
       case 'Needs review':
         return (
-          <span className="status-pill needs-review">
-            <AlertTriangle size={13} aria-hidden="true" />
-            <span>{t.status_needs_review}</span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 8px',
+            borderRadius: '14px',
+            background: 'var(--status-review-bg)',
+            border: '1px solid var(--status-review-border)',
+            color: 'var(--status-review-text)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap'
+          }}>
+            <AlertTriangle size={12} aria-hidden="true" />
+            <span>{isBn ? 'আরও যাচাই দরকার (Needs review)' : 'Needs review'}</span>
           </span>
         );
+      case 'Not checked':
       default:
         return (
-          <span className="status-pill not-checked">
-            <HelpCircle size={13} aria-hidden="true" />
-            <span>{t.status_not_checked}</span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 8px',
+            borderRadius: '14px',
+            background: 'var(--status-notchecked-bg)',
+            border: '1px solid var(--status-notchecked-border)',
+            color: 'var(--status-notchecked-text)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap'
+          }}>
+            <HelpCircle size={12} aria-hidden="true" />
+            <span>{isBn ? 'যাচাই করা হয়নি (Not checked)' : 'Not checked'}</span>
           </span>
         );
     }
@@ -95,17 +152,19 @@ export default function PassportPage({ t, lang, selectedPlotId = 'rec-demo-001',
 
   if (isLoading && !passport) {
     return (
-      <div className="app-viewport" style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <RefreshCw size={24} className="spin" style={{ color: 'var(--cyan-secondary)', margin: '0 auto 12px' }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading Citizen Plot Passport...</p>
+      <div className="app-viewport" style={{ textAlign: 'center', padding: '60px 20px', maxWidth: 'var(--max-content-width)', margin: '0 auto' }}>
+        <RefreshCw size={26} className="spin" style={{ color: 'var(--primary-accent)', margin: '0 auto 12px' }} />
+        <p style={{ color: 'var(--text-main)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
+          {isBn ? 'নাগরিক প্লট পাসপোর্ট লোড হচ্ছে...' : 'Loading Citizen Plot Passport...'}
+        </p>
       </div>
     );
   }
 
   if (error && !passport) {
     return (
-      <div className="app-viewport" style={{ padding: '40px 20px' }}>
-        <ApiErrorNotice error={error} onRetry={loadData} title="Unable to load Plot Passport" />
+      <div className="app-viewport" style={{ padding: '40px 20px', maxWidth: 'var(--max-content-width)', margin: '0 auto' }}>
+        <ApiErrorNotice error={error} onRetry={loadData} title={isBn ? 'প্লট পাসপোর্ট লোড করা সম্ভব হয়নি' : 'Unable to load Plot Passport'} />
       </div>
     );
   }
@@ -115,171 +174,452 @@ export default function PassportPage({ t, lang, selectedPlotId = 'rec-demo-001',
   }
 
   const rec = passport.record || {};
-  // Use active comparison result if available, or fall back to passport baseline comparison
   const activeComparison = comparisonResult || passport.comparison_summary;
 
   return (
-    <div className="app-viewport">
+    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
       {/* Page Header */}
-      <div className="page-header-block">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <h2 className="page-title">
-              <FileBadge size={28} style={{ color: 'var(--emerald-primary)' }} />
-              {t.passport_heading}
-            </h2>
-            <p className="page-subtitle">{t.passport_subheading}</p>
+      <div className="page-header-block" style={{ marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              background: 'var(--accent-tint)',
+              color: 'var(--primary-accent)',
+              padding: '8px',
+              borderRadius: 'var(--radius-std)',
+              display: 'flex'
+            }}>
+              <FileBadge size={24} />
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)',
+                fontWeight: 800,
+                color: 'var(--text-main)',
+                fontFamily: 'var(--font-heading)',
+                margin: 0,
+                lineHeight: 1.2
+              }}>
+                {isBn ? 'নাগরিক প্লট পাসপোর্ট' : 'Citizen Plot Passport'}
+              </h1>
+              <p style={{
+                fontSize: '0.96rem',
+                color: 'var(--text-body)',
+                fontFamily: 'var(--font-body)',
+                margin: '4px 0 0'
+              }}>
+                {isBn 
+                  ? 'আপনার জমির সকল ঐতিহাসিক পরচা, দলিল ও ক্রিপ্টোগ্রাফিক সুরক্ষার একক নাগরিক সারসংক্ষেপ।' 
+                  : 'Unified overview of plot history, survey credentials, and cryptographic integrity.'}
+              </p>
+            </div>
           </div>
-          <button id="print-passport-btn" className="btn-secondary" onClick={handlePrint}>
-            <Printer size={15} />
-            <span>{t.print_btn}</span>
+
+          <button
+            id="print-passport-btn"
+            type="button"
+            className="btn-secondary"
+            onClick={handlePrint}
+            style={{
+              height: '42px',
+              padding: '0 18px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              fontFamily: 'var(--font-heading)',
+              borderRadius: 'var(--radius-std)',
+              border: '1.5px solid var(--text-main)',
+              background: '#FFFFFF',
+              color: 'var(--text-main)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              minHeight: '44px'
+            }}
+          >
+            <Printer size={16} />
+            <span>{isBn ? 'প্রিন্ট / পিডিএফ' : 'Print / Export PDF'}</span>
           </button>
         </div>
       </div>
 
-      <ApiErrorNotice error={error} onRetry={loadData} title="Unable to refresh Plot Passport" />
+      <ApiErrorNotice error={error} onRetry={loadData} title={isBn ? 'প্লট পাসপোর্ট হালনাগাদ করা যায়নি' : 'Unable to refresh Plot Passport'} />
 
-      {/* Record Selector Card */}
-      <div className="saas-card" style={{ padding: '16px 20px' }}>
+      {/* Record Picker Card */}
+      <div style={{
+        background: 'var(--white)',
+        borderRadius: 'var(--radius-std)',
+        border: '1px solid #CAD7CF',
+        boxShadow: 'var(--shadow-hard-sm)',
+        padding: '16px 20px',
+        marginBottom: '24px'
+      }}>
         <div className="form-field">
-          <label className="field-label-row" htmlFor="passport-plot-picker">
-            <span>{t.select_plot_record}</span>
-            <span className="code-badge">{t.plot_id_label}: {plotId}</span>
+          <label htmlFor="passport-plot-picker" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-heading)',
+            color: 'var(--text-main)',
+            marginBottom: '6px'
+          }}>
+            <span>{isBn ? 'প্লট রেকর্ড নির্বাচন করুন:' : 'Select Plot Record:'}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--primary-accent)' }}>
+              {isBn ? 'ডেমো প্লট আইডি:' : 'Demo Plot ID:'} {plotId}
+            </span>
           </label>
           <select
             id="passport-plot-picker"
-            className="field-select"
             value={plotId}
             onChange={(e) => setPlotId(e.target.value)}
+            style={{
+              width: '100%',
+              height: '46px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-std)',
+              border: '1.5px solid #CAD7CF',
+              background: 'var(--paper)',
+              color: 'var(--text-main)',
+              fontSize: '0.94rem',
+              fontFamily: 'var(--font-body)',
+              cursor: 'pointer'
+            }}
           >
             {records.map(r => (
               <option key={r.id} value={r.id}>
-                {r.id}: {r.owner_name_bn} &mdash; Mouza: {r.mouza} (Dag: {r.dag_no}, Khatian: {r.khatian_no})
+                {r.id}: {r.owner_name_bn} — মৌজা: {r.mouza} (দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no})
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Main Passport Card */}
-      <div className="saas-card" style={{ border: '1.5px solid var(--line)', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span className="status-pill matched">
-                <ShieldCheck size={13} />
-                PLOT PASSPORT SPECIMEN
-              </span>
-              <span className="code-badge">{passport.plot_id}</span>
+      {/* Main Passport Card (Tactile hard shadow) */}
+      <div style={{
+        background: 'var(--white)',
+        borderRadius: 'var(--radius-std)',
+        border: '1.5px solid var(--text-main)',
+        boxShadow: 'var(--shadow-hard)',
+        overflow: 'hidden',
+        marginBottom: '28px'
+      }}>
+        {/* Passport Top Banner */}
+        <div style={{
+          background: 'var(--dark-band)',
+          color: 'var(--white)',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              background: 'var(--primary-accent)',
+              padding: '6px',
+              borderRadius: '6px',
+              color: '#fff',
+              display: 'flex'
+            }}>
+              <FileBadge size={20} />
             </div>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-heading)', letterSpacing: '-0.2px' }}>
-              {lang === 'bn' ? rec.owner_name_bn : rec.owner_name_en}
-            </h3>
-            <p style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', marginTop: '4px' }}>
-              <MapPin size={15} style={{ color: 'var(--accent)' }} />
-              <span>{rec.mouza}, Upazila: {rec.upazila}, District: {rec.district}</span>
-            </p>
+            <div>
+              <span style={{
+                fontSize: '0.72rem',
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.8px',
+                color: '#CAD7CF',
+                textTransform: 'uppercase',
+                display: 'block'
+              }}>
+                {isBn ? 'গণপ্রজাতন্ত্রী বাংলাদেশ নমুনা রেকর্ড' : 'PEOPLE’S REPUBLIC OF BANGLADESH DEMO RECORD'}
+              </span>
+              <strong style={{
+                fontSize: '1.24rem',
+                fontFamily: 'var(--font-heading)',
+                color: '#FFFFFF'
+              }}>
+                {isBn ? `নাগরিক প্লট পাসপোর্ট — দাগ ${rec.dag_no}` : `Citizen Plot Passport — Dag ${rec.dag_no}`}
+              </strong>
+            </div>
           </div>
 
-          {/* QR Code */}
-          {passport.qr_code_base64 && (
-            <div style={{ textAlign: 'center', background: 'var(--white)', padding: '10px', borderRadius: 'var(--radius-std)', border: '1px solid var(--line)' }}>
-              <img
-                src={passport.qr_code_base64}
-                alt="Plot Passport QR Fingerprint"
-                style={{ width: '120px', height: '120px', display: 'block' }}
-              />
-              <span style={{ color: 'var(--ink)', fontSize: '0.68rem', fontWeight: 700, display: 'block', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
-                DEMO DIGITAL FINGERPRINT
-              </span>
-            </div>
-          )}
+          <div style={{
+            background: '#9A2C14',
+            color: '#FFFFFF',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: '4px',
+            letterSpacing: '0.5px'
+          }}>
+            {isBn ? 'ডেমো ডেটা • আইনি সিদ্ধান্ত নয়' : 'DEMO DATA • NOT LEGAL VERDICT'}
+          </div>
         </div>
 
-        {/* 6 Core Specimen Attributes */}
-        <div className="grid-cols-3" style={{ marginTop: '22px', background: 'var(--paper)', padding: '16px', borderRadius: 'var(--radius-std)', border: '1px solid var(--line)' }}>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.field_khatian}</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-heading)', marginTop: '2px' }}>{rec.khatian_no}</div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.field_dag}</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-heading)', marginTop: '2px' }}>{rec.dag_no}</div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.recorded_area}</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-heading)', marginTop: '2px' }}>
-              {rec.area_decimal} Decimal (শতাংশ)
+        {/* Passport Body */}
+        <div style={{ padding: '24px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: '24px',
+            paddingBottom: '20px',
+            borderBottom: '1px solid #CAD7CF'
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  background: 'var(--status-matched-bg)',
+                  color: 'var(--status-matched-text)',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  <ShieldCheck size={13} />
+                  <span>{isBn ? 'প্লট পাসপোর্ট নমুনা' : 'PASSPORT SPECIMEN'}</span>
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--muted)', fontWeight: 700 }}>
+                  {passport.plot_id}
+                </span>
+              </div>
+
+              <h2 style={{
+                fontSize: '1.6rem',
+                fontWeight: 800,
+                color: 'var(--text-main)',
+                fontFamily: 'var(--font-heading)',
+                margin: '0 0 6px',
+                letterSpacing: '-0.3px'
+              }}>
+                {isBn ? rec.owner_name_bn : rec.owner_name_en}
+              </h2>
+
+              <p style={{
+                color: 'var(--muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.92rem',
+                margin: 0
+              }}>
+                <MapPin size={16} style={{ color: 'var(--primary-accent)' }} />
+                <span>{rec.mouza}, উপজেলা: {rec.upazila}, জেলা: {rec.district}</span>
+              </p>
             </div>
+
+            {/* QR Code */}
+            {passport.qr_code_base64 && (
+              <div style={{
+                textAlign: 'center',
+                background: 'var(--paper)',
+                padding: '10px',
+                borderRadius: 'var(--radius-std)',
+                border: '1px solid #CAD7CF',
+                flexShrink: 0
+              }}>
+                <img
+                  src={passport.qr_code_base64}
+                  alt="Plot Passport QR Fingerprint"
+                  style={{ width: '110px', height: '110px', display: 'block', margin: '0 auto' }}
+                />
+                <span style={{
+                  color: 'var(--text-main)',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  display: 'block',
+                  marginTop: '4px',
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  {isBn ? 'ডিজিটাল কিউআর কোড' : 'QR FINGERPRINT'}
+                </span>
+              </div>
+            )}
           </div>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.land_class}</span>
-            <div style={{ fontSize: '0.96rem', fontWeight: 600, color: 'var(--ink)', marginTop: '2px' }}>{rec.land_class}</div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.last_mutation}</span>
-            <div style={{ fontSize: '0.96rem', fontWeight: 600, color: 'var(--ink)', marginTop: '2px' }}>{rec.last_mutation_case}</div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{t.deed_date_label}</span>
-            <div style={{ fontSize: '0.96rem', fontWeight: 600, color: 'var(--ink)', marginTop: '2px' }}>{rec.deed_no} ({rec.document_date})</div>
+
+          {/* 6 Core Specimen Attributes */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+            margin: '22px 0',
+            background: 'var(--paper)',
+            padding: '18px',
+            borderRadius: 'var(--radius-std)',
+            border: '1px solid #CAD7CF'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'খতিয়ান নম্বর' : 'Khatian No'}
+              </span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                {rec.khatian_no}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'দাগ নম্বর' : 'Dag No'}
+              </span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                {rec.dag_no}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'রেকর্ডকৃত জমির পরিমাণ' : 'Recorded Area'}
+              </span>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary-accent)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                {rec.area_decimal} {isBn ? 'শতক / শতাংশ' : 'Decimal'}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'জমির শ্রেণি' : 'Land Classification'}
+              </span>
+              <div style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
+                {rec.land_class}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'সর্বশেষ নামজারি কেস' : 'Latest Mutation'}
+              </span>
+              <div style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                {rec.last_mutation_case}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, display: 'block' }}>
+                {isBn ? 'দলিল নং ও তারিখ' : 'Deed No & Date'}
+              </span>
+              <div style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
+                {rec.deed_no} ({rec.document_date})
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Integrated Verification & Comparison Audit Section (Workflow 5) */}
+      {/* Integrated Verification & Comparison Audit Section */}
       {activeComparison && (
-        <div className="saas-card" style={{ borderLeft: '4px solid var(--accent)' }}>
-          <div className="saas-card-header">
+        <div style={{
+          background: 'var(--white)',
+          borderRadius: 'var(--radius-std)',
+          border: '1px solid #CAD7CF',
+          borderLeft: '4px solid var(--primary-accent)',
+          boxShadow: 'var(--shadow-hard-sm)',
+          overflow: 'hidden',
+          marginBottom: '28px'
+        }}>
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #CAD7CF',
+            background: '#FAFBF9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
             <div>
-              <h3 className="saas-card-title">
-                <FileCheck2 size={18} style={{ color: 'var(--accent)' }} />
-                {t.integrated_audit_title}
+              <h3 style={{
+                fontSize: '1.14rem',
+                fontWeight: 700,
+                color: 'var(--text-main)',
+                fontFamily: 'var(--font-heading)',
+                margin: '0 0 2px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FileCheck2 size={18} color="var(--primary-accent)" />
+                <span>{isBn ? 'সমন্বিত দলিল নিরীক্ষা ও ফলাফল' : 'Integrated Audit Results'}</span>
               </h3>
-              <p className="saas-card-desc">{t.integrated_audit_sub}</p>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-body)', margin: 0 }}>
+                {isBn 
+                  ? 'নাগরিক প্রদত্ত দলিলের সাথে অফিসিয়াল রেফারেন্স রেকর্ডের তুলনামূলক ফলাফল' 
+                  : 'Comparison results from citizen supplied document against official reference baseline'}
+              </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="code-badge">
-                Consistency: {activeComparison.record_consistency_indicator?.percentage}%
-              </span>
-            </div>
+
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: '12px',
+              background: 'var(--accent-tint)',
+              color: 'var(--primary-accent)'
+            }}>
+              {isBn ? 'সামঞ্জস্য:' : 'Consistency:'} {activeComparison.record_consistency_indicator?.percentage}%
+            </span>
           </div>
 
-          <div className="saas-table-wrapper" style={{ marginTop: '12px' }}>
-            <table className="saas-table">
+          <div className="table-responsive-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '640px' }}>
               <thead>
-                <tr>
-                  <th>{t.th_field}</th>
-                  <th>{t.th_extracted}</th>
-                  <th>{t.th_reference}</th>
-                  <th>{t.th_status}</th>
-                  <th>{t.th_reason}</th>
+                <tr style={{
+                  background: 'var(--ground)',
+                  borderBottom: '2px solid #CBD8D2',
+                  fontSize: '0.84rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-main)',
+                  textTransform: 'uppercase'
+                }}>
+                  <th style={{ padding: '12px 18px', width: '22%' }}>{isBn ? 'ক্ষেত্রের নাম' : 'Field'}</th>
+                  <th style={{ padding: '12px 18px', width: '22%' }}>{isBn ? 'দলিলের মান' : 'Deed Value'}</th>
+                  <th style={{ padding: '12px 18px', width: '22%' }}>{isBn ? 'রেফারেন্স রেকর্ড' : 'Reference'}</th>
+                  <th style={{ padding: '12px 18px', width: '18%' }}>{isBn ? 'ফলাফল' : 'Status'}</th>
+                  <th style={{ padding: '12px 18px', width: '16%' }}>{isBn ? 'পর্যবেক্ষণ' : 'Observation'}</th>
                 </tr>
               </thead>
               <tbody>
-                {activeComparison.results?.map((item) => (
-                  <tr key={item.field} className={item.status === 'Mismatch' ? 'mismatch-row' : ''}>
-                    <td style={{ fontWeight: 600, color: 'var(--ink)' }}>
-                      {lang === 'bn' ? item.field_label_bn : item.field_label_en}
-                    </td>
-                    <td>
-                      <span className="code-badge">
+                {activeComparison.results?.map((item, idx) => {
+                  const isMismatch = item.status === 'Mismatch';
+                  const isAlt = idx % 2 === 1;
+
+                  return (
+                    <tr
+                      key={item.field}
+                      style={{
+                        background: isMismatch ? 'var(--status-mismatch-row)' : (isAlt ? '#FAFCF9' : '#FFFFFF'),
+                        borderBottom: '1px solid #E3EAE6',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      <td style={{ padding: '12px 18px', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>
+                        {isBn ? item.field_label_bn : item.field_label_en}
+                      </td>
+                      <td style={{ padding: '12px 18px', fontFamily: 'var(--font-mono)' }}>
                         {item.extracted_value !== null ? String(item.extracted_value) : '—'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="code-badge">
+                      </td>
+                      <td style={{ padding: '12px 18px', fontFamily: 'var(--font-mono)' }}>
                         {item.reference_value !== null ? String(item.reference_value) : '—'}
-                      </span>
-                    </td>
-                    <td>{renderStatusBadge(item.status)}</td>
-                    <td>
-                      <span style={{ fontSize: '0.84rem', color: 'var(--ink-soft)' }}>
+                      </td>
+                      <td style={{ padding: '12px 18px' }}>
+                        {renderStatusBadge(item.status)}
+                      </td>
+                      <td style={{ padding: '12px 18px', fontSize: '0.84rem', color: 'var(--text-body)' }}>
                         {item.reason_code}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -287,51 +627,123 @@ export default function PassportPage({ t, lang, selectedPlotId = 'rec-demo-001',
       )}
 
       {/* Record History Timeline */}
-      <div className="saas-card">
-        <h3 className="saas-card-title">
-          <Calendar size={18} style={{ color: 'var(--cyan-secondary)' }} />
-          {t.timeline_heading}
-        </h3>
-        <p className="saas-card-desc">{t.timeline_desc}</p>
+      <div style={{
+        background: 'var(--white)',
+        borderRadius: 'var(--radius-std)',
+        border: '1px solid #CAD7CF',
+        boxShadow: 'var(--shadow-hard-sm)',
+        padding: '24px',
+        marginBottom: '28px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <Calendar size={18} color="var(--primary-accent)" />
+          <h3 style={{ fontSize: '1.14rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            {isBn ? 'মালিকানা ও নামজারি টাইমলাইন' : 'Chronological Title & Mutation Timeline'}
+          </h3>
+        </div>
+        <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: '0 0 20px' }}>
+          {isBn 
+            ? 'জরিপ পরচা, সাব-কবলা দলিল ও নামজারি কেসের ধারাবাহিক পরিক্রমা।' 
+            : 'Chronological progression of survey, saf-kabala deed, and mutation events.'}
+        </p>
 
-        <div className="timeline-track">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '16px'
+        }}>
           {passport.timeline?.map((step, idx) => (
-            <div key={idx} className="timeline-step">
-              <div className="timeline-marker" />
-              <div className="timeline-year-tag">{step.year} &mdash; {step.date}</div>
-              <div className="timeline-step-title">{lang === 'bn' ? step.title_bn : step.title_en}</div>
-              <div className="timeline-step-desc">{lang === 'bn' ? step.detail_bn : step.detail_en}</div>
+            <div
+              key={idx}
+              style={{
+                background: 'var(--paper)',
+                border: '1px solid #CAD7CF',
+                borderRadius: 'var(--radius-std)',
+                padding: '16px',
+                position: 'relative'
+              }}
+            >
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                color: 'var(--primary-accent)',
+                marginBottom: '4px'
+              }}>
+                {step.year} — {step.date}
+              </div>
+              <strong style={{
+                fontSize: '0.98rem',
+                color: 'var(--text-main)',
+                fontFamily: 'var(--font-heading)',
+                display: 'block',
+                marginBottom: '4px'
+              }}>
+                {isBn ? step.title_bn : step.title_en}
+              </strong>
+              <p style={{
+                fontSize: '0.84rem',
+                color: 'var(--text-body)',
+                lineHeight: 1.5,
+                margin: 0
+              }}>
+                {isBn ? step.detail_bn : step.detail_en}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
       {/* What Was NOT Checked & Next Steps Grid */}
-      <div className="grid-cols-2">
-        <div className="saas-card" style={{ borderColor: 'rgba(245, 158, 11, 0.3)' }}>
-          <h4 className="saas-card-title" style={{ color: 'var(--amber-warn)', fontSize: '0.96rem' }}>
-            <AlertOctagon size={16} />
-            {t.not_checked_heading}
-          </h4>
-          <p className="saas-card-desc">
-            {t.not_checked_warning_text}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '24px'
+      }}>
+        {/* Box 1: What was NOT checked */}
+        <div style={{
+          background: '#FEF4F0',
+          border: '1.5px solid #F3BFB3',
+          borderRadius: 'var(--radius-std)',
+          padding: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9A2C14', marginBottom: '8px' }}>
+            <AlertOctagon size={18} />
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-heading)', margin: 0 }}>
+              {isBn ? 'কী যাচাই হয়নি (সিস্টেমের সীমাবদ্ধতা)' : 'What Was NOT Checked'}
+            </h4>
+          </div>
+          <p style={{ fontSize: '0.84rem', color: '#70220F', margin: '0 0 10px', lineHeight: 1.5 }}>
+            {isBn 
+              ? 'নাগরিক সুরক্ষা সতর্কতা: এই ডিজিটাল ব্যবস্থাটিতে নিচের আইনি বিষয়গুলো অন্তর্ভুক্ত বা যাচাই করা হয়নি:'
+              : 'Important citizen protection: This automated system intentionally omits the following legal audits:'}
           </p>
-          <ul style={{ paddingLeft: '20px', marginTop: '12px', fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.8' }}>
+          <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '0.84rem', color: '#70220F', lineHeight: 1.65 }}>
             {passport.not_checked_items?.map((item, idx) => (
               <li key={idx}><strong>{item}</strong></li>
             ))}
           </ul>
         </div>
 
-        <div className="saas-card" style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-          <h4 className="saas-card-title" style={{ color: 'var(--emerald-light)', fontSize: '0.96rem' }}>
-            <ShieldCheck size={16} />
-            {t.next_steps_heading}
-          </h4>
-          <p className="saas-card-desc">
-            {t.next_steps_desc}
+        {/* Box 2: Recommended Next Steps */}
+        <div style={{
+          background: '#EBF3FB',
+          border: '1.5px solid #C4D6F5',
+          borderRadius: 'var(--radius-std)',
+          padding: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-accent)', marginBottom: '8px' }}>
+            <Compass size={18} />
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'var(--font-heading)', margin: 0 }}>
+              {isBn ? 'পরবর্তী সরকারি যাচাইকরণ পদক্ষেপ' : 'Recommended Next Steps'}
+            </h4>
+          </div>
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', margin: '0 0 10px', lineHeight: 1.5 }}>
+            {isBn 
+              ? 'আইনি নিশ্চয়তা লাভের জন্য পরবর্তী সরকারি যাচাইকরণ পদক্ষেপসমূহ:'
+              : 'Recommended official next steps for complete statutory confirmation:'}
           </p>
-          <ul style={{ paddingLeft: '20px', marginTop: '12px', fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: '1.8' }}>
+          <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.65 }}>
             {passport.next_official_steps?.map((step, idx) => (
               <li key={idx}>{step}</li>
             ))}

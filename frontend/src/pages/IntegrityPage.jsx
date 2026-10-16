@@ -9,12 +9,17 @@ import {
   FileCode2,
   Database,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Hash,
+  Lock,
+  FileCheck2,
+  AlertTriangle
 } from 'lucide-react';
 import { fetchRecords, fetchRecordQr, checkIntegrityApi } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
-export default function IntegrityPage({ t, lang }) {
+export default function IntegrityPage({ t, lang = 'bn' }) {
+  const isBn = lang === 'bn';
   const [records, setRecords] = useState([]);
   const [selectedRecordId, setSelectedRecordId] = useState('rec-demo-001');
   const [qrData, setQrData] = useState(null);
@@ -102,36 +107,110 @@ export default function IntegrityPage({ t, lang }) {
   };
 
   return (
-    <div className="app-viewport">
+    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
       {/* Page Header */}
-      <div className="page-header-block">
-        <h2 className="page-title">
-          <QrCode size={28} style={{ color: 'var(--emerald-primary)' }} />
-          {t.integrity_heading}
-        </h2>
-        <p className="page-subtitle">{t.integrity_subheading}</p>
+      <div className="page-header-block" style={{ marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            background: 'var(--accent-tint)',
+            color: 'var(--primary-accent)',
+            padding: '8px',
+            borderRadius: 'var(--radius-std)',
+            display: 'flex'
+          }}>
+            <Lock size={24} />
+          </div>
+          <div>
+            <h1 style={{
+              fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)',
+              fontWeight: 800,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              margin: 0,
+              lineHeight: 1.2
+            }}>
+              {isBn ? 'কিউআর ও SHA-256 ফাইল সত্যতা যাচাই' : 'QR & SHA-256 Bit Integrity Verification'}
+            </h1>
+            <p style={{
+              fontSize: '0.96rem',
+              color: 'var(--text-body)',
+              fontFamily: 'var(--font-body)',
+              margin: '4px 0 0'
+            }}>
+              {isBn 
+                ? 'ক্রিপ্টোগ্রাফিক হ্যাশের মাধ্যমে ফাইলের প্রতিটি বিটের ডিজিটাল অবিকৃত অবস্থা নিশ্চিত করুন।' 
+                : 'Cryptographically verify file integrity against recorded SHA-256 digital fingerprint.'}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <ApiErrorNotice error={error} onRetry={loadData} title="Integrity Service Unavailable" />
+      <ApiErrorNotice error={error} onRetry={loadData} title={isBn ? 'সত্যতা যাচাই সেবা সাময়িকভাবে উপলব্ধ নয়' : 'Integrity Service Unavailable'} />
 
-      {/* Record Selector Card */}
-      <div className="saas-card">
-        <div className="saas-card-header">
-          <h3 className="saas-card-title">
-            <Database size={18} style={{ color: 'var(--cyan-secondary)' }} />
-            {t.select_plot_record}
+      {/* Record Selector & Expected Hash Card */}
+      <div style={{
+        background: 'var(--white)',
+        borderRadius: 'var(--radius-std)',
+        border: '1px solid #CAD7CF',
+        boxShadow: 'var(--shadow-hard-sm)',
+        padding: '24px',
+        marginBottom: '28px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid #CAD7CF',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{
+            fontSize: '1.14rem',
+            fontWeight: 700,
+            color: 'var(--text-main)',
+            fontFamily: 'var(--font-heading)',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <Database size={18} color="var(--primary-accent)" />
+            <span>{isBn ? 'প্লট রেকর্ড ও রেফারেন্স হ্যাশ নির্বাচন' : 'Plot Record & Reference Hash'}</span>
           </h3>
-          <span className="status-pill not-checked">SHA-256 BIT LEVEL HASH</span>
+          <span style={{
+            fontSize: '0.74rem',
+            fontFamily: 'var(--font-mono)',
+            padding: '3px 8px',
+            background: 'var(--ground)',
+            border: '1px solid #CBD8D2',
+            borderRadius: '4px',
+            color: 'var(--muted)',
+            fontWeight: 700
+          }}>
+            SHA-256 CRYTOGRAPHIC DIGEST
+          </span>
         </div>
 
-        <div className="grid-cols-2">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '20px'
+        }}>
           <div className="form-field">
-            <label className="field-label-row" htmlFor="integrity-record-select">
-              <span>{t.reference_select_label}</span>
+            <label htmlFor="integrity-record-select" style={{
+              display: 'block',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--text-main)',
+              marginBottom: '6px'
+            }}>
+              {isBn ? 'রেফারেন্স রেকর্ড নির্বাচন:' : 'Select Baseline Record:'}
             </label>
             <select
               id="integrity-record-select"
-              className="field-select"
               value={selectedRecordId}
               onChange={(e) => {
                 const recId = e.target.value;
@@ -140,150 +219,287 @@ export default function IntegrityPage({ t, lang }) {
                 if (r) setExpectedHash(r.file_hash_sha256);
                 setVerificationResult(null);
               }}
+              style={{
+                width: '100%',
+                height: '46px',
+                padding: '0 12px',
+                borderRadius: 'var(--radius-std)',
+                border: '1.5px solid #CAD7CF',
+                background: 'var(--paper)',
+                color: 'var(--text-main)',
+                fontSize: '0.94rem',
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer'
+              }}
             >
               {records.map(r => (
                 <option key={r.id} value={r.id}>
-                  {r.id}: {r.owner_name_bn} (Khatian: {r.khatian_no}, Dag: {r.dag_no})
+                  {r.id}: {r.owner_name_bn} (খতিয়ান: {r.khatian_no}, দাগ: {r.dag_no})
                 </option>
               ))}
             </select>
           </div>
 
           <div className="form-field">
-            <label className="field-label-row" htmlFor="expected-hash-input">
-              <span>{t.expected_sha256_label}</span>
+            <label htmlFor="expected-hash-input" style={{
+              display: 'block',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              fontFamily: 'var(--font-heading)',
+              color: 'var(--text-main)',
+              marginBottom: '6px'
+            }}>
+              {isBn ? 'প্রত্যাশিত রেফারেন্স SHA-256 ফিঙ্গারপ্রিন্ট:' : 'Expected Reference SHA-256 Hash:'}
             </label>
             <input
               id="expected-hash-input"
-              className="field-input"
               type="text"
               value={expectedHash}
               onChange={(e) => setExpectedHash(e.target.value)}
-              style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.82rem' }}
+              style={{
+                width: '100%',
+                height: '46px',
+                padding: '0 12px',
+                borderRadius: 'var(--radius-std)',
+                border: '1.5px solid #CAD7CF',
+                background: 'var(--paper)',
+                color: 'var(--text-main)',
+                fontSize: '0.84rem',
+                fontFamily: 'var(--font-mono)',
+                boxSizing: 'border-box'
+              }}
             />
           </div>
         </div>
       </div>
 
-      <div className="grid-cols-2">
-        {/* File Verification Form */}
-        <div className="saas-card">
-          <h3 className="saas-card-title" style={{ marginBottom: '6px' }}>
-            <Upload size={18} style={{ color: 'var(--emerald-primary)' }} />
-            {t.upload_for_hash}
-          </h3>
-          <p className="saas-card-desc">
-            {t.upload_compute_hash_desc}
-          </p>
+      {/* 2-Column Grid: Upload & Test + QR Preview */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '24px',
+        alignItems: 'stretch',
+        marginBottom: '28px'
+      }}>
+        {/* Left Card: File Upload & Simulation Tests */}
+        <div style={{
+          background: 'var(--white)',
+          borderRadius: 'var(--radius-std)',
+          border: '1px solid #CAD7CF',
+          boxShadow: 'var(--shadow-hard-sm)',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <h3 style={{
+              fontSize: '1.14rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              margin: '0 0 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Upload size={18} color="var(--primary-accent)" />
+              <span>{isBn ? 'হ্যাশ যাচাইয়ের জন্য দলিল আপলোড করুন' : 'Upload Deed for Hash Verification'}</span>
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: '0 0 16px' }}>
+              {isBn 
+                ? 'SHA-256 ডাইজেস্ট গণনার জন্য লোকাল কম্পিউটার বা ফোন থেকে ফাইল নির্বাচন করুন:' 
+                : 'Upload document file from local storage to compute SHA-256 digest:'}
+            </p>
 
-          <div style={{ marginTop: '16px' }}>
-            <input
-              id="integrity-file-input"
-              type="file"
-              className="field-input"
-              onChange={handleFileUpload}
-              style={{ padding: '8px 12px' }}
-            />
-          </div>
-
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
-              {t.quick_test_label}
-            </span>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                id="test-unmodified-btn"
-                className="btn-secondary"
-                onClick={() => handleSimulateCheck(false)}
-                disabled={isChecking}
-              >
-                <CheckCircle2 size={15} style={{ color: 'var(--emerald-light)' }} />
-                <span>{t.test_unchanged_btn}</span>
-              </button>
-              <button
-                id="test-modified-btn"
-                className="btn-secondary"
-                onClick={() => handleSimulateCheck(true)}
-                disabled={isChecking}
-              >
-                <XCircle size={15} style={{ color: 'var(--rose-mismatch)' }} />
-                <span>{t.test_changed_btn}</span>
-              </button>
+            <div style={{ marginBottom: '18px' }}>
+              <input
+                id="integrity-file-input"
+                type="file"
+                onChange={handleFileUpload}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: 'var(--radius-std)',
+                  border: '1.5px dashed #9AAFAA',
+                  background: '#F8FAF8',
+                  fontSize: '0.88rem',
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer'
+                }}
+              />
             </div>
-          </div>
 
-          {/* Verification Results Feedback */}
-          {verificationResult && (
-            <div
-              id="integrity-result-banner"
-              style={{
-                marginTop: '20px',
-                padding: '16px',
-                borderRadius: 'var(--radius-md)',
-                background: verificationResult.is_intact ? 'var(--emerald-subtle)' : 'var(--rose-subtle)',
-                border: `1px solid ${verificationResult.is_intact ? 'var(--emerald-border)' : 'var(--rose-border)'}`,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                {verificationResult.is_intact ? (
-                  <CheckCircle2 size={22} style={{ color: 'var(--emerald-light)' }} />
-                ) : (
-                  <XCircle size={22} style={{ color: 'var(--rose-mismatch)' }} />
-                )}
-                <div>
-                  <h4 style={{
-                    fontSize: '1.05rem',
+            {/* Quick Test Buttons */}
+            <div style={{
+              paddingTop: '16px',
+              borderTop: '1px solid #CAD7CF'
+            }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--muted)', display: 'block', marginBottom: '10px', fontWeight: 600 }}>
+                {isBn ? 'অথবা এক ক্লিকে টেস্ট সিনারিও চালান:' : 'Or run quick simulation checks:'}
+              </span>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  id="test-unmodified-btn"
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleSimulateCheck(false)}
+                  disabled={isChecking}
+                  style={{
+                    height: '42px',
+                    padding: '0 14px',
+                    fontSize: '0.86rem',
                     fontWeight: 700,
-                    color: verificationResult.is_intact ? 'var(--status-matched-text)' : 'var(--status-mismatch-text)',
-                    fontFamily: 'var(--font-heading)'
+                    fontFamily: 'var(--font-heading)',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid var(--text-main)',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    minHeight: '44px'
+                  }}
+                >
+                  <CheckCircle2 size={16} color="#14633A" />
+                  <span>{isBn ? 'টেস্ট ০১: মূল অবিকৃত দলিল' : 'Test 1: Authentic File'}</span>
+                </button>
+
+                <button
+                  id="test-modified-btn"
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleSimulateCheck(true)}
+                  disabled={isChecking}
+                  style={{
+                    height: '42px',
+                    padding: '0 14px',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-heading)',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid var(--text-main)',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    minHeight: '44px'
+                  }}
+                >
+                  <XCircle size={16} color="#9A2C14" />
+                  <span>{isBn ? 'টেস্ট ০২: পরিবর্তিত দলিল' : 'Test 2: Tampered File'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Checking State Spinner */}
+            {isChecking && (
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-accent)' }}>
+                <RefreshCw size={16} className="spin" />
+                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{isBn ? 'SHA-256 হ্যাশ গণনা চলছে...' : 'Computing SHA-256 hash...'}</span>
+              </div>
+            )}
+
+            {/* Verification Result Banner */}
+            {verificationResult && !isChecking && (
+              <div
+                id="integrity-result-banner"
+                style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  borderRadius: 'var(--radius-std)',
+                  background: verificationResult.is_intact ? 'var(--status-matched-bg)' : 'var(--status-mismatch-bg)',
+                  border: `1.5px solid ${verificationResult.is_intact ? 'var(--status-matched-border)' : 'var(--status-mismatch-border)'}`
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  {verificationResult.is_intact ? (
+                    <CheckCircle2 size={20} color="var(--status-matched-text)" />
+                  ) : (
+                    <XCircle size={20} color="var(--status-mismatch-text)" />
+                  )}
+                  <strong style={{
+                    fontSize: '1rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: verificationResult.is_intact ? 'var(--status-matched-text)' : 'var(--status-mismatch-text)'
                   }}>
-                    {verificationResult.status === 'Unchanged' ? t.hash_unchanged : t.hash_changed}
-                  </h4>
-                  <small style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>
-                    Standard Status: <strong style={{ color: 'var(--ink)' }}>{verificationResult.status}</strong>
-                  </small>
+                    {verificationResult.is_intact 
+                      ? (isBn ? 'ফাইলের হ্যাশ মিলেছে (Unchanged)' : 'Hash Matched (Unchanged)')
+                      : (isBn ? 'ফাইলের বিষয়বস্তু বদলেছে (File content changed)' : 'File Content Changed (Mismatch)')}
+                  </strong>
+                </div>
+
+                <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', wordBreak: 'break-all', color: 'var(--text-main)', marginTop: '6px' }}>
+                  <strong>{isBn ? 'গণনাকৃত হ্যাশ:' : 'Calculated Hash:'}</strong> {verificationResult.calculated_sha256}
                 </div>
               </div>
-
-              <div style={{ marginTop: '10px', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', wordBreak: 'break-all', color: 'var(--ink)' }}>
-                <div style={{ marginBottom: '4px' }}><strong>Computed SHA-256:</strong> {verificationResult.calculated_sha256}</div>
-                <div><strong>Recorded SHA-256:</strong> {verificationResult.expected_sha256}</div>
-              </div>
-
-              <div style={{ marginTop: '10px', fontSize: '0.84rem', color: 'var(--status-review-text)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                <Info size={14} style={{ flexShrink: 0 }} />
-                <span>{verificationResult.notice}</span>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* QR Code Presentation */}
-        <div className="saas-card" style={{ textAlign: 'center' }}>
-          <h3 className="saas-card-title" style={{ justifyContent: 'center' }}>
-            <QrCode size={18} style={{ color: 'var(--accent)' }} />
-            {t.qr_heading}
-          </h3>
-          <p className="saas-card-desc">
-            {t.integrity_subheading}
-          </p>
+        {/* Right Card: QR Code Preview */}
+        <div style={{
+          background: 'var(--white)',
+          borderRadius: 'var(--radius-std)',
+          border: '1px solid #CAD7CF',
+          boxShadow: 'var(--shadow-hard-sm)',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <h3 style={{
+              fontSize: '1.14rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              margin: '0 0 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <QrCode size={18} color="var(--primary-accent)" />
+              <span>{isBn ? 'প্লটের ডিজিটাল কিউআর কোড' : 'Plot Digital QR Fingerprint'}</span>
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: '0 0 20px' }}>
+              {isBn
+                ? 'স্মার্টফোন দিয়ে স্ক্যান করে সরাসরি এই প্লটের অনুমোদিত ডেটা সারসংক্ষেপ খুলুন।'
+                : 'Scan with smartphone camera to inspect the verified record summary.'}
+            </p>
 
-          {qrData && qrData.qr_base64 && (
-            <div style={{ display: 'inline-block', background: 'var(--white)', padding: '14px', borderRadius: 'var(--radius-std)', border: '1px solid var(--line)', margin: '16px 0' }}>
-              <img
-                src={qrData.qr_base64}
-                alt="Record QR Code"
-                style={{ width: '160px', height: '160px', display: 'block' }}
-              />
-              <span style={{ color: 'var(--ink)', fontSize: '0.74rem', fontWeight: 700, display: 'block', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-                {qrData.record_id}
-              </span>
-            </div>
-          )}
+            {qrData && qrData.qr_code_base64 && (
+              <div style={{ textAlign: 'center', background: 'var(--paper)', padding: '16px', borderRadius: 'var(--radius-std)', border: '1px solid #CAD7CF', marginBottom: '16px' }}>
+                <img
+                  src={qrData.qr_code_base64}
+                  alt="QR Code"
+                  style={{ width: '140px', height: '140px', display: 'block', margin: '0 auto' }}
+                />
+                <span style={{ fontSize: '0.74rem', fontFamily: 'var(--font-mono)', color: 'var(--text-main)', fontWeight: 700, display: 'block', marginTop: '8px' }}>
+                  {qrData.record_id}
+                </span>
+              </div>
+            )}
+          </div>
 
-          <div style={{ textAlign: 'left', background: 'var(--paper)', padding: '12px 16px', borderRadius: 'var(--radius-std)', border: '1px solid var(--line)' }}>
-            <span style={{ fontSize: '0.84rem', color: 'var(--ink-soft)', lineHeight: '1.6' }}>
-              🔒 <strong>{t.crypto_principle_title}:</strong> {t.crypto_principle_text}
+          {/* Educational Disclaimer */}
+          <div style={{
+            padding: '12px 14px',
+            background: '#F1F5F0',
+            border: '1px solid #CBD8D2',
+            borderRadius: 'var(--radius-std)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '8px'
+          }}>
+            <Info size={16} style={{ color: 'var(--muted)', flexShrink: 0, marginTop: '2px' }} />
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5 }}>
+              {isBn 
+                ? 'ক্রিপ্টোগ্রাফিক মূলনীতি: ডিজিটাল হ্যাশ শুধুমাত্র ফাইলের প্রতিটি বিটের অবিকৃত অবস্থা যাচাই করে। এটি কোনো আদালতের রায় বা মালিকানা সনদ নয়।' 
+                : 'Cryptographic principle: File hashing proves bit-level immutability; it does not confer legal ownership or court title.'}
             </span>
           </div>
         </div>

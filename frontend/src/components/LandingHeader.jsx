@@ -1,5 +1,5 @@
-import React from 'react';
-import { Globe, ArrowRight, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { Globe, ArrowRight, Shield, Menu, X } from 'lucide-react';
 
 export default function LandingHeader({
   lang = 'bn',
@@ -9,6 +9,16 @@ export default function LandingHeader({
   activeTab
 }) {
   const isBn = lang === 'bn';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleNavClick = (section) => {
+    setMobileMenuOpen(false);
+    if (onNavigateSection) {
+      onNavigateSection(section);
+    } else {
+      onLaunchApp(section === 'how-it-works' ? 'scanner' : section);
+    }
+  };
 
   return (
     <header className="landing-header-wrapper" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
@@ -28,7 +38,8 @@ export default function LandingHeader({
           alignItems: 'center',
           justifyContent: 'center',
           gap: '8px',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
+          minHeight: '34px'
         }}
       >
         <span style={{ 
@@ -41,12 +52,10 @@ export default function LandingHeader({
           {isBn ? 'সতর্কতা' : 'NOTICE'}
         </span>
         <span>
-          {isBn 
-            ? 'ডেমো ডেটা — এটি আইনি সিদ্ধান্ত বা স্বত্বাধিকারের প্রমাণ নয়।'
-            : 'DEMO DATA — NOT A LEGAL VERDICT OR OFFICIAL TITLE CERTIFICATION.'}
+          <strong>{isBn ? 'ডেমো ডেটা। এটি আইনি সিদ্ধান্ত নয়।' : 'DEMO DATA, not a legal verdict.'}</strong>
         </span>
         <span style={{ color: '#8BA59E' }}>
-          {isBn ? 'নিয়ম সিদ্ধান্ত নেয়। এআই শুধু ব্যাখ্যা করে।' : 'Rules decide; AI only explains.'}
+          {isBn ? '— নিয়ম সিদ্ধান্ত নেয়। এআই শুধু ব্যাখ্যা করে।' : '— Rules decide; AI only explains.'}
         </span>
       </div>
 
@@ -56,7 +65,7 @@ export default function LandingHeader({
         style={{
           background: 'var(--bg-paper)',
           borderBottom: '1.5px solid var(--text-main)',
-          padding: '12px 0'
+          padding: '10px 0'
         }}
       >
         <div 
@@ -68,17 +77,21 @@ export default function LandingHeader({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px'
+            gap: '12px'
           }}
         >
           {/* Brand Logo & Wordmark */}
           <div 
             className="brand-logo-group"
-            onClick={() => onNavigateSection && onNavigateSection('landing')}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', textDecoration: 'none' }}
+            onClick={() => handleNavClick('landing')}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', textDecoration: 'none' }}
+            role="button"
+            tabIndex="0"
+            onKeyDown={(e) => e.key === 'Enter' && handleNavClick('landing')}
+            aria-label="Bhumi Kobocho Home"
           >
             {/* Custom Shield-and-Plot-Grid Logo SVG */}
-            <svg width="38" height="42" viewBox="0 0 38 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg width="36" height="40" viewBox="0 0 38 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               {/* Outer Shield Contour */}
               <path 
                 d="M19 1L3 7V19C3 29.5 9.8 38.3 19 41C28.2 38.3 35 29.5 35 19V7L19 1Z" 
@@ -100,7 +113,7 @@ export default function LandingHeader({
             <div>
               <div style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: '1.45rem',
+                fontSize: '1.4rem',
                 fontWeight: 800,
                 color: 'var(--text-main)',
                 lineHeight: 1.1,
@@ -110,10 +123,10 @@ export default function LandingHeader({
               </div>
               <div style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: '0.7rem',
+                fontSize: '0.68rem',
                 fontWeight: 600,
                 color: 'var(--text-muted)',
-                letterSpacing: '1.2px',
+                letterSpacing: '1px',
                 textTransform: 'uppercase'
               }}>
                 BHUMI KOBOCHO
@@ -122,93 +135,53 @@ export default function LandingHeader({
           </div>
 
           {/* Navigation Links (Desktop) */}
-          <nav className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <nav className="landing-nav-links desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
             <button
               type="button"
-              onClick={() => onNavigateSection ? onNavigateSection('how-it-works') : onLaunchApp('scanner')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: '2px solid transparent'
-              }}
+              onClick={() => handleNavClick('how-it-works')}
+              className="nav-link-btn"
             >
               {isBn ? 'কীভাবে কাজ করে' : 'How It Works'}
             </button>
 
             <button
               type="button"
-              onClick={() => onLaunchApp('passport')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: '2px solid transparent'
-              }}
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('passport'); }}
+              className="nav-link-btn"
             >
               {isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'}
             </button>
 
             <button
               type="button"
-              onClick={() => onLaunchApp('guardian')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: '2px solid transparent'
-              }}
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('guardian'); }}
+              className="nav-link-btn"
             >
               {isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'}
             </button>
 
             <button
               type="button"
-              onClick={() => onNavigateSection ? onNavigateSection('limitations') : onLaunchApp('passport')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px 0',
-                borderBottom: '2px solid transparent'
-              }}
+              onClick={() => handleNavClick('limitations')}
+              className="nav-link-btn text-muted-link"
             >
               {isBn ? 'সীমা' : 'Scope & Limits'}
             </button>
           </nav>
 
-          {/* Header Actions: Language Switcher & App Launch Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Header Actions: Language Switcher, CTA, & Mobile Hamburger */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* Bangla / English Toggle Button */}
             <button
               type="button"
               onClick={() => setLang(isBn ? 'en' : 'bn')}
               className="lang-toggle-btn"
               style={{
-                height: '38px',
+                height: '42px',
                 padding: '0 12px',
                 borderRadius: 'var(--radius-std)',
                 background: 'var(--bg-card)',
-                border: '1px solid #CAD7CF',
+                border: '1.5px solid var(--line)',
                 color: 'var(--text-main)',
                 fontFamily: 'var(--font-heading)',
                 fontSize: '0.85rem',
@@ -216,37 +189,137 @@ export default function LandingHeader({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minWidth: '44px'
               }}
               title={isBn ? 'Switch to English' : 'বাংলায় দেখুন'}
+              aria-label={isBn ? 'Switch to English' : 'বাংলায় দেখুন'}
             >
-              <Globe size={15} style={{ color: 'var(--primary-accent)' }} />
+              <Globe size={16} style={{ color: 'var(--primary-accent)' }} />
               <span>{isBn ? 'English' : 'বাংলা'}</span>
             </button>
 
-            {/* App Launch CTA Button */}
+            {/* App Launch CTA Button (Desktop) */}
             <button
               type="button"
-              onClick={() => onLaunchApp('scanner')}
-              className="btn-primary"
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('scanner'); }}
+              className="btn-primary desktop-only"
               style={{
-                height: '38px',
+                height: '42px',
                 padding: '0 16px',
                 borderRadius: 'var(--radius-std)',
-                fontSize: '0.88rem',
+                fontSize: '0.9rem',
                 fontWeight: 700,
                 fontFamily: 'var(--font-heading)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                cursor: 'pointer'
               }}
             >
               <span>{isBn ? 'ডেমো দেখুন' : 'View Demo'}</span>
               <ArrowRight size={15} />
             </button>
+
+            {/* Mobile Hamburger Menu Toggle Button */}
+            <button
+              type="button"
+              className="mobile-menu-toggle mobile-only"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                height: '42px',
+                width: '42px',
+                borderRadius: 'var(--radius-std)',
+                background: 'var(--bg-card)',
+                border: '1.5px solid var(--line)',
+                color: 'var(--text-main)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              aria-expanded={mobileMenuOpen}
+              aria-label={isBn ? 'মেনু খুলুন/বন্ধ করুন' : 'Toggle navigation menu'}
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* 3. Mobile Navigation Collapsible Dropdown */}
+      {mobileMenuOpen && (
+        <div 
+          className="mobile-nav-drawer mobile-only"
+          style={{
+            background: 'var(--bg-paper)',
+            borderBottom: '2px solid var(--text-main)',
+            boxShadow: 'var(--shadow-hard)',
+            padding: '16px 20px',
+            animation: 'slideDown 0.2s ease-out'
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => handleNavClick('how-it-works')}
+              className="mobile-nav-link"
+              style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
+            >
+              {isBn ? 'কীভাবে কাজ করে' : 'How It Works'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('passport'); }}
+              className="mobile-nav-link"
+              style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
+            >
+              {isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('guardian'); }}
+              className="mobile-nav-link"
+              style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
+            >
+              {isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleNavClick('limitations')}
+              className="mobile-nav-link"
+              style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-muted)' }}
+            >
+              {isBn ? 'ব্যবহারের সীমা ও শর্তাবলী' : 'Scope & Limitations'}
+            </button>
+
+            {/* Mobile Primary CTA */}
+            <button
+              type="button"
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('scanner'); }}
+              className="btn-primary"
+              style={{
+                height: '46px',
+                width: '100%',
+                marginTop: '6px',
+                borderRadius: 'var(--radius-std)',
+                fontSize: '1rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>{isBn ? 'ডেমো দেখুন' : 'View Demo'}</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

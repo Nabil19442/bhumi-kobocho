@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  FileText, 
+  ScanText, 
   Upload, 
   CheckCircle2, 
   AlertTriangle, 
@@ -14,11 +14,14 @@ import {
   FileCode2,
   Sparkles,
   FileCheck,
-  ScanText
+  FileUp,
+  Info,
+  ShieldCheck
 } from 'lucide-react';
 import { scanDocument } from '../api';
 
-export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedData }) {
+export default function ScannerPage({ t, lang = 'bn', onProceedToCompare, setSharedExtractedData }) {
+  const isBn = lang === 'bn';
   const [selectedSample, setSelectedSample] = useState('001');
   const [isScanning, setIsScanning] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -73,7 +76,7 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
           owner_name: res.extracted_fields.owner_name || '',
           khatian_no: res.extracted_fields.khatian_no || '',
           dag_no: res.extracted_fields.dag_no || '',
-          area_decimal: res.extracted_fields.area_decimal || '',
+          area_decimal: res.extracted_fields.area_decimal !== undefined ? String(res.extracted_fields.area_decimal) : '',
           document_date: res.extracted_fields.document_date || '',
           deed_no: res.extracted_fields.deed_no || '',
         });
@@ -82,8 +85,10 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
         setStatusMessage({
           type: 'success',
           text: fileObj 
-            ? `Successfully extracted fields from ${fileObj.name}` 
-            : `Loaded demo specimen: ${sampleVal === '001' ? 'Plot #1058 (Mirpur)' : sampleVal === '002' ? 'Plot #2490 (Badda)' : 'Low-confidence test'}`
+            ? (isBn ? `সফলভাবে তথ্য শনাক্ত হয়েছে: ${fileObj.name}` : `Successfully extracted fields from ${fileObj.name}`)
+            : (isBn 
+                ? `নমুনা দলিল লোড হয়েছে: ${sampleVal === '001' ? 'দাগ ১০৫৮ (মিরপুর)' : sampleVal === '002' ? 'দাগ ২৪৯০ (বাড্ডা)' : 'কম কনফিডেন্স পরীক্ষা'}`
+                : `Loaded demo specimen: ${sampleVal === '001' ? 'Plot #1058 (Mirpur)' : sampleVal === '002' ? 'Plot #2490 (Badda)' : 'Low-confidence test'}`)
         });
       }
     } catch (err) {
@@ -91,8 +96,8 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
       setStatusMessage({
         type: 'error',
         text: err.isOffline
-          ? 'Backend offline: Please ensure the backend server is running on http://127.0.0.1:8000.'
-          : (err.message || 'Error extracting fields from document.'),
+          ? (isBn ? 'ব্যাকএন্ড অফলাইন: অনুগ্রহ করে ব্যাকএন্ড সার্ভার চালু আছে কি না পরীক্ষা করুন।' : 'Backend offline: Please ensure the backend server is running on http://127.0.0.1:8000.')
+          : (err.message || (isBn ? 'দলিলের তথ্য প্রক্রিয়াকরণে সমস্যা হয়েছে।' : 'Error extracting fields from document.')),
         canRetry: true,
         retryParams: { sampleVal, fileObj }
       });
@@ -147,79 +152,292 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
     onProceedToCompare(formData);
   };
 
-  return (
-    <div className="app-viewport">
-      {/* Page Heading */}
-      <div className="page-header-block">
-        <h2 className="page-title">
-          <ScanText size={28} style={{ color: 'var(--emerald-primary)' }} />
-          {t.scan_heading}
-        </h2>
-        <p className="page-subtitle">{t.scan_subheading}</p>
-      </div>
+  // Helper to render field review status tags
+  const renderFieldBadge = (fieldKey, val) => {
+    const conf = confidence[fieldKey];
+    const isMissing = !val || String(val).trim() === '';
 
-      {/* Step 5: Dual Upload Cards (Option A & Option B) */}
-      <div className="grid-cols-2" style={{ marginBottom: '24px' }}>
-        {/* Option A: Try Demo Document */}
-        <div className="upload-option-card">
-          <div className="upload-option-top">
-            <span className="upload-option-badge demo">
-              <FileCheck size={13} />
-              {t.option_a_label}
-            </span>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '4px' }}>
-              {t.option_a_title}
-            </h3>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-              {t.option_a_desc}
+    if (isMissing) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          background: 'var(--status-mismatch-bg)',
+          color: 'var(--status-mismatch-text)',
+          border: '1px solid var(--status-mismatch-border)',
+          fontSize: '0.74rem',
+          fontWeight: 700,
+          fontFamily: 'var(--font-mono)'
+        }}>
+          <AlertTriangle size={12} />
+          <span>{isBn ? 'তথ্য পাওয়া যায়নি' : 'Missing'}</span>
+        </span>
+      );
+    }
+
+    if (conf !== undefined && conf < 0.75) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          background: 'var(--status-review-bg)',
+          color: 'var(--status-review-text)',
+          border: '1px solid var(--status-review-border)',
+          fontSize: '0.74rem',
+          fontWeight: 700,
+          fontFamily: 'var(--font-mono)'
+        }}>
+          <AlertTriangle size={12} />
+          <span>{isBn ? 'যাচাই দরকার' : 'Needs review'}</span>
+        </span>
+      );
+    }
+
+    if (conf !== undefined) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          background: 'var(--status-matched-bg)',
+          color: 'var(--status-matched-text)',
+          border: '1px solid var(--status-matched-border)',
+          fontSize: '0.74rem',
+          fontWeight: 700,
+          fontFamily: 'var(--font-mono)'
+        }}>
+          <CheckCircle2 size={12} />
+          <span>{Math.round(conf * 100)}% {isBn ? 'কনফিডেন্স' : 'Conf'}</span>
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="app-viewport" style={{ maxWidth: 'var(--max-content-width)', margin: '0 auto', padding: '32px var(--gutter-desktop)' }}>
+      {/* Page Header */}
+      <div className="page-header-block" style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <div style={{
+            background: 'var(--accent-tint)',
+            color: 'var(--primary-accent)',
+            padding: '8px',
+            borderRadius: 'var(--radius-std)',
+            display: 'flex'
+          }}>
+            <ScanText size={24} />
+          </div>
+          <div>
+            <h1 style={{
+              fontSize: 'clamp(1.6rem, 2.8vw, 2.2rem)',
+              fontWeight: 800,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              margin: 0,
+              lineHeight: 1.2
+            }}>
+              {isBn ? 'দলিল স্ক্যানার ও তথ্য পর্যালোচনা' : 'Deed Scanner & Information Review'}
+            </h1>
+            <p style={{
+              fontSize: '0.98rem',
+              color: 'var(--text-body)',
+              fontFamily: 'var(--font-body)',
+              margin: '4px 0 0'
+            }}>
+              {isBn 
+                ? 'দলিল আপলোড করুন বা সংরক্ষিত ডেমো নমুনা নির্বাচন করে তথ্য পর্যালোচনা ও সংশোধন করুন।' 
+                : 'Upload your deed document or pick a synthetic specimen to extract, review, and edit field values.'}
             </p>
           </div>
+        </div>
+      </div>
 
+      {/* Dual Upload Options Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '24px',
+        marginBottom: '28px'
+      }}>
+        {/* Option A: Try Demo Document */}
+        <div style={{
+          background: 'var(--white)',
+          borderRadius: 'var(--radius-std)',
+          border: '1px solid #CAD7CF',
+          boxShadow: 'var(--shadow-hard-sm)',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
           <div>
-            <div className="form-field" style={{ marginBottom: '16px' }}>
-              <select
-                id="sample-document-select"
-                className="field-select"
-                value={selectedSample}
-                onChange={(e) => setSelectedSample(e.target.value)}
-                aria-label="Select Demo Document Specimen"
-              >
-                <option value="001">Specimen 01: Md. Rafiqul Islam — Dag 1058, Khatian 412 (15.5 dec)</option>
-                <option value="002">Specimen 02: Sultana Jahan — Dag 2490, Khatian 835 (8.25 dec)</option>
-                <option value="custom">Specimen 03: Degraded Text / Binary Specimen (Simulate OCR failure)</option>
-              </select>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '3px 10px',
+                borderRadius: 'var(--radius-std)',
+                background: 'var(--accent-tint)',
+                color: 'var(--primary-accent)',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <FileCheck size={13} />
+                <span>{isBn ? 'বিকল্প ১: ডেমো নমুনা' : 'OPTION 1: DEMO SPECIMEN'}</span>
+              </span>
             </div>
 
-            <button
-              id="load-demo-btn"
-              type="button"
-              className="btn-secondary"
-              style={{ width: '100%' }}
-              onClick={handleLoadDemo}
-              disabled={isScanning}
-            >
-              <RefreshCw size={15} className={isScanning ? 'spin' : ''} />
-              <span>{t.option_a_btn}</span>
-            </button>
+            <h3 style={{
+              fontSize: '1.14rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              marginBottom: '6px'
+            }}>
+              {isBn ? 'ডেমো নমুনা দলিল ব্যবহার করুন' : 'Try Demo Specimen'}
+            </h3>
+
+            <p style={{
+              fontSize: '0.88rem',
+              color: 'var(--text-body)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.5,
+              marginBottom: '16px'
+            }}>
+              {isBn 
+                ? 'সিস্টেমের কার্যকারিতা যাচাই করতে প্রস্তুতকৃত কৃত্রিম নমুনা নির্বাচন করুন।'
+                : 'Select pre-loaded synthetic specimen records to inspect the extraction and audit workflow.'}
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label htmlFor="sample-document-select" style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--muted)',
+                marginBottom: '6px',
+                fontWeight: 600
+              }}>
+                {isBn ? 'নমুনা দলিল নির্বাচন:' : 'Select Specimen:'}
+              </label>
+              <select
+                id="sample-document-select"
+                value={selectedSample}
+                onChange={(e) => setSelectedSample(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-std)',
+                  border: '1.5px solid #CAD7CF',
+                  background: 'var(--paper)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.94rem',
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="001">নমুনা ০১: মোঃ রফিকুল ইসলাম — দাগ ১০৫৮, খতিয়ান ৪১২ (১৫.৫ শতক)</option>
+                <option value="002">নমুনা ০২: সুলতানা জাহান — দাগ ২৪৯০, খতিয়ান ৮৩৫ (৮.২৫ শতক)</option>
+                <option value="custom">নমুনা ০৩: ঝাপসা বা কম স্পষ্ট দলিল (লো-কনফিডেন্স টেস্ট)</option>
+              </select>
+            </div>
           </div>
+
+          <button
+            id="load-demo-btn"
+            type="button"
+            onClick={handleLoadDemo}
+            disabled={isScanning}
+            className="btn-secondary"
+            style={{
+              width: '100%',
+              height: '46px',
+              fontSize: '0.94rem',
+              fontWeight: 700,
+              fontFamily: 'var(--font-heading)',
+              borderRadius: 'var(--radius-std)',
+              border: '1.5px solid var(--text-main)',
+              background: '#FFFFFF',
+              color: 'var(--text-main)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              minHeight: '44px'
+            }}
+          >
+            <RefreshCw size={16} className={isScanning ? 'spin' : ''} />
+            <span>{isBn ? 'নমুনা দলিল লোড করুন' : 'Load Demo Document'}</span>
+          </button>
         </div>
 
         {/* Option B: Upload Your Document */}
-        <div className="upload-option-card">
-          <div className="upload-option-top">
-            <span className="upload-option-badge custom">
-              <Upload size={13} />
-              CUSTOM DEED
-            </span>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '4px' }}>
-              {t.option_b_title}
-            </h3>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-              {t.option_b_desc}
-            </p>
-          </div>
-
+        <div style={{
+          background: 'var(--white)',
+          borderRadius: 'var(--radius-std)',
+          border: '1px solid #CAD7CF',
+          boxShadow: 'var(--shadow-hard-sm)',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
           <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '3px 10px',
+                borderRadius: 'var(--radius-std)',
+                background: '#F1F5F0',
+                color: 'var(--text-main)',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)'
+              }}>
+                <Upload size={13} />
+                <span>{isBn ? 'বিকল্প ২: নিজের দলিল' : 'OPTION 2: UPLOAD'}</span>
+              </span>
+            </div>
+
+            <h3 style={{
+              fontSize: '1.14rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              marginBottom: '6px'
+            }}>
+              {isBn ? 'দলিল ফাইল আপলোড করুন' : 'Upload Land Document'}
+            </h3>
+
+            <p style={{
+              fontSize: '0.88rem',
+              color: 'var(--text-body)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.5,
+              marginBottom: '16px'
+            }}>
+              {isBn 
+                ? 'কম্পিউটার বা ফোন থেকে পরচা, সাফ-কবলা দলিল বা সার্ভে নকশার ফাইল আপলোড করুন।'
+                : 'Upload digital deed, porcha, or survey image/PDF to extract fields with optical confidence scores.'}
+            </p>
+
+            {/* Drag & Drop Dropzone */}
             <div
               className={`drag-drop-zone ${dragActive ? 'active' : ''}`}
               onDragEnter={handleDrag}
@@ -230,7 +448,15 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
               role="button"
               tabIndex="0"
               onKeyDown={(e) => e.key === 'Enter' && document.getElementById('deed-file-input').click()}
-              aria-label="Upload document dropzone"
+              style={{
+                border: dragActive ? '2px dashed var(--primary-accent)' : '1.5px dashed #9AAFAA',
+                borderRadius: 'var(--radius-std)',
+                padding: '20px 16px',
+                textAlign: 'center',
+                background: dragActive ? 'var(--accent-tint)' : '#F8FAF8',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
             >
               <input
                 id="deed-file-input"
@@ -239,20 +465,37 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
                 onChange={handleFileUpload}
                 style={{ display: 'none' }}
               />
-              <Upload className="drag-drop-icon" />
-              <div className="drag-drop-text">
+              <FileUp size={28} style={{ color: 'var(--primary-accent)', margin: '0 auto 8px' }} />
+              <div style={{ fontSize: '0.92rem', color: 'var(--text-main)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
                 {uploadedFile ? (
-                  <strong style={{ color: 'var(--cyan-secondary)' }}>{uploadedFile.name}</strong>
+                  <strong style={{ color: 'var(--primary-accent)' }}>{uploadedFile.name}</strong>
                 ) : (
-                  <span>{t.dropzone_prompt} <span style={{ color: 'var(--cyan-secondary)', textDecoration: 'underline' }}>{t.browse_files}</span></span>
+                  <span>
+                    {isBn ? 'ফাইলটি এখানে টেনে আনুন, অথবা ' : 'Drag and drop file here, or '}
+                    <span style={{ color: 'var(--primary-accent)', textDecoration: 'underline' }}>
+                      {isBn ? 'ফাইল খুঁজুন' : 'browse'}
+                    </span>
+                  </span>
                 )}
               </div>
-              <div className="drag-drop-formats">{t.supported_formats}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+                {isBn ? 'PNG, JPG, PDF বা TXT সমর্থিত (সর্বোচ্চ ১০ মেগাবাইট)' : 'PNG, JPG, PDF, or TXT (Max 10MB)'}
+              </div>
             </div>
 
             {uploadedFile && (
-              <div style={{ marginTop: '8px', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t.file_selected}: {uploadedFile.name}</span>
+              <div style={{
+                marginTop: '10px',
+                padding: '6px 12px',
+                background: 'var(--accent-tint)',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                color: 'var(--primary-accent)',
+                fontFamily: 'var(--font-mono)',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span>{uploadedFile.name}</span>
                 <span>{(uploadedFile.size / 1024).toFixed(1)} KB</span>
               </div>
             )}
@@ -260,225 +503,364 @@ export default function ScannerPage({ t, onProceedToCompare, setSharedExtractedD
         </div>
       </div>
 
-      {/* Progress & Scanning Feedback */}
+      {/* Progress & Feedback Notice */}
       {isScanning && (
-        <div className="saas-card" style={{ textAlign: 'center', padding: '24px', borderColor: 'var(--cyan-border)' }}>
-          <RefreshCw size={24} className="spin" style={{ color: 'var(--cyan-secondary)', margin: '0 auto 8px' }} />
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600 }}>{t.scanning_progress}</p>
+        <div style={{
+          background: 'var(--white)',
+          border: '1px solid #CAD7CF',
+          borderRadius: 'var(--radius-std)',
+          padding: '20px',
+          textAlign: 'center',
+          boxShadow: 'var(--shadow-hard-sm)',
+          marginBottom: '24px'
+        }}>
+          <RefreshCw size={24} className="spin" style={{ color: 'var(--primary-accent)', margin: '0 auto 8px' }} />
+          <p style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            {isBn ? 'দলিলের তথ্য বিশ্লেষণ ও কনফিডেন্স মূল্যায়ন চলছে...' : 'Extracting candidate entities & computing optical confidence...'}
+          </p>
         </div>
       )}
 
       {statusMessage && !isScanning && (
         <div style={{
-          marginBottom: '20px',
-          padding: '10px 16px',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.85rem',
-          fontWeight: 500,
-          background: statusMessage.type === 'success' ? 'var(--emerald-subtle)' : 'var(--rose-subtle)',
-          color: statusMessage.type === 'success' ? 'var(--emerald-light)' : '#FB7185',
-          border: `1px solid ${statusMessage.type === 'success' ? 'var(--emerald-border)' : 'var(--rose-border)'}`,
+          marginBottom: '24px',
+          padding: '12px 18px',
+          borderRadius: 'var(--radius-std)',
+          fontSize: '0.88rem',
+          fontWeight: 600,
+          background: statusMessage.type === 'success' ? 'var(--status-matched-bg)' : 'var(--status-mismatch-bg)',
+          color: statusMessage.type === 'success' ? 'var(--status-matched-text)' : 'var(--status-mismatch-text)',
+          border: `1.5px solid ${statusMessage.type === 'success' ? 'var(--status-matched-border)' : 'var(--status-mismatch-border)'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '8px'
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {statusMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+            {statusMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
             <span>{statusMessage.text}</span>
           </div>
+
           {statusMessage.type === 'error' && statusMessage.canRetry && (
             <button
               type="button"
               onClick={() => triggerScan(statusMessage.retryParams?.sampleVal, statusMessage.retryParams?.fileObj)}
-              className="btn-secondary"
               style={{
-                height: '30px',
-                padding: '0 10px',
-                fontSize: '0.78rem',
-                borderColor: 'var(--line)',
-                color: 'var(--crimson-text, #C0392B)',
-                background: '#FEF4F0',
+                height: '32px',
+                padding: '0 12px',
+                fontSize: '0.8rem',
+                border: '1px solid #9A2C14',
+                color: '#9A2C14',
+                background: '#FFFFFF',
+                borderRadius: 'var(--radius-std)',
+                cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer'
+                gap: '6px'
               }}
             >
-              <RefreshCw size={12} />
-              <span>Retry</span>
+              <RefreshCw size={13} />
+              <span>{isBn ? 'পুনরায় চেষ্টা করুন' : 'Retry'}</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Step 6: Extracted Field Review Grid */}
-      <div className="saas-card">
-        <div className="saas-card-header">
+      {/* Field Review Card (Hard Shadow) */}
+      <div style={{
+        background: 'var(--white)',
+        borderRadius: 'var(--radius-std)',
+        border: '1.5px solid var(--text-main)',
+        boxShadow: 'var(--shadow-hard)',
+        overflow: 'hidden'
+      }}>
+        {/* Card Header */}
+        <div style={{
+          padding: '18px 24px',
+          borderBottom: '1px solid #CAD7CF',
+          background: '#FAFBF9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
           <div>
-            <h3 className="saas-card-title">
-              <Sparkles size={18} style={{ color: 'var(--emerald-primary)' }} />
-              {t.review_heading}
+            <h3 style={{
+              fontSize: '1.24rem',
+              fontWeight: 800,
+              color: 'var(--text-main)',
+              fontFamily: 'var(--font-heading)',
+              margin: '0 0 4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Sparkles size={18} color="var(--primary-accent)" />
+              <span>{isBn ? 'শনাক্তকৃত তথ্যের নির্ভুলতা পর্যালোচনা ও সম্পাদনা' : 'Extracted Field Review & Verification'}</span>
             </h3>
-            <p className="saas-card-desc">{t.review_subheading}</p>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', fontFamily: 'var(--font-body)', margin: 0 }}>
+              {isBn 
+                ? 'দলিল থেকে পঠিত তথ্যগুলো মিলিয়ে দেখুন। কোনো তথ্যে ভুল বা অমিল থাকলে নিজেই এডিট করুন।'
+                : 'Review detected entity fields. Inaccurate or low-confidence values can be manually corrected.'}
+            </p>
           </div>
-          <span className="status-pill not-checked">OCR CONFIDENCE ENGINE</span>
+
+          <span style={{
+            fontSize: '0.74rem',
+            fontFamily: 'var(--font-mono)',
+            padding: '3px 8px',
+            background: 'var(--ground)',
+            border: '1px solid #CBD8D2',
+            borderRadius: '4px',
+            color: 'var(--muted)',
+            fontWeight: 700
+          }}>
+            {isBn ? 'মানবসংশোধন প্রস্তুত' : 'EDITABLE FIELDS'}
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '20px',
+            marginBottom: '28px'
+          }}>
             {/* 1. Owner Name */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-owner-name">{t.field_owner}</label>
-                {confidence.owner_name !== undefined && (
-                  <span className={`status-pill ${confidence.owner_name < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.owner_name < 0.75 ? t.status_needs_review : `${Math.round(confidence.owner_name * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-owner-name" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'মালিকের নাম (Owner Name)' : 'Owner Name'}
+                </label>
+                {renderFieldBadge('owner_name', formData.owner_name)}
               </div>
-              <div className="field-input-box">
-                <User size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-owner-name"
                   type="text"
-                  className="field-input"
                   value={formData.owner_name}
                   onChange={(e) => handleInputChange('owner_name', e.target.value)}
-                  placeholder="e.g. Md. Rafiqul Islam"
+                  placeholder={isBn ? 'যেমন: মোঃ রফিকুল ইসলাম' : 'e.g. Md. Rafiqul Islam'}
                   required
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-body)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
 
             {/* 2. Khatian Number */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-khatian-no">{t.field_khatian}</label>
-                {confidence.khatian_no !== undefined && (
-                  <span className={`status-pill ${confidence.khatian_no < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.khatian_no < 0.75 ? t.status_needs_review : `${Math.round(confidence.khatian_no * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-khatian-no" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'খতিয়ান নম্বর (Khatian No)' : 'Khatian Number'}
+                </label>
+                {renderFieldBadge('khatian_no', formData.khatian_no)}
               </div>
-              <div className="field-input-box">
-                <Hash size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <Hash size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-khatian-no"
                   type="text"
-                  className="field-input"
                   value={formData.khatian_no}
                   onChange={(e) => handleInputChange('khatian_no', e.target.value)}
-                  placeholder="e.g. 412"
+                  placeholder={isBn ? 'যেমন: ৪১২' : 'e.g. 412'}
                   required
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-mono)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
 
             {/* 3. Dag Number */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-dag-no">{t.field_dag}</label>
-                {confidence.dag_no !== undefined && (
-                  <span className={`status-pill ${confidence.dag_no < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.dag_no < 0.75 ? t.status_needs_review : `${Math.round(confidence.dag_no * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-dag-no" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'দাগ নম্বর (Dag No)' : 'Dag Number'}
+                </label>
+                {renderFieldBadge('dag_no', formData.dag_no)}
               </div>
-              <div className="field-input-box">
-                <MapPin size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <MapPin size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-dag-no"
                   type="text"
-                  className="field-input"
                   value={formData.dag_no}
                   onChange={(e) => handleInputChange('dag_no', e.target.value)}
-                  placeholder="e.g. 1058"
+                  placeholder={isBn ? 'যেমন: ১০৫৮' : 'e.g. 1058'}
                   required
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-mono)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
 
-            {/* 4. Land Area */}
+            {/* 4. Land Area (Decimal) */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-area-decimal">{t.field_area}</label>
-                {confidence.area_decimal !== undefined && (
-                  <span className={`status-pill ${confidence.area_decimal < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.area_decimal < 0.75 ? t.status_needs_review : `${Math.round(confidence.area_decimal * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-area-decimal" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'জমির পরিমাণ (শতক/শতাংশ)' : 'Land Area (Decimal)'}
+                </label>
+                {renderFieldBadge('area_decimal', formData.area_decimal)}
               </div>
-              <div className="field-input-box">
-                <Maximize2 size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <Maximize2 size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-area-decimal"
                   type="text"
-                  className="field-input"
                   value={formData.area_decimal}
                   onChange={(e) => handleInputChange('area_decimal', e.target.value)}
-                  placeholder="e.g. 15.5"
+                  placeholder={isBn ? 'যেমন: ১৫.৫০' : 'e.g. 15.50'}
                   required
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-mono)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
 
             {/* 5. Document Date */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-document-date">{t.field_date}</label>
-                {confidence.document_date !== undefined && (
-                  <span className={`status-pill ${confidence.document_date < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.document_date < 0.75 ? t.status_needs_review : `${Math.round(confidence.document_date * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-document-date" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'দলিলের তারিখ (Document Date)' : 'Document Date'}
+                </label>
+                {renderFieldBadge('document_date', formData.document_date)}
               </div>
-              <div className="field-input-box">
-                <Calendar size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <Calendar size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-document-date"
                   type="text"
-                  className="field-input"
                   value={formData.document_date}
                   onChange={(e) => handleInputChange('document_date', e.target.value)}
                   placeholder="YYYY-MM-DD"
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-mono)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
 
             {/* 6. Deed Number */}
             <div className="form-field">
-              <div className="field-label-row">
-                <label htmlFor="field-deed-no">{t.field_deed_no}</label>
-                {confidence.deed_no !== undefined && (
-                  <span className={`status-pill ${confidence.deed_no < 0.75 ? 'needs-review' : 'matched'}`}>
-                    {confidence.deed_no < 0.75 ? t.status_needs_review : `${Math.round(confidence.deed_no * 100)}% Conf`}
-                  </span>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label htmlFor="field-deed-no" style={{ fontSize: '0.92rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-main)' }}>
+                  {isBn ? 'দলিল নম্বর (Deed No)' : 'Deed Number'}
+                </label>
+                {renderFieldBadge('deed_no', formData.deed_no)}
               </div>
-              <div className="field-input-box">
-                <FileCode2 size={16} className="field-input-icon" />
+              <div style={{ position: 'relative' }}>
+                <FileCode2 size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--muted)' }} />
                 <input
                   id="field-deed-no"
                   type="text"
-                  className="field-input"
                   value={formData.deed_no}
                   onChange={(e) => handleInputChange('deed_no', e.target.value)}
-                  placeholder="e.g. 1482/2021"
+                  placeholder={isBn ? 'যেমন: ১৪৮২/২০২১' : 'e.g. 1482/2021'}
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    padding: '0 12px 0 38px',
+                    borderRadius: 'var(--radius-std)',
+                    border: '1.5px solid #CAD7CF',
+                    background: '#FFFFFF',
+                    color: 'var(--text-main)',
+                    fontSize: '16px',
+                    fontFamily: 'var(--font-mono)',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+          {/* Form Action Row: "তথ্য মিলিয়ে দেখুন" */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            paddingTop: '20px',
+            borderTop: '1px solid #CAD7CF'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: 'var(--muted)' }}>
+              <Info size={16} />
+              <span>{isBn ? 'আপনার সম্পাদিত মান পরবর্তী তুলনা ধাপে কার্যকর হবে।' : 'Manual edits will be used in subsequent comparison.'}</span>
+            </div>
+
             <button
               id="proceed-to-compare-btn"
               type="submit"
               className="btn-primary"
+              style={{
+                height: '48px',
+                padding: '0 28px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-heading)',
+                borderRadius: 'var(--radius-std)',
+                boxShadow: 'var(--shadow-hard-sm)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                minHeight: '44px'
+              }}
             >
-              <span>{t.btn_confirm_compare}</span>
-              <ArrowRight size={17} />
+              <span>{isBn ? 'তথ্য মিলিয়ে দেখুন →' : 'Compare Records →'}</span>
+              <ArrowRight size={18} />
             </button>
           </div>
         </form>
