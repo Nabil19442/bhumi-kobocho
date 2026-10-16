@@ -157,24 +157,27 @@ def extract_fields_from_text(
         "raw_text": text
     }
 
-    confidences: Dict[str, float] = {}
+    confidences: Dict[str, Optional[float]] = {}
 
     # 1. Deed No
     deed_match = re.search(r"(?:দলিল\s*নম্বর|দলিল\s*নং|Deed\s*No)[^\d০-৯:]*[:\s]+([\d০-৯\w/]+)", text, re.IGNORECASE)
     if deed_match:
         fields["deed_no"] = deed_match.group(1).strip()
-        confidences["deed_no"] = base_confidence if base_confidence is not None else 0.90
+        if base_confidence is not None:
+            confidences["deed_no"] = base_confidence
     else:
         num_slash_year = re.search(r"\b(\d{3,5}/\d{4})\b", text)
         if num_slash_year:
             fields["deed_no"] = num_slash_year.group(1)
-            confidences["deed_no"] = base_confidence if base_confidence is not None else 0.70
+            if base_confidence is not None:
+                confidences["deed_no"] = base_confidence
 
     # 2. Date
     date_match = re.search(r"(?:তারিখ|Date)[^\d০-৯:]*[:\s]+(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})", text, re.IGNORECASE)
     if date_match:
         fields["document_date"] = date_match.group(1).strip()
-        confidences["document_date"] = base_confidence if base_confidence is not None else 0.88
+        if base_confidence is not None:
+            confidences["document_date"] = base_confidence
 
     # 3. Owner Name
     name_match = re.search(r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|মালিক|গ্রহীতা|দাতার\s*নাম|Owner\s*Name)\s*[:：\-—]\s*([^\n\r,]+)", text, re.IGNORECASE)
@@ -182,39 +185,44 @@ def extract_fields_from_text(
         owner_candidate = name_match.group(1).strip()
         owner_candidate = re.sub(r"^(?:মালিকের\s*নাম|মালিক|গ্রহীতা)\s*[:：\-—]\s*", "", owner_candidate).strip()
         fields["owner_name"] = owner_candidate
-        confidences["owner_name"] = base_confidence if base_confidence is not None else 0.85
+        if base_confidence is not None:
+            confidences["owner_name"] = base_confidence
     else:
         for line in text.splitlines():
             clean_line = line.strip()
             if any(p in clean_line for p in ["মোঃ", "মোহাম্মদ", "Md.", "Mohammad", "সুলতানা", "Sultana", "আব্দুল", "Abdul"]):
                 fields["owner_name"] = clean_line
-                confidences["owner_name"] = base_confidence if base_confidence is not None else 0.60
+                if base_confidence is not None:
+                    confidences["owner_name"] = base_confidence
                 break
 
     # 4. Khatian No
     khatian_match = re.search(r"(?:খতিয়ান\s*নম্বর|খতিয়ান\s*নং|খতিয়ান|Khatian\s*No)[^\d০-৯:]*[:\s]*([\d০-৯/]+)", text, re.IGNORECASE)
     if khatian_match:
         fields["khatian_no"] = khatian_match.group(1).strip()
-        confidences["khatian_no"] = base_confidence if base_confidence is not None else 0.92
+        if base_confidence is not None:
+            confidences["khatian_no"] = base_confidence
 
     # 5. Dag No
     dag_match = re.search(r"(?:দাগ\s*নম্বর|দাগ\s*নং|দাগ|Dag\s*No)[^\d০-৯:]*[:\s]*([\d০-৯/]+)", text, re.IGNORECASE)
     if dag_match:
         fields["dag_no"] = dag_match.group(1).strip()
-        confidences["dag_no"] = base_confidence if base_confidence is not None else 0.91
+        if base_confidence is not None:
+            confidences["dag_no"] = base_confidence
 
     # 6. Area
     area_match = re.search(r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|পরিমাণ|Area)[^\d০-৯:]*[:\s]*([\d০-৯\.]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho)?)", text, re.IGNORECASE)
     if area_match:
         fields["area_decimal"] = area_match.group(1).strip()
-        confidences["area_decimal"] = base_confidence if base_confidence is not None else 0.86
+        if base_confidence is not None:
+            confidences["area_decimal"] = base_confidence
 
-    # Convert confidences into Needs review flags if < 0.75
+    # Assign field status without fabricating unsupplied confidence numbers
     field_status = {}
     for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]:
         if fields[k] is None:
             field_status[k] = "Not checked"
-        elif confidences.get(k, 0.0) < 0.75:
+        elif confidences.get(k) is not None and confidences[k] < 0.75:
             field_status[k] = "Needs review"
         else:
             field_status[k] = "Candidate extracted"
@@ -298,14 +306,7 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
             "deed_no": target_record.get("deed_no"),
             "raw_text": f"DEMO SPECIMEN: {target_record.get('id')}\nমালিক: {target_record.get('owner_name_bn')}\nখতিয়ান: {target_record.get('khatian_no')}\nদাগ: {target_record.get('dag_no')}\nজমির পরিমাণ: {target_record.get('area_decimal')} শতাংশ"
         },
-        "confidence_scores": {
-            "owner_name": 0.95,
-            "khatian_no": 0.96,
-            "dag_no": 0.95,
-            "area_decimal": 0.92,
-            "document_date": 0.91,
-            "deed_no": 0.97
-        },
+        "confidence_scores": {},
         "ocr_field_status": {
             "owner_name": "Candidate extracted",
             "khatian_no": "Candidate extracted",

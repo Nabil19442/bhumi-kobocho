@@ -33,14 +33,16 @@ def test_known_demo_specimen_loading():
     assert res["extracted_fields"]["dag_no"] == "1058"
     assert res["extracted_fields"]["owner_name"] == "মোঃ রফিকুল ইসলাম"
     assert len(res["uploaded_file_sha256"]) == 64
+    # No fabricated confidence scores
+    assert res["confidence_scores"] == {}
 
 def test_arbitrary_upload_no_filename_inference():
     """
     Validates that general upload path NEVER infers demo record based on filename.
     Even if named 'deed_sample_001.png', if Tesseract is unavailable, it reports engine_unavailable.
     """
-    dummy_png_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
-    res = scan_uploaded_document(dummy_png_bytes, filename="deed_sample_001.png")
+    valid_png_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+    res = scan_uploaded_document(valid_png_bytes, filename="deed_sample_001.png")
     
     is_avail, _, _ = is_tesseract_available()
     if not is_avail:
@@ -72,6 +74,8 @@ def test_txt_extraction_deterministic():
     assert fields["khatian_no"] == "৪১২"
     assert fields["dag_no"] == "১০৫৮"
     assert "১৫.৫" in fields["area_decimal"]
+    # No fabricated confidence numbers for text extraction
+    assert res["confidence_scores"] == {}
 
 def test_no_fabricated_ocr_confidence():
     """Ensures confidence scores are never fabricated when engine is unavailable."""
@@ -125,6 +129,24 @@ def test_api_scan_unsupported_file_type():
     assert res.status_code == 400
     assert "unsupported" in res.json()["detail"].lower()
 
+def test_api_scan_content_signature_mismatch():
+    """Validates that disguised files (e.g. invalid signature) are rejected with HTTP 400."""
+    # File named .png but containing invalid bytes
+    res = client.post(
+        "/api/scan",
+        files={"file": ("fake.png", b"NOT_A_PNG_HEADER", "image/png")}
+    )
+    assert res.status_code == 400
+    assert "signature" in res.json()["detail"].lower()
+
+    # File named .pdf but containing invalid bytes
+    res_pdf = client.post(
+        "/api/scan",
+        files={"file": ("fake.pdf", b"NOT_A_PDF_HEADER", "application/pdf")}
+    )
+    assert res_pdf.status_code == 400
+    assert "signature" in res_pdf.json()["detail"].lower()
+
 def test_api_scan_neither_file_nor_sample():
     """Validates that missing both file and sample_id returns HTTP 400."""
     res = client.post("/api/scan", data={})
@@ -152,7 +174,7 @@ def test_api_integrity_invalid_sha256():
     res1 = client.post(
         "/api/integrity/check",
         data={"expected_hash": "abc123"},
-        files={"file": ("test.png", b"test", "image/png")}
+        files={"file": ("test.png", b"\x89PNG\r\n\x1a\n", "image/png")}
     )
     assert res1.status_code == 400
     assert "sha-256" in res1.json()["detail"].lower()
@@ -161,7 +183,7 @@ def test_api_integrity_invalid_sha256():
     res2 = client.post(
         "/api/integrity/check",
         data={"expected_hash": "g" * 64},
-        files={"file": ("test.png", b"test", "image/png")}
+        files={"file": ("test.png", b"\x89PNG\r\n\x1a\n", "image/png")}
     )
     assert res2.status_code == 400
 
@@ -174,3 +196,23 @@ def test_api_integrity_empty_upload():
     )
     assert res.status_code == 400
     assert "empty" in res.json()["detail"].lower()
+
+def test_api_integrity_content_validation():
+    """Validates content signature and oversize checks on integrity endpoint."""
+    # Oversized file
+    res_oversized = client.post(
+        "/api/integrity/check",
+        data={"expected_hash": "a" * 64},
+        files={"file": ("big.png", b"x" * (10 * 1024 * 1024 + 1), "image/png")}
+    )
+    assert res_oversized.status_code == 400
+    assert "exceeds" in res_oversized.json()["detail"].lower()
+
+    # Unsupported extension
+    res_unsupported = client.post(
+        "/api/integrity/check",
+        data={"expected_hash": "a" * 64},
+        files={"file": ("payload.exe", b"MZ\x00", "application/octet-stream")}
+    )
+    assert res_unsupported.status_code == 400
+    assert "unsupported" in res_unsupported.json()["detail"].lower()

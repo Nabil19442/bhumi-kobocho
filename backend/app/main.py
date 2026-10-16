@@ -75,6 +75,55 @@ def get_record(record_id: str):
         raise HTTPException(status_code=404, detail="Demo record not found")
     return rec
 
+def validate_file_content(file_bytes: bytes, filename: str) -> None:
+    """
+    Validates uploaded file size, supported extension, and content signatures (magic bytes).
+    Rejects empty files, files > 10MB, unsupported extensions, and content signature mismatches.
+    """
+    if len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is empty (0 bytes)."
+        )
+    if len(file_bytes) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds maximum allowed limit of 10 MB."
+        )
+
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format '{ext}'. Supported formats: .png, .jpg, .jpeg, .pdf, .txt."
+        )
+
+    # Validate actual file content signatures (do not trust extension alone)
+    if ext == ".png":
+        if not file_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match a valid PNG image signature."
+            )
+    elif ext in [".jpg", ".jpeg"]:
+        if not file_bytes.startswith(b"\xff\xd8\xff"):
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match a valid JPEG image signature."
+            )
+    elif ext == ".pdf":
+        if not file_bytes.startswith(b"%PDF-"):
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match a valid PDF document signature."
+            )
+    elif ext == ".txt":
+        if b"\x00" in file_bytes[:4096]:
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match a valid plain text document."
+            )
+
 @app.post("/api/scan")
 async def scan_document(
     file: Optional[UploadFile] = File(None),
@@ -84,7 +133,7 @@ async def scan_document(
     Scans uploaded document or loads demo specimen.
     - Explicitly distinguishes known demo specimens from arbitrary user-uploaded files.
     - Known specimens are loaded from their actual files under backend/data/samples/.
-    - Arbitrary uploads are validated (non-empty, <=10MB, supported format).
+    - Arbitrary uploads are validated (non-empty, <=10MB, supported format, content signatures).
     - General upload path never relies on filename-based inference.
     """
     # 1. Explicitly selected demo specimen
@@ -94,25 +143,8 @@ async def scan_document(
     # 2. Uploaded user file
     if file is not None:
         filename = file.filename or ""
-        ext = os.path.splitext(filename)[1].lower()
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file format '{ext}'. Supported formats: .png, .jpg, .jpeg, .pdf, .txt."
-            )
-
         file_bytes = await file.read()
-        if len(file_bytes) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Uploaded file is empty (0 bytes)."
-            )
-        if len(file_bytes) > MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail="File size exceeds maximum allowed limit of 10 MB."
-            )
-
+        validate_file_content(file_bytes, filename)
         return scan_uploaded_document(file_bytes, filename=filename)
 
     # 3. Neither provided
@@ -238,27 +270,10 @@ async def check_integrity(
             detail="Invalid SHA-256 hash format. Expected exactly 64 hexadecimal characters."
         )
 
-    # 2. Validate file format if extension is present
+    # 2. Read and validate byte contents and signature
     filename = file.filename or ""
-    ext = os.path.splitext(filename)[1].lower()
-    if ext and ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file format '{ext}'. Supported formats: .png, .jpg, .jpeg, .pdf, .txt."
-        )
-
-    # 3. Read and validate byte contents
     contents = await file.read()
-    if len(contents) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Uploaded file is empty (0 bytes)."
-        )
-    if len(contents) > MAX_UPLOAD_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail="File size exceeds maximum allowed limit of 10 MB."
-        )
+    validate_file_content(contents, filename)
 
     return check_file_integrity(contents, clean_hash)
 
