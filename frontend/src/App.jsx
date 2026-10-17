@@ -212,6 +212,8 @@ export default function App() {
           <ReportsPage
             t={t}
             lang={lang}
+            onStartScanning={() => setActiveTab('scanner')}
+            onNavigate={(tab) => setActiveTab(tab)}
             onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
           />
         )}

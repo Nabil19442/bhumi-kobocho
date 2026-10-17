@@ -14,7 +14,8 @@ import {
   Maximize2,
   Info,
   ShieldAlert,
-  Download
+  Download,
+  FileUp
 } from 'lucide-react';
 
 const RECENT_REPORTS = [
@@ -80,9 +81,23 @@ const RECENT_REPORTS = [
   }
 ];
 
-export default function ReportsPage({ t, lang = 'bn', onViewPassport }) {
+export default function ReportsPage({ 
+  t, 
+  lang = 'bn', 
+  onViewPassport, 
+  onStartScanning, 
+  onNavigate 
+}) {
   const isBn = lang === 'bn';
   const [selectedReport, setSelectedReport] = useState(RECENT_REPORTS[0]);
+
+  const handleGoToScanner = () => {
+    if (onStartScanning) {
+      onStartScanning();
+    } else if (onNavigate) {
+      onNavigate('scanner');
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -153,48 +168,92 @@ export default function ReportsPage({ t, lang = 'bn', onViewPassport }) {
       padding: '32px var(--gutter-desktop)',
       boxSizing: 'border-box'
     }}>
-      {/* Page Title */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontSize: '0.78rem',
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 700,
-          color: 'var(--primary-accent)',
-          background: 'var(--accent-tint)',
-          padding: '4px 10px',
-          borderRadius: '4px',
-          border: '1px solid #C4D6F5',
-          marginBottom: '8px'
-        }}>
-          <ClipboardCheck size={14} />
-          <span>{isBn ? 'নিরীক্ষা ও যাচাইকরণ প্রত্যয়নপত্র' : 'AUDIT LOGS & VERIFICATION CERTIFICATES'}</span>
+      {/* Page Title & Action Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '20px',
+        marginBottom: '28px'
+      }}>
+        <div style={{ flex: '1 1 500px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.78rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            color: 'var(--primary-accent)',
+            background: 'var(--accent-tint)',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            border: '1px solid #C4D6F5',
+            marginBottom: '8px'
+          }}>
+            <ClipboardCheck size={14} />
+            <span>{isBn ? 'নিরীক্ষা ও যাচাইকরণ প্রত্যয়নপত্র' : 'AUDIT LOGS & VERIFICATION CERTIFICATES'}</span>
+          </div>
+
+          <h1 style={{
+            fontSize: 'clamp(1.8rem, 2.8vw, 2.4rem)',
+            fontWeight: 800,
+            color: 'var(--text-main)',
+            fontFamily: 'var(--font-heading)',
+            margin: '0 0 8px 0'
+          }}>
+            {isBn ? 'দলিল যাচাইকরণ প্রতিবেদন' : 'Verification Reports'}
+          </h1>
+
+          <p style={{
+            fontSize: '0.98rem',
+            color: 'var(--text-body)',
+            fontFamily: 'var(--font-body)',
+            margin: 0,
+            maxWidth: '820px',
+            lineHeight: 1.55
+          }}>
+            {isBn
+              ? 'সম্পন্নকৃত সকল দলিল যাচাইয়ের বিস্তারিত অডিট প্রতিবেদন, বিরোধ বিশ্লেষণ ও প্রাতিষ্ঠানিক সনদপত্র। এই সনদপত্রটি মুদ্রণ বা পিডিএফ হিসেবে সংরক্ষণ করা যাবে।'
+              : 'Inspect historical audit certificates, discrepancy analysis, and verification verdicts generated against the synthetic transaction registry.'}
+          </p>
         </div>
 
-        <h1 style={{
-          fontSize: 'clamp(1.8rem, 2.8vw, 2.4rem)',
-          fontWeight: 800,
-          color: 'var(--text-main)',
-          fontFamily: 'var(--font-heading)',
-          margin: '0 0 8px 0'
-        }}>
-          {isBn ? 'দলিল যাচাইকরণ প্রতিবেদন' : 'Verification Reports'}
-        </h1>
-
-        <p style={{
-          fontSize: '0.98rem',
-          color: 'var(--text-body)',
-          fontFamily: 'var(--font-body)',
-          margin: 0,
-          maxWidth: '820px',
-          lineHeight: 1.55
-        }}>
-          {isBn
-            ? 'সম্পন্নকৃত সকল দলিল যাচাইয়ের বিস্তারিত অডিট প্রতিবেদন, বিরোধ বিশ্লেষণ ও প্রাতিষ্ঠানিক সনদপত্র। এই সনদপত্রটি মুদ্রণ বা পিডিএফ হিসেবে সংরক্ষণ করা যাবে।'
-            : 'Inspect historical audit certificates, discrepancy analysis, and verification verdicts generated against the synthetic transaction registry.'}
-        </p>
+        {/* Upload New Deed Primary Action Button */}
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, paddingTop: '4px' }}>
+          <button
+            type="button"
+            id="btn-upload-new-deed"
+            onClick={handleGoToScanner}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px 22px',
+              borderRadius: 'var(--radius-std)',
+              background: 'var(--primary-accent)',
+              color: '#FFFFFF',
+              border: 'none',
+              fontWeight: 800,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-hard, 0 3px 10px rgba(0,0,0,0.18))',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <FileUp size={18} />
+            <span>{isBn ? 'নতুন দলিল আপলোড করুন' : 'Upload New Deed'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Left List + Right Certificate Preview */}
