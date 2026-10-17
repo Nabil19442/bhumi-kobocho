@@ -49,13 +49,13 @@ export default function LandingPage({
         onStartScanning={onStartScanning}
       />
 
-      {/* C. Core Features: 6 Prominent Capabilities */}
+      {/* C. Core Features: 5 Main Capabilities */}
       <CoreFeaturesSection
         lang={lang}
         onStartScanning={onStartScanning}
         onViewHistory={onViewHistory || onStartScanning}
         onViewPassport={onViewPassport}
-        onViewLandPrice={onViewLandPrice}
+        onViewGuardian={onViewGuardian}
       />
 
       {/* D. Live Synthetic Scenario Demo Section */}
