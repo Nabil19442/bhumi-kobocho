@@ -218,6 +218,43 @@ def test_api_compare_unknown_deed_returns_record_not_found():
     assert data["status_badge"] == "Previous Land Record Not Found"
     assert data["status_label_bn"] == "পূর্ববর্তী রেকর্ড পাওয়া যায়নি"
 
+def test_api_compare_auto_resolves_to_demo_archive_record():
+    """Validates that 'auto' resolves to real demo record (rec-demo-001) instead of failing with 404."""
+    # Test with Dag 1058, Khatian 412 (rec-demo-001)
+    res = client.post("/api/compare", json={
+        "reference_record_id": "auto",
+        "extracted_data": {
+            "dag_no": "1058",
+            "khatian_no": "412",
+            "deed_no": "1482/2021",
+            "area_decimal": "15.5",
+            "owner_name": "মোঃ রফিকুল ইসলাম"
+        }
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["reference_record"] is not None
+    assert data["reference_record"]["id"] == "rec-demo-001"
+    assert data["reference_record"]["owner_name_bn"] == "মোঃ রফিকুল ইসলাম"
+
+def test_api_compare_auto_case_insensitive_and_empty():
+    """Validates that 'Auto', '', or None never treats string as literal record ID."""
+    for ref_val in ["Auto", "AUTO", "", None]:
+        res = client.post("/api/compare", json={
+            "reference_record_id": ref_val,
+            "extracted_data": {
+                "dag_no": "784",
+                "khatian_no": "129",
+                "deed_no": "2311/2018",
+                "area_decimal": "24.0",
+                "owner_name": "আব্দুল করিম শেখ"
+            }
+        })
+        assert res.status_code == 200
+        data = res.json()
+        assert data["reference_record"] is not None
+        assert data["reference_record"]["id"] == "rec-demo-003"
+
 def test_land_price_intelligence_integrity_preserved():
     """Ensures the 20,000 ML Land Price dataset and prediction model remain 100% untouched."""
     from backend.ml.config import DATASET_CSV_PATH

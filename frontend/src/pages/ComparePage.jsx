@@ -25,7 +25,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
   const isBn = lang === 'bn';
   const [records, setRecords] = useState([]);
   const [scenarios, setScenarios] = useState([]);
-  const [selectedRecordId, setSelectedRecordId] = useState('auto');
+  const [selectedRecordId, setSelectedRecordId] = useState('rec-demo-001');
   const [tolerance, setTolerance] = useState(0.05);
   const [comparison, setComparison] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +39,17 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       ]);
       if (recordsData && recordsData.records) {
         setRecords(recordsData.records);
+        // If shared extracted data exists, try auto-selecting matching baseline record
+        if (sharedExtractedData) {
+          const norm = (v) => v ? String(v).trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)) : '';
+          const match = recordsData.records.find(r => 
+            norm(r.dag_no) === norm(sharedExtractedData.dag_no) &&
+            norm(r.khatian_no) === norm(sharedExtractedData.khatian_no)
+          ) || recordsData.records.find(r => norm(r.dag_no) === norm(sharedExtractedData.dag_no));
+          if (match) {
+            setSelectedRecordId(match.id);
+          }
+        }
       }
       if (scenariosData && scenariosData.scenarios) {
         setScenarios(scenariosData.scenarios);
@@ -139,7 +150,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       }
 
       const payload = {
-        reference_record_id: refId,
+        reference_record_id: (refId === 'auto' || !refId) ? null : refId,
         extracted_data: extractedPayload,
         area_tolerance_decimal: parseFloat(tol),
         language: lang,
@@ -162,7 +173,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
   }, [selectedRecordId, lang, sharedExtractedData]);
 
   const handleRetry = () => {
-    loadRecords();
+    loadInitialData();
     runComparison(selectedRecordId, tolerance);
   };
 
@@ -406,7 +417,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
                 cursor: 'pointer'
               }}
             >
-              <option value="auto">
+              <option value="">
                 🔍 {isBn ? 'স্বয়ংক্রিয় অনুসন্ধান: সংশ্লিষ্ট দলিলের ইতিহাস (Search Synthetic Parcel History)' : 'Auto-Search Synthetic Parcel History'}
               </option>
               

@@ -1,78 +1,97 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FileUp, 
   ScanText, 
   GitCompare, 
   FileCheck2, 
   ArrowRight, 
-  CheckCircle2 
+  CheckCircle2,
+  Compass,
+  Layers,
+  Sparkles,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
 
 /**
- * WorkflowSection
+ * WorkflowSection: Land Verification Process
  * 
- * 4-Step Land Verification Workflow:
- * 1. Upload a land deed
- * 2. Extract and review information
- * 3. Compare against available land records
- * 4. Generate a verification report
- * 
- * Horizontal timeline on desktop, vertical timeline on mobile.
+ * Distinctive horizontal connected timeline:
+ * Document Upload → AI Extraction → Ownership Cross-check → Risk Report
+ * Visually connected to the cadastral living map aesthetic.
  */
 export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
   const isBn = lang === 'bn';
+  const [activeStep, setActiveStep] = useState(0);
 
   const steps = [
     {
-      number: '১',
-      enNumber: '1',
-      title: isBn ? 'দলিল আপলোড করুন' : 'Upload a Land Deed',
+      id: 'upload',
+      number: '০১',
+      numberEn: '01',
+      phase: 'INGESTION',
+      title: isBn ? 'দলিল আপলোড' : 'Document Upload',
+      subtitle: isBn ? 'ছবি বা স্ক্যান কপি গ্রহণ' : 'Image or PDF ingestion',
       desc: isBn
-        ? 'বিক্রেতা বা আবেদনকারীর দলিলের স্ক্যান কপি (ছবি বা PDF) আপলোড করুন অথবা সংরক্ষিত ডেমো দলিল নির্বাচন করুন।'
+        ? 'বিক্রেতা বা আবেদনকারীর দলিলের স্ক্যান কপি (ছবি বা PDF) আপলোড করুন অথবা ডেমো দলিল নির্বাচন করুন।'
         : 'Upload a scanned deed document (image or PDF) or choose a pre-loaded demonstration deed.',
       icon: FileUp,
-      badge: isBn ? 'ধাপ ১' : 'Step 1'
+      sampleTag: 'PDF / JPEG',
+      specimen: isBn ? 'দলিল স্ক্যান ফাইল গৃহীত' : 'Deed specimen loaded'
     },
     {
-      number: '২',
-      enNumber: '2',
-      title: isBn ? 'তথ্য শনাক্ত ও পর্যালোচনা' : 'Extract & Review Info',
+      id: 'extract',
+      number: '০২',
+      numberEn: '02',
+      phase: 'AI EXTRACTION',
+      title: isBn ? 'এআই তথ্য শনাক্তকরণ' : 'AI Extraction',
+      subtitle: isBn ? 'অপটিক্যাল এআই পার্সিং' : 'Optical entity parsing',
       desc: isBn
-        ? 'অপটিক্যাল এআই তাৎক্ষণিকভাবে বিক্রেতা, ক্রেতা, দাগ নং, খতিয়ান, মৌজা এবং জমির পরিমাণ স্বয়ংক্রিয়ভাবে শনাক্ত করে।'
-        : 'Optical AI instantly extracts seller, buyer, plot (dag), khatian, mouza, and acreage into an editable review form.',
+        ? 'অপটিক্যাল এআই স্বয়ংক্রিয়ভাবে বিক্রেতা, ক্রেতা, দাগ নং, খতিয়ান, মৌজা ও জমির পরিমাণ নির্ভুলভাবে এক্সট্রাক্ট করে।'
+        : 'Optical AI accurately extracts seller, buyer, plot (dag), khatian, mouza, and acreages into structured fields.',
       icon: ScanText,
-      badge: isBn ? 'ধাপ ২' : 'Step 2'
+      sampleTag: 'OCR 99.4%',
+      specimen: isBn ? 'দাগ: ৫৫৮ • খতিয়ান: ১২৮' : 'Dag: 558 • Khatian: 128'
     },
     {
-      number: '৩',
-      enNumber: '3',
-      title: isBn ? 'রেকর্ডের সঙ্গে তুলনা' : 'Compare Land Records',
+      id: 'crosscheck',
+      number: '০৩',
+      numberEn: '03',
+      phase: 'CADASTRAL AUDIT',
+      title: isBn ? 'মালিকানা ক্রস-চেক' : 'Ownership Cross-check',
+      subtitle: isBn ? 'রেকর্ড ও চেইন যাচাই' : 'Cadastre & chain audit',
       desc: isBn
-        ? 'শনাক্তকৃত দাগ ও খতিয়ানের বিপরীতে সংরক্ষিত মৌজা ও পূর্ববর্তী লেনদেনের ডেটাবেসে ধারাবাহিক স্বত্ব ও মালিকানা যাচাই করা হয়।'
-        : 'Cross-checks extracted plot and khatian numbers against available historical records in the cadastral registry.',
+        ? 'শনাক্তকৃত দাগ ও খতিয়ানের বিপরীতে সংরক্ষিত মৌজা ডেটাবেসে ধারাবাহিক মালিকানা চেইন ও বিক্রেতার ব্যালেন্স নিরীক্ষা।'
+        : 'Cross-checks extracted plot and khatian numbers against historical registry records and seller remaining balance.',
       icon: GitCompare,
-      badge: isBn ? 'ধাপ ৩' : 'Step 3'
+      sampleTag: '20,000+ RECORDS',
+      specimen: isBn ? 'ধারাবাহিকতা: ৪টি হস্তান্তর' : 'Custody: 4 recorded transfers'
     },
     {
-      number: '৪',
-      enNumber: '4',
-      title: isBn ? 'যাচাই প্রতিবেদন তৈরি' : 'Generate Verification Report',
+      id: 'report',
+      number: '০৪',
+      numberEn: '04',
+      phase: 'VERDICT & PASSPORT',
+      title: isBn ? 'ঝুঁকি অডিট প্রতিবেদন' : 'Risk Report & Passport',
+      subtitle: isBn ? 'প্রমাণ সনদ প্রস্তুত' : 'Evidence report & certificate',
       desc: isBn
-        ? 'দ্বৈত বিক্রয় ঝুঁকি, সীমানা ওভারল্যাপ বা স্বত্ব ফাঁক থাকলে তাত্ক্ষণিক সতর্কতা এবং সার্বিক যাচাইকরণ অডিট প্রতিবেদন প্রস্তুত।'
-        : 'Instantly generates an evidence-backed verification report highlighting duplicate sales, overlaps, and title integrity.',
+        ? 'দ্বৈত বিক্রয় ঝুঁকি বা স্বত্ব ফাঁক থাকলে তাত্ক্ষণিক সতর্কতা এবং নিরপেক্ষ ডিজিটাল প্লট পাসপোর্ট সনদ প্রস্তুত।'
+        : 'Instantly generates an evidence-backed verification report highlighting duplicate sales and title integrity.',
       icon: FileCheck2,
-      badge: isBn ? 'ধাপ ৪' : 'Step 4'
+      sampleTag: 'VERIFIED PASSPORT',
+      specimen: isBn ? 'স্থিতি: নিরাপদ লেনদেন সনদ' : 'Status: Title Clear & Verified'
     }
   ];
 
   return (
     <section 
       id="how-it-works" 
-      className="landing-section" 
+      className="verification-process-section" 
       style={{
-        padding: '72px 0',
+        padding: 'clamp(36px, 4.5vw, 54px) 0',
         background: 'var(--bg-primary)',
-        borderBottom: '1px solid var(--line)'
+        borderBottom: '1px solid var(--line)',
+        position: 'relative'
       }}
     >
       <div 
@@ -84,196 +103,245 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
           boxSizing: 'border-box'
         }}
       >
-        {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto 52px' }}>
+        {/* Section Header: Editorial & Connected to Map Concept */}
+        <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 32px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '4px 12px',
+            padding: '3px 10px',
             borderRadius: 'var(--radius-std)',
             background: 'var(--accent-tint)',
             border: '1px solid #C4D6F5',
             color: 'var(--primary-accent)',
-            fontSize: '0.82rem',
-            fontWeight: 700,
+            fontSize: '0.74rem',
+            fontWeight: 800,
             fontFamily: 'var(--font-mono)',
-            marginBottom: '12px'
+            marginBottom: '10px',
+            letterSpacing: '0.6px'
           }}>
-            <CheckCircle2 size={14} />
-            <span>{isBn ? 'সহজ চার ধাপের প্রক্রিয়া' : 'SIMPLE 4-STEP WORKFLOW'}</span>
+            <Compass size={13} color="var(--primary-accent)" />
+            <span>{isBn ? 'স্বচ্ছ যাচাই প্রক্রিয়া' : 'CADASTRAL VERIFICATION PIPELINE'}</span>
           </div>
 
           <h2 style={{
-            fontSize: 'clamp(1.9rem, 3.4vw, 2.6rem)',
+            fontSize: 'clamp(1.8rem, 3.0vw, 2.4rem)',
             fontWeight: 800,
             color: 'var(--text-main)',
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.25,
-            marginBottom: '12px'
+            marginBottom: '10px',
+            letterSpacing: '-0.3px'
           }}>
-            {isBn ? 'মাত্র চারটি ধাপে সম্পূর্ণ যাচাই' : 'How It Works in 4 Steps'}
+            {isBn ? 'দলিল থেকে ডিজিটাল সত্যতা: চার ধাপের যাচাই' : 'Land Verification Process'}
           </h2>
 
           <p style={{
-            fontSize: '1.04rem',
+            fontSize: '0.98rem',
             color: 'var(--text-body)',
             fontFamily: 'var(--font-body)',
-            lineHeight: 1.6,
+            lineHeight: 1.55,
             margin: 0
           }}>
             {isBn
-              ? 'দলিলের তথ্য স্ক্যান করে মৌজা রেকর্ডের সঙ্গে মেলানো এবং ঝুঁকি শনাক্ত করার স্বচ্ছ প্রক্রিয়া।'
-              : 'A transparent workflow to scan deed details, verify against available records, and identify risks.'}
+              ? 'দলিল আপলোড থেকে শুরু করে এআই এক্সট্রাকশন এবং মৌজা রেকর্ডের সঙ্গে তুলনামূলক নিরীক্ষার স্বচ্ছ প্রবাহ।'
+              : 'From raw deed document to optical extraction, historical cross-checks, and cryptographic verification report.'}
           </p>
         </div>
 
         {/* =========================================================================
-            DESKTOP HORIZONTAL TIMELINE
+            DESKTOP HORIZONTAL "LIVING MAP PROCESS" VISUAL
            ========================================================================= */}
-        <div className="workflow-desktop-timeline">
-          {/* Horizontal Track Connector Line behind step circles */}
+        <div className="process-desktop-track">
+          {/* Continuous Connected Cadastral Line */}
           <div 
-            className="timeline-track-line"
             style={{
               position: 'relative',
               width: '100%',
-              marginBottom: '28px'
+              marginBottom: '18px'
             }}
           >
+            {/* Background Line */}
             <div 
               style={{
                 position: 'absolute',
                 top: '20px',
                 left: '12.5%',
                 right: '12.5%',
-                height: '2.5px',
+                height: '2px',
                 background: 'var(--line)',
                 zIndex: 1
               }} 
             />
 
-            {/* 4 Step Indicator Nodes */}
+            {/* 4 Connected Survey Marker Nodes */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               position: 'relative',
               zIndex: 2
             }}>
-              {steps.map((step, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    background: 'var(--white)',
-                    border: '2.5px solid var(--primary-accent)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '1.15rem',
-                    fontWeight: 800,
-                    color: 'var(--primary-accent)',
-                    boxShadow: '0 3px 8px rgba(39, 66, 160, 0.18)'
-                  }}>
-                    {isBn ? step.number : step.enNumber}
+              {steps.map((step, idx) => {
+                const isSelected = activeStep === idx;
+                return (
+                  <div 
+                    key={idx} 
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+                    onClick={() => setActiveStep(idx)}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: isSelected ? 'var(--primary-accent)' : 'var(--white)',
+                      border: '2px solid var(--primary-accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.96rem',
+                      fontWeight: 800,
+                      color: isSelected ? '#FFFFFF' : 'var(--primary-accent)',
+                      boxShadow: isSelected ? '0 4px 12px rgba(39, 66, 160, 0.35)' : '0 2px 6px rgba(16, 39, 42, 0.08)',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      {isBn ? step.number : step.numberEn}
+                    </div>
+
+                    <span style={{
+                      marginTop: '6px',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      color: isSelected ? 'var(--primary-accent)' : 'var(--text-muted)',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {step.phase}
+                    </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* 4 Step Detail Cards */}
+          {/* 4 Connected Step Cards with Integrated Visual Specimen */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '20px'
+            gap: '16px'
           }}>
             {steps.map((step, idx) => {
               const Icon = step.icon;
+              const isSelected = activeStep === idx;
               return (
                 <div
                   key={idx}
-                  className="workflow-step-card"
+                  className="process-step-card"
+                  onClick={() => setActiveStep(idx)}
                   style={{
-                    background: 'var(--white)',
+                    background: isSelected ? '#FFFFFF' : 'var(--paper)',
                     borderRadius: '12px',
-                    border: '1.5px solid var(--line)',
-                    padding: '22px 20px',
+                    border: isSelected ? '2px solid var(--primary-accent)' : '1.5px solid var(--line)',
+                    padding: '18px 16px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    boxShadow: '0 2px 8px rgba(16, 39, 42, 0.04)',
-                    transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease'
+                    boxShadow: isSelected ? '0 8px 22px rgba(39, 66, 160, 0.12)' : '0 2px 6px rgba(16, 39, 42, 0.03)',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box'
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.borderColor = 'var(--primary-accent)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(39, 66, 160, 0.09)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0px)';
-                    e.currentTarget.style.borderColor = 'var(--line)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 39, 42, 0.04)';
-                  }}
+                  onMouseEnter={() => setActiveStep(idx)}
                 >
                   <div>
-                    {/* Top Row: Icon & Badge */}
+                    {/* Top Row: Icon & Tag */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      marginBottom: '14px'
+                      marginBottom: '12px'
                     }}>
                       <div style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '8px',
-                        background: 'var(--accent-tint)',
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '6px',
+                        background: isSelected ? 'var(--accent-tint)' : 'var(--bg-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'var(--primary-accent)'
+                        color: 'var(--primary-accent)',
+                        border: '1px solid #C4D6F5'
                       }}>
-                        <Icon size={20} />
+                        <Icon size={18} />
                       </div>
 
                       <span style={{
                         fontFamily: 'var(--font-mono)',
-                        fontSize: '0.74rem',
+                        fontSize: '0.68rem',
                         fontWeight: 700,
-                        color: 'var(--primary-accent)',
-                        background: 'var(--accent-tint)',
-                        padding: '2px 8px',
-                        borderRadius: '4px'
+                        color: isSelected ? 'var(--primary-accent)' : 'var(--text-muted)',
+                        background: isSelected ? 'var(--accent-tint)' : 'var(--bg-primary)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--line)'
                       }}>
-                        {step.badge}
+                        {step.sampleTag}
                       </span>
                     </div>
 
                     {/* Step Title */}
                     <h3 style={{
-                      fontSize: '1.08rem',
+                      fontSize: '1.02rem',
                       fontWeight: 800,
                       color: 'var(--text-main)',
                       fontFamily: 'var(--font-heading)',
-                      marginBottom: '8px',
-                      lineHeight: 1.3
+                      marginBottom: '4px',
+                      lineHeight: 1.25
                     }}>
                       {step.title}
                     </h3>
 
+                    {/* Short Subtitle */}
+                    <span style={{
+                      display: 'block',
+                      fontSize: '0.74rem',
+                      color: 'var(--primary-accent)',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      marginBottom: '8px'
+                    }}>
+                      {step.subtitle}
+                    </span>
+
                     {/* Step Description */}
                     <p style={{
-                      fontSize: '0.90rem',
+                      fontSize: '0.86rem',
                       color: 'var(--text-body)',
                       fontFamily: 'var(--font-body)',
-                      lineHeight: 1.55,
-                      margin: 0
+                      lineHeight: 1.5,
+                      margin: '0 0 14px'
                     }}>
                       {step.desc}
                     </p>
+                  </div>
+
+                  {/* Micro Visual Specimen Tag */}
+                  <div style={{
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    background: isSelected ? 'var(--accent-tint)' : 'var(--bg-primary)',
+                    border: '1px solid var(--line)',
+                    fontSize: '0.72rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--text-main)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <CheckCircle2 size={12} color="var(--primary-accent)" />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {step.specimen}
+                    </span>
                   </div>
                 </div>
               );
@@ -284,14 +352,13 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
         {/* =========================================================================
             MOBILE VERTICAL TIMELINE (< 768px)
            ========================================================================= */}
-        <div className="workflow-mobile-timeline">
-          <div style={{ position: 'relative', paddingLeft: '48px' }}>
-            {/* Vertical Connector Line running down */}
+        <div className="process-mobile-track">
+          <div style={{ position: 'relative', paddingLeft: '44px' }}>
             <div style={{
               position: 'absolute',
               top: '20px',
               bottom: '40px',
-              left: '19px',
+              left: '18px',
               width: '2px',
               background: 'var(--line)'
             }} />
@@ -303,61 +370,77 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
                   key={idx} 
                   style={{ 
                     position: 'relative', 
-                    marginBottom: idx === steps.length - 1 ? '0' : '24px' 
+                    marginBottom: idx === steps.length - 1 ? '0' : '18px' 
                   }}
                 >
-                  {/* Step Number Circle positioned on vertical line */}
                   <div style={{
                     position: 'absolute',
-                    left: '-48px',
+                    left: '-44px',
                     top: '0',
-                    width: '38px',
-                    height: '38px',
+                    width: '36px',
+                    height: '36px',
                     borderRadius: '50%',
                     background: 'var(--white)',
-                    border: '2.5px solid var(--primary-accent)',
+                    border: '2px solid var(--primary-accent)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontFamily: 'var(--font-mono)',
-                    fontSize: '1rem',
+                    fontSize: '0.92rem',
                     fontWeight: 800,
                     color: 'var(--primary-accent)',
                     boxShadow: '0 2px 6px rgba(39, 66, 160, 0.15)',
                     zIndex: 2
                   }}>
-                    {isBn ? step.number : step.enNumber}
+                    {isBn ? step.number : step.numberEn}
                   </div>
 
-                  {/* Step Card Content */}
                   <div style={{
                     background: 'var(--white)',
-                    borderRadius: '12px',
+                    borderRadius: '10px',
                     border: '1.5px solid var(--line)',
-                    padding: '18px',
+                    padding: '14px',
                     boxShadow: '0 2px 6px rgba(16, 39, 42, 0.04)'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Icon size={18} color="var(--primary-accent)" />
-                      <h3 style={{
-                        fontSize: '1.04rem',
-                        fontWeight: 800,
-                        color: 'var(--text-main)',
-                        fontFamily: 'var(--font-heading)',
-                        margin: 0
-                      }}>
-                        {step.title}
-                      </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Icon size={16} color="var(--primary-accent)" />
+                        <h3 style={{
+                          fontSize: '0.98rem',
+                          fontWeight: 800,
+                          color: 'var(--text-main)',
+                          fontFamily: 'var(--font-heading)',
+                          margin: 0
+                        }}>
+                          {step.title}
+                        </h3>
+                      </div>
+                      <span style={{ fontSize: '0.66rem', fontFamily: 'var(--font-mono)', color: 'var(--primary-accent)', fontWeight: 700 }}>
+                        {step.phase}
+                      </span>
                     </div>
+
                     <p style={{
-                      fontSize: '0.88rem',
+                      fontSize: '0.84rem',
                       color: 'var(--text-body)',
                       fontFamily: 'var(--font-body)',
-                      lineHeight: 1.5,
-                      margin: 0
+                      lineHeight: 1.45,
+                      margin: '0 0 8px'
                     }}>
                       {step.desc}
                     </p>
+
+                    <div style={{
+                      fontSize: '0.72rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <span>&bull;</span>
+                      <span>{step.specimen}</span>
+                    </div>
                   </div>
                 </div>
               );
@@ -365,24 +448,24 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
           </div>
         </div>
 
-        {/* Bottom CTA Button */}
-        <div style={{ textAlign: 'center', marginTop: '40px' }}>
+        {/* Bottom Verification Trigger Button */}
+        <div style={{ textAlign: 'center', marginTop: '28px' }}>
           <button
             type="button"
-            id="how-it-works-start-btn"
+            id="process-start-verification-btn"
             onClick={onStartScanning}
             className="btn-primary"
             style={{
-              height: '48px',
-              padding: '0 26px',
-              fontSize: '0.98rem',
-              fontWeight: 700,
+              height: '44px',
+              padding: '0 24px',
+              fontSize: '0.94rem',
+              fontWeight: 800,
               fontFamily: 'var(--font-heading)',
               borderRadius: 'var(--radius-std)',
               background: 'var(--primary-accent)',
               color: '#FFFFFF',
               border: 'none',
-              boxShadow: '0 3px 12px rgba(39, 66, 160, 0.28)',
+              boxShadow: '0 4px 12px rgba(39, 66, 160, 0.28)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
@@ -398,25 +481,25 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
               e.currentTarget.style.transform = 'translateY(0px)';
             }}
           >
-            <span>{isBn ? 'দলিল যাচাই শুরু করুন' : 'Start Deed Verification'}</span>
-            <ArrowRight size={16} />
+            <span>{isBn ? 'দলিল আপলোড করে যাচাই শুরু করুন' : 'Start Deed Verification'}</span>
+            <ArrowRight size={15} />
           </button>
         </div>
       </div>
 
       <style>{`
-        .workflow-desktop-timeline {
+        .process-desktop-track {
           display: block;
         }
-        .workflow-mobile-timeline {
+        .process-mobile-track {
           display: none;
         }
 
-        @media (max-width: 768px) {
-          .workflow-desktop-timeline {
+        @media (max-width: 820px) {
+          .process-desktop-track {
             display: none !important;
           }
-          .workflow-mobile-timeline {
+          .process-mobile-track {
             display: block !important;
           }
         }

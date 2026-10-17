@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldAlert, 
   CheckCircle2, 
@@ -8,33 +8,38 @@ import {
   Info,
   ShieldCheck,
   UserCheck,
-  UserX
+  UserX,
+  FileSpreadsheet,
+  FileSearch,
+  Scale,
+  Compass
 } from 'lucide-react';
 
 /**
- * GuardianPreviewSection
+ * GuardianPreviewSection: Ownership-Conflict Investigation Panel
  * 
- * Land Guardian Section:
- * Explains Land Guardian with a concrete sample demo scenario:
- * - Previous owner: Abdul Karim
- * - Previous buyer: Sultana Jahan
- * - Dag No: 558
- * - Land Area: 10 decimals
- * 
- * Explains duplicate-sale detection when someone attempts to sell the same land again.
- * Clearly labeled as a demo scenario with explicit legal disclaimer.
+ * DESIGN CONCEPT: Investigation Dashboard Preview
+ * - One parcel: Dag 558 (Savar Mouza, 10.0 decimals)
+ * - Two conflicting ownership claims:
+ *   - Claim 1 (Valid): Prior registered sale to Sultana Jahan (Deed #8834)
+ *   - Claim 2 (Conflict): Duplicate resale attempt by seller with 0 balance
+ * - Visible warning indicator & conflict diagnostics
+ * - Clear explanation of what needs further verification
+ * - Prominent demo scenario notice
  */
 export default function GuardianPreviewSection({ lang = 'bn', onViewGuardian }) {
   const isBn = lang === 'bn';
+  const [selectedDocket, setSelectedDocket] = useState('comparison'); // 'comparison' | 'rule'
 
   return (
     <section 
       id="guardian-preview" 
-      className="landing-section" 
+      className="guardian-investigation-section" 
       style={{
-        padding: '76px 0',
-        background: 'var(--paper)',
-        borderBottom: '1px solid var(--line)'
+        padding: 'clamp(36px, 4.5vw, 54px) 0',
+        background: 'var(--bg-primary)',
+        borderBottom: '1px solid var(--line)',
+        position: 'relative'
       }}
     >
       <div 
@@ -47,295 +52,336 @@ export default function GuardianPreviewSection({ lang = 'bn', onViewGuardian }) 
         }}
       >
         {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 24px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '4px 12px',
+            padding: '3px 10px',
             borderRadius: 'var(--radius-std)',
             background: '#FDEEE9',
             border: '1px solid #F3BFB3',
             color: '#9A2C14',
-            fontSize: '0.82rem',
-            fontWeight: 700,
+            fontSize: '0.74rem',
+            fontWeight: 800,
             fontFamily: 'var(--font-mono)',
-            marginBottom: '12px'
+            marginBottom: '10px',
+            letterSpacing: '0.6px'
           }}>
-            <ShieldAlert size={14} color="#9A2C14" />
-            <span>{isBn ? 'ল্যান্ড গার্ডিয়ান • দ্বৈত বিক্রয় শনাক্তকরণ' : 'LAND GUARDIAN • DUPLICATE SALE DETECTION'}</span>
+            <ShieldAlert size={13} color="#9A2C14" />
+            <span>{isBn ? 'ল্যান্ড গার্ডিয়ান • বিরোধ তদন্ত প্যানেল' : 'LAND GUARDIAN • CONFLICT INVESTIGATION'}</span>
           </div>
 
           <h2 style={{
-            fontSize: 'clamp(1.9rem, 3.4vw, 2.6rem)',
+            fontSize: 'clamp(1.8rem, 3.0vw, 2.4rem)',
             fontWeight: 800,
             color: 'var(--text-main)',
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.25,
-            marginBottom: '14px',
+            marginBottom: '8px',
             letterSpacing: '-0.3px'
           }}>
-            {isBn ? 'ল্যান্ড গার্ডিয়ান কীভাবে দ্বৈত বিক্রয় রোধ করে?' : 'How Land Guardian Detects Duplicate Sales'}
+            {isBn ? 'স্বয়ংক্রিয় মালিকানা বিরোধ তদন্ত ড্যাশবোর্ড' : 'Ownership-Conflict Investigation Panel'}
           </h2>
 
           <p style={{
-            fontSize: '1.04rem',
+            fontSize: '0.96rem',
             color: 'var(--text-body)',
             fontFamily: 'var(--font-body)',
-            lineHeight: 1.6,
+            lineHeight: 1.55,
             margin: 0
           }}>
             {isBn
-              ? 'অতীতে বিক্রি হয়ে যাওয়া জমি পুনরায় অবৈধভাবে বিক্রির চেষ্টা করলে ল্যান্ড গার্ডিয়ান স্বয়ংক্রিয়ভাবে অডিট করে ক্রেতাকে সতর্ক করে।'
-              : 'Automated chain-of-custody audit that alerts citizens and buyers if previously conveyed land is offered for resale.'}
+              ? 'অতীতে বিক্রি হয়ে যাওয়া জমি পুনরায় বিক্রির অপচেষ্টা হলে ল্যান্ড গার্ডিয়ান সুনির্দিষ্ট প্রমাণ সহ বিরোধ শনাক্ত করে।'
+              : 'Digital investigation console alerting citizens and legal officers before fraudulent duplicate conveyances occur.'}
           </p>
         </div>
 
-        {/* Clear Mandatory Demo Disclaimer */}
+        {/* Demo Specimen Mandatory Notice */}
         <div style={{
-          maxWidth: '860px',
-          margin: '0 auto 32px',
+          maxWidth: '920px',
+          margin: '0 auto 18px',
           background: '#FEF4F0',
-          border: '1.5px solid #F3BFB3',
-          borderRadius: '10px',
-          padding: '12px 18px',
+          border: '1px solid #F3BFB3',
+          borderRadius: '8px',
+          padding: '8px 14px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
+          gap: '10px',
           boxSizing: 'border-box'
         }}>
-          <Info size={18} style={{ color: '#9A2C14', flexShrink: 0 }} />
+          <Info size={15} style={{ color: '#9A2C14', flexShrink: 0 }} />
           <p style={{
-            fontSize: '0.86rem',
+            fontSize: '0.78rem',
             color: '#7E200C',
             fontFamily: 'var(--font-body)',
-            lineHeight: 1.5,
+            lineHeight: 1.45,
             margin: 0
           }}>
-            <strong>{isBn ? 'ডেমো পরিস্থিতি সতর্কতা:' : 'DEMO SCENARIO NOTICE:'}</strong>{' '}
+            <strong>{isBn ? 'ডেমো তদন্ত কেস স্টাডি:' : 'DEMO INVESTIGATION CASE:'}</strong>{' '}
             {isBn
-              ? 'নিচের উদাহরণটি সিস্টেমের অ্যালগরিদম প্রদর্শনের জন্য একটি পরীক্ষামূলক ডেমো পরিস্থিতি। এটি সকল সরকারি রেকর্ড অ্যাক্সেসের দাবি করে না এবং কোনো আইনি মালিকানার রায় প্রদান করে না।'
-              : 'The scenario below is a demonstration model. The system does not claim to access all government registries or provide legal ownership title.'}
+              ? 'নিচের উদাহরণটি সিস্টেমের বিরোধ শনাক্তকরণ অ্যালগরিদম প্রদর্শনের জন্য একটি পরীক্ষামূলক ডেমো দৃশ্যপট। এটি কোনো আদালতের আইনি রায় নয়।'
+              : 'The case below is a demonstration specimen illustrating algorithmic conflict detection against historical ledgers. Not an official court ruling.'}
           </p>
         </div>
 
-        {/* SAMPLE DEMO SCENARIO SHOWCASE: Abdul Karim -> Sultana Jahan (Dag 558, 10 Decimals) */}
+        {/* =========================================================================
+            INVESTIGATION DASHBOARD PANEL CARD
+           ========================================================================= */}
         <div 
-          className="guardian-scenario-container"
+          className="investigation-dashboard-card"
           style={{
-            maxWidth: '920px',
-            margin: '0 auto 40px',
+            maxWidth: '960px',
+            margin: '0 auto 24px',
             background: 'var(--white)',
-            borderRadius: '16px',
+            borderRadius: '14px',
             border: '1.5px solid var(--line)',
-            boxShadow: '0 8px 28px rgba(16, 39, 42, 0.07)',
+            boxShadow: '0 8px 24px rgba(16, 39, 42, 0.06)',
             overflow: 'hidden'
           }}
         >
-          {/* Scenario Banner */}
+          {/* Top Docket Meta Bar */}
           <div style={{
-            background: 'var(--bg-primary)',
-            padding: '16px 24px',
+            background: 'var(--bg-paper)',
+            padding: '12px 20px',
             borderBottom: '1px solid var(--line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '10px'
-          }}>
+            gap: '10px',
+            fontSize: '0.78rem',
+            fontFamily: 'var(--font-mono)'
+          }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={16} color="var(--primary-accent)" />
-              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>
-                {isBn ? 'নমুনা অডিট পরিস্থিতি: দাগ নং ৫৫৮ (১০ শতক)' : 'Audit Case: Dag No 558 (10 decimals)'}
-              </span>
+              <FileSearch size={16} color="var(--primary-accent)" />
+              <strong style={{ color: 'var(--text-main)', letterSpacing: '0.3px' }}>
+                CASE FILE #INV-2026-DAG558
+              </strong>
+              <span style={{ color: 'var(--line)' }}>•</span>
+              <span style={{ color: 'var(--text-muted)' }}>সাভার মৌজা • দাগ ৫৫৮ (১০.০ শতক)</span>
             </div>
-            <span style={{
-              background: '#10272A',
-              color: '#FFFFFF',
-              fontSize: '0.70rem',
+
+            {/* Warning Indicator Tag */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 10px',
+              borderRadius: '4px',
+              background: '#FDEEE9',
+              border: '1px solid #F3BFB3',
+              color: '#9A2C14',
               fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              padding: '3px 8px',
-              borderRadius: '4px'
+              fontSize: '0.72rem'
             }}>
-              DEMO SCENARIO
-            </span>
+              <AlertTriangle size={13} color="#9A2C14" />
+              <span>DUPLICATE CONVEYANCE FLAGGED</span>
+            </div>
           </div>
 
-          {/* 2-Step Comparison Columns: Past Sale vs Duplicate Attempt */}
+          {/* Two-Column Conflicting Claims Docket */}
           <div 
-            className="guardian-scenario-grid"
+            className="claims-docket-grid"
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              divideX: '1px solid var(--line)'
+              background: '#FFFFFF'
             }}
           >
-            {/* Step A: Legitimate Past Transfer */}
+            {/* CLAIM 1 (Recorded Prior Conveyance) */}
             <div 
-              className="scenario-panel-past"
               style={{
-                padding: '28px 24px',
+                padding: '20px',
                 borderRight: '1px solid var(--line)',
                 background: '#FAFCFA',
                 boxSizing: 'border-box'
               }}
             >
               <div style={{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '3px 10px',
-                borderRadius: '4px',
-                background: 'var(--status-matched-bg)',
-                color: 'var(--status-matched-text)',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                marginBottom: '16px'
+                justifyContent: 'space-between',
+                marginBottom: '12px'
               }}>
-                <CheckCircle2 size={13} />
-                <span>{isBn ? 'ধাপ ১: সম্পন্নকৃত বৈধ মালিকানা হস্তান্তর' : 'Step 1: Prior Valid Conveyance'}</span>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: 'var(--status-matched-bg)',
+                  border: '1px solid var(--status-matched-border)',
+                  color: 'var(--status-matched-text)',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  <CheckCircle2 size={12} />
+                  <span>CLAIM 01: RECORDED VALID TITLE</span>
+                </span>
+                <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                  DEED #8834 / 2021
+                </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'সাবেক বিক্রেতা (Seller):' : 'Previous Seller:'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>সাবেক বিক্রেতা (Grantor):</span>
                   <strong style={{ color: 'var(--text-main)' }}>আব্দুল করিম (Abdul Karim)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'বৈধ ক্রেতা (Buyer):' : 'Previous Buyer:'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>বৈধ ক্রেতা (Grantee):</span>
                   <strong style={{ color: 'var(--primary-accent)' }}>সুলতানা জাহান (Sultana Jahan)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'দাগ নং (Dag No):' : 'Dag No:'}</span>
-                  <strong style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>৫৫৮ (558)</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>হস্তান্তরিত জমি (Quantum):</span>
+                  <strong style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>১০.০ শতক (100% Sold)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'হস্তান্তরিত জমি (Area):' : 'Transferred Area:'}</span>
-                  <strong style={{ color: 'var(--text-main)' }}>১০ শতক (10 decimals)</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>বিক্রেতার অবশিষ্ট ব্যালেন্স:</span>
+                  <strong style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>০.০ শতক (Nil)</strong>
                 </div>
               </div>
 
-              {/* Result Callout */}
+              {/* Status Outcome */}
               <div style={{
-                padding: '12px',
-                borderRadius: '8px',
+                padding: '8px 12px',
+                borderRadius: '6px',
                 background: 'var(--status-matched-bg)',
                 border: '1px solid var(--status-matched-border)',
-                fontSize: '0.84rem',
+                fontSize: '0.78rem',
                 color: 'var(--status-matched-text)',
-                lineHeight: 1.5
+                lineHeight: 1.45
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, marginBottom: '2px' }}>
-                  <UserCheck size={14} />
-                  <span>{isBn ? 'বর্তমান বৈধ মালিক: সুলতানা জাহান' : 'Current Legal Owner: Sultana Jahan'}</span>
+                <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                  <UserCheck size={13} />
+                  <span>বর্তমান আইনসঙ্গত মালিক: সুলতানা জাহান</span>
                 </div>
                 <p style={{ margin: 0 }}>
-                  {isBn
-                    ? 'আব্দুল করিম তাঁর মালিকানাধীন সম্পূর্ণ ১০ শতক জমি সুলতানা জাহানের কাছে হস্তান্তর করেছেন। তাঁর অবশিষ্ট ব্যালেন্স = ০ শতক।'
-                    : 'Abdul Karim transferred all 10 decimals to Sultana Jahan. Remaining balance for seller = 0 decimals.'}
+                  দলিল নং ৮৮৩৪ মূলে ১০ শতক জমি হস্তান্তর সম্পন্ন হওয়ায় আব্দুল করিমের আর কোনো স্বত্ব অবশিষ্ট নেই।
                 </p>
               </div>
             </div>
 
-            {/* Step B: Detected Duplicate Sale Attempt */}
+            {/* CLAIM 2 (Flagged Duplicate Resale Attempt) */}
             <div 
-              className="scenario-panel-conflict"
               style={{
-                padding: '28px 24px',
+                padding: '20px',
                 background: '#FFFDFD',
                 boxSizing: 'border-box'
               }}
             >
               <div style={{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '3px 10px',
-                borderRadius: '4px',
-                background: '#FDEEE9',
-                color: '#9A2C14',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                marginBottom: '16px'
+                justifyContent: 'space-between',
+                marginBottom: '12px'
               }}>
-                <AlertTriangle size={13} color="#9A2C14" />
-                <span>{isBn ? 'ধাপ ২: নতুন দ্বৈত বিক্রয়ের চেষ্টা শনাক্ত' : 'Step 2: Duplicate Sale Attempt'}</span>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: '#FDEEE9',
+                  border: '1px solid #F3BFB3',
+                  color: '#9A2C14',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  <AlertTriangle size={12} color="#9A2C14" />
+                  <span>CLAIM 02: FLAGGED ATTEMPTED RESALE</span>
+                </span>
+                <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#9A2C14', fontWeight: 700 }}>
+                  HIGH CONFLICT RISK
+                </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'প্রস্তাবিত বিক্রেতা:' : 'Attempted Seller:'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>প্রস্তাবিত বিক্রেতা:</span>
                   <strong style={{ color: '#9A2C14' }}>আব্দুল করিম (পুনরায় বিক্রির চেষ্টা)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'নতুন ক্রেতা (New Buyer):' : 'Prospective Buyer:'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>প্রস্তাবিত ক্রেতা:</span>
                   <strong style={{ color: 'var(--text-main)' }}>অন্য কোনো নাগরিক (Unaware Buyer)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'দাগ নং (Dag No):' : 'Dag No:'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>দাগ নং (Target Dag):</span>
                   <strong style={{ color: '#9A2C14', fontFamily: 'var(--font-mono)' }}>৫৫৮ (একই দাগ!)</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.90rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{isBn ? 'প্রস্তাবিত পরিমাণ:' : 'Attempted Acreage:'}</span>
-                  <strong style={{ color: '#9A2C14' }}>১০ শতক (অতিরিক্ত বিক্রি)</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>প্রস্তাবিত জমি:</span>
+                  <strong style={{ color: '#9A2C14', fontFamily: 'var(--font-mono)' }}>১০.০ শতক (অতিরিক্ত বিক্রি)</strong>
                 </div>
               </div>
 
-              {/* Alert Callout */}
+              {/* Status Outcome */}
               <div style={{
-                padding: '12px',
-                borderRadius: '8px',
+                padding: '8px 12px',
+                borderRadius: '6px',
                 background: '#FDEEE9',
                 border: '1px solid #F3BFB3',
-                fontSize: '0.84rem',
+                fontSize: '0.78rem',
                 color: '#9A2C14',
-                lineHeight: 1.5
+                lineHeight: 1.45
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, marginBottom: '2px' }}>
-                  <UserX size={14} color="#9A2C14" />
-                  <span>{isBn ? 'ল্যান্ড গার্ডিয়ান সতর্কতা: দ্বৈত বিক্রয় ঝুঁকি!' : 'Land Guardian Alert: Duplicate Sale!'}</span>
+                <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                  <UserX size={13} color="#9A2C14" />
+                  <span>সতর্কতা: বিক্রেতার ব্যালেন্স শূন্য</span>
                 </div>
                 <p style={{ margin: 0 }}>
-                  {isBn
-                    ? 'বিক্রেতা আব্দুল করিমের অবশিষ্ট ব্যালেন্স ০ শতক। সুলতানা জাহানের কাছে পূর্বেই বিক্রি হওয়ায় নতুন লেনদেনটি সরাসরি বিরোধপূর্ণ চিহ্নিত।'
-                    : 'Karim has 0 decimals remaining. Because Sultana Jahan already holds title, this resale attempt is flagged immediately.'}
+                  পূর্বেই বিক্রি হয়ে যাওয়ায় এই দাগের নতুন যে কোনো লেনদেন সরাসরি দ্বৈত বিক্রয় ও প্রতারণা হিসেবে চিহ্নিত।
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Bottom Explanation Footer inside Scenario Card */}
+          {/* Investigation Findings & Further Verification Diagnosis */}
           <div style={{
-            padding: '18px 24px',
+            padding: '14px 20px',
             background: 'var(--bg-paper)',
             borderTop: '1px solid var(--line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '14px'
+            gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} color="var(--primary-accent)" />
-              <span style={{ fontSize: '0.90rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
-                {isBn 
-                  ? 'লেনদেন সম্পন্ন করার আগেই নাগরিককে আর্থিক ক্ষতি ও প্রতারণা থেকে সুরক্ষা দেয়।'
-                  : 'Protects prospective buyers from financial loss before money changes hands.'}
+            <div style={{ maxWidth: '620px' }}>
+              <span style={{
+                display: 'block',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: 'var(--primary-accent)',
+                fontFamily: 'var(--font-mono)',
+                marginBottom: '2px'
+              }}>
+                AUDIT DIAGNOSIS & FURTHER VERIFICATION NEEDED:
               </span>
+              <p style={{
+                fontSize: '0.82rem',
+                color: 'var(--text-body)',
+                fontFamily: 'var(--font-body)',
+                lineHeight: 1.45,
+                margin: 0
+              }}>
+                বিক্রেতার আরএস খতিয়ান ও পূর্ববর্তী কবলা ৮৮৩৪ এর সত্যতা যাচাই সাপেক্ষে লেনদেনটি সরাসরি স্থগিত রাখার সুপারিশ করা হচ্ছে।
+              </p>
             </div>
 
             <button
               type="button"
-              id="guardian-demo-btn"
+              id="open-guardian-console-btn"
               onClick={onViewGuardian}
               className="btn-secondary"
               style={{
                 height: '38px',
                 padding: '0 16px',
-                fontSize: '0.86rem',
+                fontSize: '0.84rem',
                 fontWeight: 700,
                 fontFamily: 'var(--font-heading)',
                 borderRadius: 'var(--radius-std)',
@@ -345,62 +391,63 @@ export default function GuardianPreviewSection({ lang = 'bn', onViewGuardian }) 
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-subtle)'
               }}
             >
-              <span>{isBn ? 'ল্যান্ড গার্ডিয়ান অডিট খুলুন' : 'Open Guardian Audit'}</span>
+              <span>{isBn ? 'ল্যান্ড গার্ডিয়ান অডিট কনসোল খুলুন' : 'Open Guardian Console'}</span>
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
 
-        {/* 3 Pillars Explaining the Mechanism */}
+        {/* 3 Pillars Explaining the Investigation Engine */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '20px',
-          maxWidth: '920px',
+          gap: '14px',
+          maxWidth: '960px',
           margin: '0 auto'
         }}>
           <div style={{
             background: 'var(--white)',
-            borderRadius: '10px',
+            borderRadius: '8px',
             border: '1px solid var(--line)',
-            padding: '18px 16px'
+            padding: '12px 14px'
           }}>
-            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '6px' }}>
-              ১. পূর্ববর্তী হস্তান্তরের অডিট
+            <h4 style={{ fontSize: '0.90rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '3px' }}>
+              ১. বালাম বই ও হস্তান্তরের অডিট
             </h4>
-            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
-              দাগ নম্বরের ঐতিহাসিক রেজিস্ট্রি পর্যালোচনা করে বিক্রেতার পূর্বের বিক্রয় তথ্য যাচাই করা হয়।
+            <p style={{ fontSize: '0.80rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.45 }}>
+              দাগের ঐতিহাসিক রেকর্ড স্ক্যান করে অতীতে জমি বিক্রয় হয়ে থাকলে তা তাৎক্ষণিকভাবে চিহ্নিত করে।
             </p>
           </div>
 
           <div style={{
             background: 'var(--white)',
-            borderRadius: '10px',
+            borderRadius: '8px',
             border: '1px solid var(--line)',
-            padding: '18px 16px'
+            padding: '12px 14px'
           }}>
-            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '6px' }}>
-              ২. অবশিষ্ট জমির ব্যালেন্স ট্র্যাকিং
+            <h4 style={{ fontSize: '0.90rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '3px' }}>
+              ২. অবশিষ্ট ব্যালেন্স ট্র্যাকিং
             </h4>
-            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
-              বিক্রেতার মূল খতিয়ান হতে ইতিপূর্বে কতটুকু বিক্রি হয়েছে এবং কতটুকু বৈধ অবশিষ্ট রয়েছে তা স্বয়ংক্রিয়ভাবে হিসাব করা হয়।
+            <p style={{ fontSize: '0.80rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.45 }}>
+              খতিয়ানের মোট পরিমাণ থেকে বিক্রিত পরিমাণ বিয়োগ করে বিক্রেতার প্রকৃত অবশিষ্ট হিসাব রাখে।
             </p>
           </div>
 
           <div style={{
             background: 'var(--white)',
-            borderRadius: '10px',
+            borderRadius: '8px',
             border: '1px solid var(--line)',
-            padding: '18px 16px'
+            padding: '12px 14px'
           }}>
-            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '6px' }}>
-              ৩. অখণ্ড প্রমাণ টাইমলাইন
+            <h4 style={{ fontSize: '0.90rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '3px' }}>
+              ৩. অখণ্ড ডিজিটাল প্রমাণ
             </h4>
-            <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
-              বিরোধ শনাক্ত হলে সুনির্দিষ্ট দলিল নম্বর ও তারিখ সম্বলিত ডিজিটাল প্রমাণ প্রতিবেদন প্রস্তুত হয়।
+            <p style={{ fontSize: '0.80rem', color: 'var(--text-body)', margin: 0, lineHeight: 1.45 }}>
+              দলিল নম্বর ও তারিখ সহ নিরীক্ষা রিপোর্ট প্রস্তুত করে আর্থিক ক্ষতি ও মামলা মোকদ্দমা রোধ করে।
             </p>
           </div>
         </div>
@@ -408,10 +455,10 @@ export default function GuardianPreviewSection({ lang = 'bn', onViewGuardian }) 
 
       <style>{`
         @media (max-width: 768px) {
-          .guardian-scenario-grid {
+          .claims-docket-grid {
             grid-template-columns: 1fr !important;
           }
-          .scenario-panel-past {
+          .claims-docket-grid > div:first-child {
             border-right: none !important;
             border-bottom: 1px solid var(--line) !important;
           }

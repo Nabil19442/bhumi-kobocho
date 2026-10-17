@@ -91,8 +91,8 @@ export default function CoreFeaturesSection({
       id="features-section" 
       className="landing-section" 
       style={{
-        padding: '72px 0',
-        background: 'var(--bg-paper)',
+        padding: 'clamp(32px, 4vw, 48px) 0',
+        background: 'var(--bg-primary)',
         borderBottom: '1px solid var(--line)'
       }}
     >
@@ -106,42 +106,42 @@ export default function CoreFeaturesSection({
         }}
       >
         {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 48px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 26px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '4px 12px',
+            padding: '3px 10px',
             borderRadius: 'var(--radius-std)',
             background: 'var(--accent-tint)',
             border: '1px solid #C4D6F5',
             color: 'var(--primary-accent)',
-            fontSize: '0.82rem',
+            fontSize: '0.76rem',
             fontWeight: 700,
             fontFamily: 'var(--font-mono)',
-            marginBottom: '12px'
+            marginBottom: '8px'
           }}>
-            <Sparkles size={14} />
+            <Sparkles size={13} />
             <span>{isBn ? 'মূল সক্ষমতা' : 'CORE CAPABILITIES'}</span>
           </div>
 
           <h2 style={{
-            fontSize: 'clamp(1.9rem, 3.4vw, 2.6rem)',
+            fontSize: 'clamp(1.7rem, 2.8vw, 2.2rem)',
             fontWeight: 800,
             color: 'var(--text-main)',
             fontFamily: 'var(--font-heading)',
             lineHeight: 1.25,
-            marginBottom: '14px',
+            marginBottom: '8px',
             letterSpacing: '-0.3px'
           }}>
             {isBn ? 'ভূমি কবচের প্রধান ফিচারসমূহ' : 'Main Features of Bhumi Kobocho'}
           </h2>
 
           <p style={{
-            fontSize: '1.04rem',
+            fontSize: '0.96rem',
             color: 'var(--text-body)',
             fontFamily: 'var(--font-body)',
-            lineHeight: 1.6,
+            lineHeight: 1.5,
             margin: 0
           }}>
             {isBn
@@ -155,8 +155,8 @@ export default function CoreFeaturesSection({
           className="features-cards-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '24px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '16px'
           }}
         >
           {features.map((item) => {
@@ -167,25 +167,25 @@ export default function CoreFeaturesSection({
                 className="feature-clean-card"
                 style={{
                   background: 'var(--white)',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   border: '1.5px solid var(--line)',
-                  padding: '28px 24px',
+                  padding: '18px 18px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  boxShadow: '0 4px 14px rgba(16, 39, 42, 0.05)',
+                  boxShadow: '0 2px 8px rgba(16, 39, 42, 0.04)',
                   transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
                   boxSizing: 'border-box'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.borderColor = 'var(--primary-accent)';
-                  e.currentTarget.style.boxShadow = '0 10px 24px rgba(39, 66, 160, 0.10)';
+                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(39, 66, 160, 0.08)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0px)';
                   e.currentTarget.style.borderColor = 'var(--line)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(16, 39, 42, 0.05)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 39, 42, 0.04)';
                 }}
               >
                 <div>
@@ -194,12 +194,12 @@ export default function CoreFeaturesSection({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: '20px'
+                    marginBottom: '12px'
                   }}>
                     <div style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '10px',
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
                       background: 'var(--accent-tint)',
                       border: '1px solid #C4D6F5',
                       display: 'flex',
@@ -207,17 +207,17 @@ export default function CoreFeaturesSection({
                       justifyContent: 'center',
                       color: 'var(--primary-accent)'
                     }}>
-                      <Icon size={22} />
+                      <Icon size={19} />
                     </div>
 
                     <span style={{
                       fontFamily: 'var(--font-mono)',
-                      fontSize: '0.72rem',
+                      fontSize: '0.70rem',
                       fontWeight: 700,
                       color: 'var(--text-muted)',
                       background: 'var(--bg-primary)',
                       border: '1px solid var(--line)',
-                      padding: '3px 8px',
+                      padding: '2px 7px',
                       borderRadius: '4px'
                     }}>
                       {item.badge}
@@ -226,22 +226,22 @@ export default function CoreFeaturesSection({
 
                   {/* Title */}
                   <h3 style={{
-                    fontSize: '1.18rem',
+                    fontSize: '1.06rem',
                     fontWeight: 800,
                     color: 'var(--text-main)',
                     fontFamily: 'var(--font-heading)',
-                    marginBottom: '10px',
-                    lineHeight: 1.35
+                    marginBottom: '6px',
+                    lineHeight: 1.3
                   }}>
                     {item.title}
                   </h3>
 
                   {/* Description */}
                   <p style={{
-                    fontSize: '0.94rem',
+                    fontSize: '0.88rem',
                     color: 'var(--text-body)',
                     fontFamily: 'var(--font-body)',
-                    lineHeight: 1.6,
+                    lineHeight: 1.5,
                     margin: 0
                   }}>
                     {item.desc}
@@ -249,7 +249,7 @@ export default function CoreFeaturesSection({
                 </div>
 
                 {/* Bottom Action Button */}
-                <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px dashed var(--line)' }}>
+                <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px dashed var(--line)' }}>
                   <button
                     type="button"
                     onClick={item.action}
@@ -260,22 +260,22 @@ export default function CoreFeaturesSection({
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '7px',
+                      gap: '6px',
                       color: 'var(--primary-accent)',
                       fontWeight: 700,
-                      fontSize: '0.92rem',
+                      fontSize: '0.88rem',
                       fontFamily: 'var(--font-heading)',
                       transition: 'gap 0.15s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.gap = '10px';
+                      e.currentTarget.style.gap = '9px';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.gap = '7px';
+                      e.currentTarget.style.gap = '6px';
                     }}
                   >
                     <span>{item.btnText}</span>
-                    <ArrowRight size={16} />
+                    <ArrowRight size={14} />
                   </button>
                 </div>
               </div>

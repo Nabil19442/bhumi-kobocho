@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ScanText, 
   Upload, 
@@ -20,9 +20,10 @@ import {
   FileBadge,
   GitCompare,
   PlusCircle,
-  HelpCircle
+  HelpCircle,
+  Database
 } from 'lucide-react';
-import { scanDocument, compareRecordsApi } from '../api';
+import { scanDocument, compareRecordsApi, fetchRecords } from '../api';
 import ProposedPurchaseModal from '../components/ProposedPurchaseModal';
 
 const DEMO_SPECIMENS = [
@@ -131,6 +132,8 @@ export default function ScannerPage({
   const [verificationReport, setVerificationReport] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [availableRecords, setAvailableRecords] = useState([]);
+  const [selectedRefRecordId, setSelectedRefRecordId] = useState('');
 
   const cleanVal = (v) => {
     if (v === null || v === undefined) return '';
@@ -138,6 +141,67 @@ export default function ScannerPage({
     if (s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') return '';
     return s;
   };
+
+  // Helper: Auto-resolves the best matching reference record from loaded records
+  const resolveReferenceRecord = (data, recordsList) => {
+    if (!recordsList || !recordsList.length || !data) return '';
+    const norm = (val) => {
+      if (val === null || val === undefined) return '';
+      return String(val).trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    };
+
+    const dag = norm(data.dag_no);
+    const khatian = norm(data.khatian_no);
+    const deed = norm(data.deed_no);
+
+    // 1. Exact Dag and Khatian match
+    if (dag && khatian) {
+      const match = recordsList.find(r => norm(r.dag_no) === dag && norm(r.khatian_no) === khatian);
+      if (match) return match.id;
+    }
+    // 2. Deed number match
+    if (deed) {
+      const match = recordsList.find(r => norm(r.deed_no) === deed);
+      if (match) return match.id;
+    }
+    // 3. Dag number match
+    if (dag) {
+      const match = recordsList.find(r => norm(r.dag_no) === dag);
+      if (match) return match.id;
+    }
+    // 4. Seller or Owner name match
+    if (data.seller_name || data.owner_name) {
+      const seller = (data.seller_name || '').trim().toLowerCase();
+      const owner = (data.owner_name || '').trim().toLowerCase();
+      const match = recordsList.find(r => {
+        const rBn = (r.owner_name_bn || '').toLowerCase();
+        const rEn = (r.owner_name_en || '').toLowerCase();
+        return (seller && (rBn.includes(seller) || rEn.includes(seller))) ||
+               (owner && (rBn.includes(owner) || rEn.includes(owner)));
+      });
+      if (match) return match.id;
+    }
+    return '';
+  };
+
+  // Load available demo reference records on mount and resolve default reference record
+  useEffect(() => {
+    let active = true;
+    fetchRecords()
+      .then(res => {
+        if (active && res && res.records) {
+          setAvailableRecords(res.records);
+          setSelectedRefRecordId(prev => {
+            if (prev) return prev;
+            return resolveReferenceRecord(formData, res.records);
+          });
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load reference records:', err);
+      });
+    return () => { active = false; };
+  }, []);
 
   // Step 1: Trigger OCR scan on upload or sample load
   const handleFileUpload = async (fileObj) => {
@@ -153,20 +217,26 @@ export default function ScannerPage({
       const res = await scanDocument(data);
       if (res && res.extracted_fields) {
         const ef = res.extracted_fields;
-        setFormData(prev => ({
-          ...prev,
-          seller_name: cleanVal(ef.seller_name || prev.seller_name),
-          buyer_name: cleanVal(ef.buyer_name || ef.owner_name || prev.buyer_name),
-          owner_name: cleanVal(ef.owner_name || ef.buyer_name || prev.owner_name),
-          mouza: cleanVal(ef.mouza || prev.mouza),
-          jl_no: cleanVal(ef.jl_no || prev.jl_no),
-          khatian_no: cleanVal(ef.khatian_no || prev.khatian_no),
-          dag_no: cleanVal(ef.dag_no || prev.dag_no),
-          area_decimal: cleanVal(ef.area_decimal || prev.area_decimal),
-          deed_no: cleanVal(ef.deed_no || prev.deed_no),
-          document_date: cleanVal(ef.document_date || prev.document_date)
-        }));
+        const newForm = {
+          seller_name: cleanVal(ef.seller_name || formData.seller_name),
+          buyer_name: cleanVal(ef.buyer_name || ef.owner_name || formData.buyer_name),
+          owner_name: cleanVal(ef.owner_name || ef.buyer_name || formData.owner_name),
+          mouza: cleanVal(ef.mouza || formData.mouza),
+          jl_no: cleanVal(ef.jl_no || formData.jl_no),
+          khatian_no: cleanVal(ef.khatian_no || formData.khatian_no),
+          dag_no: cleanVal(ef.dag_no || formData.dag_no),
+          area_decimal: cleanVal(ef.area_decimal || formData.area_decimal),
+          deed_no: cleanVal(ef.deed_no || formData.deed_no),
+          document_date: cleanVal(ef.document_date || formData.document_date),
+          parcel_id: formData.parcel_id
+        };
+        setFormData(newForm);
         setFieldStatus(res.ocr_field_status || {});
+
+        // Resolve reference record ID: prefer sample_id if known demo, else match by fields
+        const matchedRefId = res.sample_id || resolveReferenceRecord(newForm, availableRecords);
+        setSelectedRefRecordId(matchedRefId || '');
+
         setCurrentStep(2);
         setStatusMessage({
           type: 'success',
@@ -198,6 +268,10 @@ export default function ScannerPage({
       deed_no: 'Candidate extracted',
       document_date: 'Candidate extracted'
     });
+    // Auto-resolve reference record for specimen
+    const matchedRefId = resolveReferenceRecord(specimen.data, availableRecords);
+    setSelectedRefRecordId(matchedRefId || '');
+
     setCurrentStep(2);
     setStatusMessage({
       type: 'success',
@@ -211,7 +285,7 @@ export default function ScannerPage({
     setStatusMessage(null);
     try {
       const comparePayload = {
-        reference_record_id: 'auto',
+        reference_record_id: selectedRefRecordId || null,
         extracted_data: {
           owner_name: formData.buyer_name || formData.owner_name,
           seller_name: formData.seller_name,
@@ -623,6 +697,144 @@ export default function ScannerPage({
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleRunVerification(); }}>
+            {/* Reference Baseline Record Selector & Status Card */}
+            <div style={{
+              background: 'var(--paper)',
+              borderRadius: 'var(--radius-std)',
+              border: '1.5px solid #CAD7CF',
+              padding: '18px 20px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <label htmlFor="step2-reference-record-select" style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.92rem',
+                  fontWeight: 800,
+                  color: 'var(--text-main)',
+                  fontFamily: 'var(--font-heading)'
+                }}>
+                  <Database size={16} style={{ color: 'var(--primary-accent)' }} />
+                  <span>{isBn ? 'তুলনার জন্য রেফারেন্স রেকর্ড (Reference Baseline Record)' : 'Reference Baseline Land Record'}</span>
+                </label>
+
+                {selectedRefRecordId ? (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--status-matched-bg)',
+                    border: '1px solid var(--status-matched-border)',
+                    color: 'var(--status-matched-text)',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '12px'
+                  }}>
+                    <CheckCircle2 size={13} />
+                    <span>{isBn ? 'রেফারেন্স রেকর্ড সংযুক্ত' : 'Reference Record Linked'}</span>
+                  </span>
+                ) : (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--status-needs-review-bg)',
+                    border: '1px solid var(--status-needs-review-border)',
+                    color: 'var(--status-needs-review-text)',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: '12px'
+                  }}>
+                    <AlertTriangle size={13} />
+                    <span>{isBn ? 'রেফারেন্স রেকর্ড নির্বাচিত হয়নি' : 'Reference record not selected'}</span>
+                  </span>
+                )}
+              </div>
+
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+                {isBn
+                  ? 'দলিলের দাগ বা খতিয়ানের সাথে ডাটাবেজের পূর্ববর্তী রেকর্ড মিলিয়ে রেফারেন্স স্বয়ংক্রিয়ভাবে শনাক্ত হয়। আপনি চাইলে নিচের তালিকা থেকে অন্য রেফারেন্স রেকর্ডও নির্বাচন করতে পারেন।'
+                  : 'The baseline reference record is automatically resolved by Dag & Khatian against the demo database. You can also manually choose any baseline record from the dropdown.'}
+              </p>
+
+              <select
+                id="step2-reference-record-select"
+                value={selectedRefRecordId}
+                onChange={(e) => setSelectedRefRecordId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: '1.5px solid var(--text-main)',
+                  fontSize: '0.9rem',
+                  background: '#FFFFFF',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="">
+                  {isBn ? '-- কোনো রেফারেন্স রেকর্ড ছাড়া / স্বয়ংক্রিয় অনুসন্ধান --' : '-- No reference record selected / Auto-search --'}
+                </option>
+                {availableRecords.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    [{r.id}] {isBn ? r.owner_name_bn : (r.owner_name_en || r.owner_name_bn)} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no} ({r.mouza})
+                  </option>
+                ))}
+              </select>
+
+              {/* Selected Record Detail summary or Manual Review Warning */}
+              {selectedRefRecordId ? (
+                (() => {
+                  const rec = availableRecords.find(r => r.id === selectedRefRecordId);
+                  return rec ? (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      background: '#FFFFFF',
+                      border: '1px solid var(--line)',
+                      fontSize: '0.82rem',
+                      color: 'var(--text-body)',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '16px'
+                    }}>
+                      <div><strong>{isBn ? 'মালিক:' : 'Owner:'}</strong> {rec.owner_name_bn}</div>
+                      <div><strong>{isBn ? 'দাগ নম্বর:' : 'Dag No:'}</strong> {rec.dag_no}</div>
+                      <div><strong>{isBn ? 'খতিয়ান:' : 'Khatian:'}</strong> {rec.khatian_no}</div>
+                      <div><strong>{isBn ? 'জমির পরিমাণ:' : 'Area:'}</strong> {rec.area_decimal} {isBn ? 'শতক' : 'decimals'}</div>
+                      <div><strong>{isBn ? 'দলিল নম্বর:' : 'Deed No:'}</strong> {rec.deed_no || 'N/A'}</div>
+                      <div><strong>{isBn ? 'মৌজা:' : 'Mouza:'}</strong> {rec.mouza}</div>
+                    </div>
+                  ) : null;
+                })()
+              ) : (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '6px',
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  fontSize: '0.82rem',
+                  color: '#92400E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                  <span>
+                    {isBn
+                      ? 'রেফারেন্স রেকর্ড নির্বাচিত হয়নি — ম্যানুয়াল পর্যালোচনা প্রয়োজন: এই দলিলের দাগ/খতিয়ানের জন্য সরাসরি কোনো পূর্ববর্তী ডেমো রেকর্ড সংযুক্ত নেই।'
+                      : 'Reference record not selected / Needs manual review: No prior demo record matched for this plot.'}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',

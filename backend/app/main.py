@@ -58,7 +58,8 @@ from .transaction_registry import (
     get_parcel_by_id,
     get_transaction_by_id,
     record_proposed_purchase,
-    load_transactions
+    load_transactions,
+    normalize_digits
 )
 
 # ML imports via backend.ml to guarantee single shared module instance in sys.modules
@@ -507,50 +508,81 @@ def compare_document(req: CompareRequest):
     extracted_dict = req.extracted_data.model_dump()
     conflict_analysis = detect_conflicts(extracted_dict)
 
-    ref_id = (req.reference_record_id or "").strip()
+    ref_raw = (req.reference_record_id or "").strip()
+    is_auto = ref_raw.lower() in ("auto", "automatic", "search_history", "history", "none", "", "null", "undefined")
 
-    # 1. Automatic history search mode
-    if ref_id in ("auto", "search_history", "history", ""):
-        if not conflict_analysis.get("has_history"):
+    records = load_records()
+    ref_record = None
+
+    if is_auto:
+        # 1. Automatic reference resolution:
+        # Step A: Check static demo archive dataset (records.json) by Dag & Khatian, Deed, or Dag
+        norm_dag = normalize_digits(extracted_dict.get("dag_no"))
+        norm_khatian = normalize_digits(extracted_dict.get("khatian_no"))
+        norm_deed = normalize_digits(extracted_dict.get("deed_no"))
+
+        if norm_dag and norm_khatian:
+            ref_record = next(
+                (r for r in records if normalize_digits(r.get("dag_no")) == norm_dag and normalize_digits(r.get("khatian_no")) == norm_khatian),
+                None
+            )
+        if not ref_record and norm_deed:
+            ref_record = next(
+                (r for r in records if normalize_digits(r.get("deed_no")) == norm_deed),
+                None
+            )
+        if not ref_record and norm_dag:
+            ref_record = next(
+                (r for r in records if normalize_digits(r.get("dag_no")) == norm_dag),
+                None
+            )
+
+        # Step B: If not in static demo records, check synthetic transaction history
+        if not ref_record and conflict_analysis.get("has_history"):
+            supporting = conflict_analysis.get("supporting_records", [])
+            baseline_tx = supporting[0] if supporting else None
+            ref_record = {
+                "id": conflict_analysis.get("parcel_id") or (baseline_tx.get("transaction_id") if baseline_tx else "parcel-baseline"),
+                "owner_name_bn": baseline_tx.get("seller_name_bn") if baseline_tx else extracted_dict.get("owner_name"),
+                "khatian_no": baseline_tx.get("khatian_no") if baseline_tx else extracted_dict.get("khatian_no"),
+                "dag_no": baseline_tx.get("dag_no") if baseline_tx else extracted_dict.get("dag_no"),
+                "area_decimal": baseline_tx.get("transferred_area") if baseline_tx else extracted_dict.get("area_decimal"),
+                "document_date": baseline_tx.get("transaction_date") if baseline_tx else extracted_dict.get("document_date"),
+                "deed_no": baseline_tx.get("deed_no") if baseline_tx else extracted_dict.get("deed_no")
+            }
+
+        # Step C: If no reference record exists at all (unrecorded parcel or unselected),
+        # return a clear, user-friendly 'Reference record not selected / Needs manual review' response
+        if not ref_record:
             return {
                 "has_history": False,
                 "status": "NO_PRIOR_RECORD",
                 "status_badge": "Previous Land Record Not Found",
                 "status_label_bn": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি",
                 "status_label_en": "Previous Land Record Not Found",
+                "reference_status": "Reference record not selected",
+                "reference_status_bn": "রেফারেন্স রেকর্ড নির্বাচিত হয়নি / ম্যানুয়াল পর্যালোচনা প্রয়োজন",
+                "reference_status_en": "Reference record not selected / Needs manual review",
                 "conflict_analysis": conflict_analysis,
                 "results": [],
                 "explanation": {
-                    "title": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি (Previous Land Record Not Found)",
-                    "summary": "এই দাগ বা খতিয়ানের বিপরীতে কোনো পূর্ববর্তী নিবন্ধিত লেনদেন বা সিএস/এসএ রেকর্ড খুঁজে পাওয়া যায়নি।",
-                    "details": "অনুগ্রহ করে সরাসরি সাব-রেজিস্ট্রি আর্কাইভ ও ভূমি রেকর্ড যাচাই করুন।"
+                    "title": "রেফারেন্স রেকর্ড নির্বাচিত হয়নি / ম্যানুয়াল পর্যালোচনা প্রয়োজন",
+                    "summary": "এই দাগ বা খতিয়ানের বিপরীতে কোনো পূর্ববর্তী নিবন্ধিত লেনদেন বা রেফারেন্স রেকর্ড খুঁজে পাওয়া যায়নি।",
+                    "details": "রেফারেন্স রেকর্ড নির্বাচিত হয়নি — ম্যানুয়াল পর্যালোচনা প্রয়োজন। অনুগ্রহ করে সরাসরি সাব-রেজিস্ট্রি আর্কাইভ ও ভূমি রেকর্ড যাচাই করুন।"
                 },
                 "reference_record": None,
                 "disclaimer": "DEMO DATA — not a legal verdict"
             }
-
-        supporting = conflict_analysis.get("supporting_records", [])
-        baseline_tx = supporting[0] if supporting else None
-        ref_record = {
-            "id": conflict_analysis.get("parcel_id") or "parcel-baseline",
-            "owner_name_bn": baseline_tx.get("seller_name_bn") if baseline_tx else extracted_dict.get("owner_name"),
-            "khatian_no": baseline_tx.get("khatian_no") if baseline_tx else extracted_dict.get("khatian_no"),
-            "dag_no": baseline_tx.get("dag_no") if baseline_tx else extracted_dict.get("dag_no"),
-            "area_decimal": baseline_tx.get("transferred_area") if baseline_tx else extracted_dict.get("area_decimal"),
-            "document_date": baseline_tx.get("transaction_date") if baseline_tx else extracted_dict.get("document_date"),
-            "deed_no": baseline_tx.get("deed_no") if baseline_tx else extracted_dict.get("deed_no")
-        }
     else:
-        # 2. Explicit reference record requested
-        records = load_records()
-        ref_record = next((r for r in records if r.get("id") == ref_id), None)
+        # 2. Explicit reference record requested by valid record ID
+        ref_record = next((r for r in records if r.get("id") == ref_raw), None)
 
         if not ref_record:
-            parcel_records = get_parcel_by_id(ref_id)
+            parcel_records = get_parcel_by_id(ref_raw)
             if parcel_records:
                 latest = parcel_records[-1]
                 ref_record = {
-                    "id": ref_id,
+                    "id": ref_raw,
                     "owner_name_bn": latest.get("buyer_name_bn"),
                     "khatian_no": latest.get("khatian_no"),
                     "dag_no": latest.get("dag_no"),
@@ -560,9 +592,22 @@ def compare_document(req: CompareRequest):
                 }
 
         if not ref_record:
+            tx = get_transaction_by_id(ref_raw)
+            if tx:
+                ref_record = {
+                    "id": ref_raw,
+                    "owner_name_bn": tx.get("buyer_name_bn"),
+                    "khatian_no": tx.get("khatian_no"),
+                    "dag_no": tx.get("dag_no"),
+                    "area_decimal": tx.get("transferred_area"),
+                    "document_date": tx.get("transaction_date"),
+                    "deed_no": tx.get("deed_no")
+                }
+
+        if not ref_record:
             raise HTTPException(
                 status_code=404,
-                detail=f"Reference record '{ref_id}' not found."
+                detail=f"Reference record '{ref_raw}' not found."
             )
 
     result = compare_records(

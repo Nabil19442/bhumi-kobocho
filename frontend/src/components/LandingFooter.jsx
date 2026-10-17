@@ -6,10 +6,10 @@ export default function LandingFooter({ lang = 'bn' }) {
 
   return (
     <footer className="landing-footer" style={{
-      background: 'var(--deep)',
-      color: '#EAF0E8',
-      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-      padding: '48px 0 32px'
+      background: 'var(--bg-primary)',
+      color: 'var(--text-body)',
+      borderTop: '1.5px solid var(--line)',
+      padding: '36px 0 24px'
     }}>
       <div className="landing-container" style={{
         maxWidth: 'var(--max-content-width)',
@@ -19,22 +19,22 @@ export default function LandingFooter({ lang = 'bn' }) {
       }}>
         {/* Top Disclaimer Highlight Banner */}
         <div style={{
-          background: 'rgba(253, 230, 138, 0.12)',
-          border: '1px solid rgba(253, 230, 138, 0.3)',
+          background: 'var(--status-review-bg)',
+          border: '1px solid var(--status-review-border)',
           borderRadius: 'var(--radius-std)',
-          padding: '12px 18px',
-          marginBottom: '36px',
+          padding: '10px 16px',
+          marginBottom: '28px',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
-          <Info size={18} style={{ color: '#FDE68A', flexShrink: 0 }} />
+          <Info size={16} style={{ color: 'var(--status-review-text)', flexShrink: 0 }} />
           <p style={{
             margin: 0,
-            fontSize: '0.86rem',
-            color: '#FEF3C7',
+            fontSize: '0.82rem',
+            color: 'var(--status-review-text)',
             fontFamily: 'var(--font-heading)',
-            lineHeight: 1.5
+            lineHeight: 1.45
           }}>
             <strong>{isBn ? 'ডেমো ডেটা সতর্কতা:' : 'Demo Data Notice:'} </strong>
             {isBn
@@ -47,42 +47,42 @@ export default function LandingFooter({ lang = 'bn' }) {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '32px',
-          paddingBottom: '36px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+          gap: '28px',
+          paddingBottom: '24px',
+          borderBottom: '1px solid var(--line)'
         }}>
           {/* Brand Col */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <div style={{
-                width: '28px',
-                height: '28px',
+                width: '26px',
+                height: '26px',
                 borderRadius: '6px',
-                background: 'var(--accent)',
+                background: 'var(--primary-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff'
               }}>
-                <ShieldCheck size={18} />
+                <ShieldCheck size={16} />
               </div>
               <span style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: '1.28rem',
+                fontSize: '1.20rem',
                 fontWeight: 800,
-                color: '#FFFFFF'
+                color: 'var(--text-main)'
               }}>
                 {isBn ? 'ভূমি কবচ' : 'Bhumi Kobocho'}
               </span>
             </div>
 
             <p style={{
-              fontSize: '0.86rem',
-              color: '#BACEC7',
+              fontSize: '0.84rem',
+              color: 'var(--text-body)',
               fontFamily: 'var(--font-body)',
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               maxWidth: '320px',
-              margin: '0 0 12px'
+              margin: '0 0 8px'
             }}>
               {isBn
                 ? 'নাগরিক ভূমি রেকর্ড বুদ্ধিমত্তা ও ক্রিপ্টোগ্রাফিক সুরক্ষা প্ল্যাটফর্ম।'
@@ -90,9 +90,9 @@ export default function LandingFooter({ lang = 'bn' }) {
             </p>
 
             <div style={{
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               fontFamily: 'var(--font-mono)',
-              color: '#8BA59E'
+              color: 'var(--text-muted)'
             }}>
               Rules decide; AI explains.
             </div>
@@ -101,36 +101,36 @@ export default function LandingFooter({ lang = 'bn' }) {
           {/* Hackathon & Team Col */}
           <div>
             <span style={{
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontFamily: 'var(--font-mono)',
               textTransform: 'uppercase',
-              color: '#8BA59E',
+              color: 'var(--text-muted)',
               letterSpacing: '0.6px',
               display: 'block',
-              marginBottom: '10px'
+              marginBottom: '8px'
             }}>
               {isBn ? 'দল ও প্রতিযোগিতা' : 'TEAM & EVENT'}
             </span>
             <div style={{
-              fontSize: '0.96rem',
+              fontSize: '0.92rem',
               fontWeight: 700,
               fontFamily: 'var(--font-heading)',
-              color: '#FFFFFF',
-              marginBottom: '4px'
+              color: 'var(--text-main)',
+              marginBottom: '2px'
             }}>
               TEAM: ZENOX
             </div>
             <div style={{
-              fontSize: '0.88rem',
-              color: '#BACEC7',
-              marginBottom: '8px'
+              fontSize: '0.84rem',
+              color: 'var(--text-body)',
+              marginBottom: '6px'
             }}>
               LandTech Innovation Hackathon 2026
             </div>
             <div style={{
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               fontFamily: 'var(--font-mono)',
-              color: '#8BA59E'
+              color: 'var(--text-muted)'
             }}>
               Organized for citizen-first digital governance.
             </div>
@@ -139,13 +139,13 @@ export default function LandingFooter({ lang = 'bn' }) {
           {/* Core Modules Quick Links */}
           <div>
             <span style={{
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontFamily: 'var(--font-mono)',
               textTransform: 'uppercase',
-              color: '#8BA59E',
+              color: 'var(--text-muted)',
               letterSpacing: '0.6px',
               display: 'block',
-              marginBottom: '10px'
+              marginBottom: '8px'
             }}>
               {isBn ? 'মূল মডিউলসমূহ' : 'CORE MODULES'}
             </span>
@@ -153,9 +153,9 @@ export default function LandingFooter({ lang = 'bn' }) {
               listStyle: 'none',
               padding: 0,
               margin: 0,
-              fontSize: '0.86rem',
-              color: '#BACEC7',
-              lineHeight: 1.8
+              fontSize: '0.84rem',
+              color: 'var(--text-body)',
+              lineHeight: 1.7
             }}>
               <li>{isBn ? '• দলিল স্ক্যানার ও ফিল্ড এক্সট্রাকশন' : '• Deed Scanner & OCR Review'}</li>
               <li>{isBn ? '• অসঙ্গতি নিরীক্ষা ও নিয়ম ইঞ্জিন' : '• Mismatch Detector & Rule Engine'}</li>
@@ -168,14 +168,14 @@ export default function LandingFooter({ lang = 'bn' }) {
 
         {/* Bottom Credits & Copyright */}
         <div style={{
-          paddingTop: '24px',
+          paddingTop: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
-          fontSize: '0.78rem',
-          color: '#8BA59E',
+          gap: '10px',
+          fontSize: '0.76rem',
+          color: 'var(--text-muted)',
           fontFamily: 'var(--font-mono)'
         }}>
           <div>
