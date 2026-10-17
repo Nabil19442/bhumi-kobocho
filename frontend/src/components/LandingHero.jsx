@@ -63,8 +63,8 @@ export default function LandingHero({
           className="hero-grid-3d" 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(300px, 1fr) minmax(340px, 1.15fr)',
-            gap: 'clamp(24px, 3.5vw, 48px)',
+            gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.3fr)',
+            gap: 'clamp(24px, 3.5vw, 44px)',
             alignItems: 'center'
           }}
         >
