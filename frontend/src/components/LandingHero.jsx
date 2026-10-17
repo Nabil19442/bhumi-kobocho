@@ -13,6 +13,7 @@ export default function LandingHero({
   onStartScanning, 
   onViewPassport,
   onViewGuardian,
+  onViewReports,
   onHowItWorks 
 }) {
   const isBn = lang === 'bn';
@@ -280,12 +281,13 @@ export default function LandingHero({
             </div>
           </div>
 
-          {/* Column 2: 3D Floating Land Parcel Visual */}
+          {/* Column 2: Unified Land Record Card (Map + Record Info) */}
           <div className="hero-3d-visual-column" style={{ position: 'relative', zIndex: 2 }}>
             <Parcel3DVisual
               lang={lang}
               onStartScanning={onStartScanning}
               onViewPassport={onViewPassport}
+              onViewReports={onViewReports}
             />
           </div>
         </div>

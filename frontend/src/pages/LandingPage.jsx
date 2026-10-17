@@ -21,7 +21,8 @@ export default function LandingPage({
   onViewIntegrity,
   onViewHistory,
   onViewLandPrice,
-  onViewGuardian
+  onViewGuardian,
+  onViewReports
 }) {
   const handleScrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);
@@ -32,12 +33,13 @@ export default function LandingPage({
 
   return (
     <div className="landing-page-root" style={{ width: '100%', overflowX: 'hidden' }}>
-      {/* A. Hero Section with Headline, Supporting Text, CTAs, and Interactive 3D Land Parcel Visual */}
+      {/* A. Hero Section with Headline, Supporting Text, CTAs, and Unified Land Record Card Visual */}
       <LandingHero
         lang={lang}
         onStartScanning={onStartScanning}
         onViewPassport={onViewPassport}
         onViewGuardian={onViewGuardian}
+        onViewReports={onViewReports || onViewPassport}
         onHowItWorks={() => handleScrollToSection('how-it-works')}
       />
 

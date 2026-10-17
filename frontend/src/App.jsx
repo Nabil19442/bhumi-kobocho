@@ -151,6 +151,7 @@ export default function App() {
             onViewIntegrity={() => setActiveTab('integrity')}
             onViewLandPrice={() => setActiveTab('landprice')}
             onViewGuardian={() => setActiveTab('guardian')}
+            onViewReports={() => setActiveTab('reports')}
           />
         )}
 
