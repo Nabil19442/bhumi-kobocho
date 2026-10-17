@@ -49,7 +49,7 @@ from .ocr import (
     scan_uploaded_document,
     scan_document_bytes
 )
-from .graph import build_relationship_graph
+from .graph import build_relationship_graph, build_parcel_graph
 from .conflict_detector import detect_conflicts
 from .transaction_registry import (
     find_history_for_deed,
@@ -225,20 +225,38 @@ def list_records():
 def get_records_graph(record_id: Optional[str] = Query(None)):
     """
     Returns the synthetic land record relationship graph.
-    - If record_id is provided, returns the focused graph for that record.
+    - If record_id is provided, returns the focused graph for that record or parcel.
     - If record_id is unknown, returns HTTP 404.
     - If record_id is omitted, returns the complete relationship graph.
     """
     records = load_records()
-    if record_id:
-        rec_exists = any(r.get("id") == record_id for r in records)
-        if not rec_exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Record '{record_id}' not found."
-            )
     events = load_events()
-    return build_relationship_graph(records, events=events, focus_record_id=record_id)
+
+    if record_id:
+        # 1. Archive records in records.json (rec-demo-001..004)
+        rec_exists = any(r.get("id") == record_id for r in records)
+        if rec_exists:
+            return build_relationship_graph(records, events=events, focus_record_id=record_id)
+
+        # 2. Parcel ID in synthetic transaction registry (e.g. PCL-DHK-GUL-015-0550)
+        parcel_txs = get_parcel_by_id(record_id)
+        if parcel_txs:
+            return build_parcel_graph(record_id, parcel_txs)
+
+        # 3. Transaction ID in transaction registry (e.g. rec-scen-001-a)
+        tx = get_transaction_by_id(record_id)
+        if tx:
+            p_id = tx.get("parcel_id")
+            p_txs = get_parcel_by_id(p_id) if p_id else [tx]
+            return build_parcel_graph(p_id or record_id, p_txs, focus_tx_id=record_id)
+
+        # 4. Genuinely unknown record/parcel ID -> HTTP 404
+        raise HTTPException(
+            status_code=404,
+            detail=f"Record '{record_id}' not found."
+        )
+
+    return build_relationship_graph(records, events=events, focus_record_id=None)
 
 @app.get("/api/records/{record_id}")
 def get_record(record_id: str):

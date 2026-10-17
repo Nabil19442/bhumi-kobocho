@@ -177,3 +177,76 @@ def test_graph_cannot_match_with_incomplete_reference():
     baya_finding = next(f for f in graph["findings"] if f["source_record_id"] == "rec-test-01")
     assert baya_finding["status"] == "Needs review"
 
+
+def test_graph_parcel_id_resolution():
+    """Verify that synthetic parcel ID PCL-DHK-GUL-015-0550 returns 200 with complete relationship graph."""
+    res = client.get("/api/records/graph?record_id=PCL-DHK-GUL-015-0550")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["focus_record_id"] == "PCL-DHK-GUL-015-0550"
+    node_ids = {n["id"] for n in data["nodes"]}
+    assert "PCL-DHK-GUL-015-0550" in node_ids
+    assert "rec-scen-001-a" in node_ids
+    assert "rec-scen-001-b" in node_ids
+
+    # Verify parcel node attributes
+    parcel_node = next(n for n in data["nodes"] if n["id"] == "PCL-DHK-GUL-015-0550")
+    assert parcel_node["node_type"] == "parcel"
+    assert parcel_node["dag_no"] == "550"
+    assert parcel_node["khatian_no"] == "220"
+    assert parcel_node["is_synthetic"] is True
+
+    # Verify TRANSACTION_ON_PARCEL edges exist
+    tx_edges = [e for e in data["edges"] if e["relationship_type"] == "TRANSACTION_ON_PARCEL"]
+    assert len(tx_edges) >= 2
+
+    # Verify duplicate conveyance finding
+    dup_finding = next(
+        (f for f in data["findings"] if "dup" in f.get("finding_id", "") or "দ্বৈত" in f.get("explanation_bn", "")),
+        None
+    )
+    assert dup_finding is not None
+    assert dup_finding["status"] == "Needs review"
+
+    # Verify summary counters
+    summary = data["summary"]
+    assert summary["total_nodes"] == len(data["nodes"])
+    assert summary["total_edges"] == len(data["edges"])
+    assert summary["resolved_references_count"] >= 1
+    assert summary["missing_references_count"] >= 1
+
+
+def test_graph_all_demo_parcels():
+    """Verify that all featured demo parcels load their graphs without error."""
+    demo_parcels = [
+        "PCL-DHK-GUL-015-0550",
+        "PCL-DHK-SAV-045-0784",
+        "PCL-DHK-MIR-028-1058",
+        "PCL-CTG-KOT-088-3310",
+        "PCL-SYL-SAD-032-1540",
+        "PCL-DHK-SHA-012-1234",
+        "PCL-RAJ-PAB-041-1058",
+        "PCL-KHL-RPS-018-1540",
+        "PCL-DHK-SHT-012-1234"
+    ]
+    for parcel_id in demo_parcels:
+        res = client.get(f"/api/records/graph?record_id={parcel_id}")
+        assert res.status_code == 200, f"Failed for {parcel_id}: {res.text}"
+        data = res.json()
+        assert len(data["nodes"]) >= 1
+        assert len(data["edges"]) >= 1
+        assert data["summary"]["total_nodes"] == len(data["nodes"])
+        assert data["summary"]["total_edges"] == len(data["edges"])
+
+
+def test_graph_transaction_id_resolution():
+    """Verify that a transaction ID rec-scen-001-a returns its scoped parcel relationship graph."""
+    res = client.get("/api/records/graph?record_id=rec-scen-001-a")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["focus_record_id"] == "rec-scen-001-a"
+    node_ids = {n["id"] for n in data["nodes"]}
+    assert "rec-scen-001-a" in node_ids
+    assert "PCL-DHK-GUL-015-0550" in node_ids
+

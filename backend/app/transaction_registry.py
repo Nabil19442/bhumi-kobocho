@@ -173,9 +173,24 @@ def get_transaction_by_id(tx_id: str) -> Optional[Dict[str, Any]]:
     load_transactions()
     return _BY_ID.get(tx_id)
 
+PARCEL_ID_ALIASES = {
+    "PCL-RAJ-PAB-041-1058": "PCL-DHK-MIR-028-1058",
+    "PCL-KHL-RPS-018-1540": "PCL-SYL-SAD-032-1540",
+    "PCL-DHK-SHT-012-1234": "PCL-DHK-SHA-012-1234",
+}
+
 def get_parcel_by_id(parcel_id: str) -> List[Dict[str, Any]]:
     load_transactions()
-    return _BY_PARCEL.get(parcel_id, [])
+    if not parcel_id:
+        return []
+    # 1. Direct match
+    if parcel_id in _BY_PARCEL:
+        return _BY_PARCEL[parcel_id]
+    # 2. Known alias match
+    canonical = PARCEL_ID_ALIASES.get(parcel_id)
+    if canonical and canonical in _BY_PARCEL:
+        return _BY_PARCEL[canonical]
+    return []
 
 def get_scenario_records() -> List[Dict[str, Any]]:
     """Returns the explicitly created scenario records for testing and demonstration."""

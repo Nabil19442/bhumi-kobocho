@@ -24,9 +24,10 @@ import ProposedPurchaseModal from '../components/ProposedPurchaseModal';
 const PRESET_PARCELS = [
   { id: 'PCL-DHK-GUL-015-0550', dag: '550', mouza: 'গুলশান', label: 'দাগ ৫৫০ (গুলশান) — দ্বৈত বিক্রয় টেস্ট' },
   { id: 'PCL-DHK-SAV-045-0784', dag: '784', mouza: 'সাভার', label: 'দাগ ৭৮৪ (সাভার) — এরিয়া ওভারল্যাপ টেস্ট' },
-  { id: 'PCL-RAJ-PAB-041-1058', dag: '1058', mouza: 'পাবনা', label: 'দাগ ১০৫৮ (পাবনা) — স্বাভাবিক ধারাবাহিক চেইন' },
-  { id: 'PCL-KHL-RPS-018-1540', dag: '1540', mouza: 'রূপসা', label: 'দাগ ১৫৪০ (রূপসা) — বহুবিধ লেনদেনের ইতিহাস' },
-  { id: 'PCL-DHK-SHT-012-1234', dag: '1234', mouza: 'শান্তিপুর', label: 'দাগ ১২৩৪ (শান্তিপুর) — ডেমো পিডিএফ দলিল' }
+  { id: 'PCL-DHK-MIR-028-1058', dag: '1058', mouza: 'মিরপুর', label: 'দাগ ১০৫৮ (মিরপুর) — স্বাভাবিক ধারাবাহিক চেইন' },
+  { id: 'PCL-CTG-KOT-088-3310', dag: '3310', mouza: 'আন্দরকিল্লা', label: 'দাগ ৩৩১০ (চট্টগ্রাম) — অসম্পূর্ণ ইতিহাস টেস্ট' },
+  { id: 'PCL-SYL-SAD-032-1540', dag: '1540', mouza: 'আম্বরখানা', label: 'দাগ ১৫৪০ (সিলেট) — বহুবিধ লেনদেনের ইতিহাস' },
+  { id: 'PCL-DHK-SHA-012-1234', dag: '1234', mouza: 'শান্তিপুর', label: 'দাগ ১২৩৪ (শান্তিপুর) — ডেমো পিডিএফ দলিল' }
 ];
 
 export default function HistoryPage({ t, lang = 'bn', onViewPassport }) {

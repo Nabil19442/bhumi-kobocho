@@ -14,8 +14,24 @@ import {
 } from 'lucide-react';
 import { fetchRecordGraph, fetchRecords } from '../api';
 
-export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavigatePassport }) {
+const DEMO_PARCELS = [
+  { id: 'PCL-DHK-GUL-015-0550', label_bn: 'গুলশান (দাগ ৫৫০ — দ্বৈত বিক্রয়)', label_en: 'Gulshan (Dag 550 — Duplicate Sale)' },
+  { id: 'PCL-DHK-SAV-045-0784', label_bn: 'সাভার (দাগ ৭৮৪ — ওভারল্যাপ)', label_en: 'Savar (Dag 784 — Overlap)' },
+  { id: 'PCL-DHK-MIR-028-1058', label_bn: 'মিরপুর (দাগ ১০৫৮ — চেইন)', label_en: 'Mirpur (Dag 1058 — Clean Chain)' },
+  { id: 'PCL-CTG-KOT-088-3310', label_bn: 'চট্টগ্রাম (দাগ ৩৩১০ — গ্যাপ)', label_en: 'Chittagong (Dag 3310 — Gap)' },
+  { id: 'PCL-SYL-SAD-032-1540', label_bn: 'সিলেট (দাগ ১৫৪০ — বহুবিধ)', label_en: 'Sylhet (Dag 1540 — Multi-Tx)' },
+  { id: 'PCL-DHK-SHA-012-1234', label_bn: 'শান্তিপুর (দাগ ১২৩৪)', label_en: 'Shantipur (Dag 1234)' }
+];
+
+export default function GraphPage({ 
+  lang = 'bn', 
+  initialRecordId = null, 
+  onNavigatePassport, 
+  onViewPassport, 
+  onSelectRecord 
+}) {
   const isBn = lang === 'bn';
+  const handleNavigatePassport = onViewPassport || onNavigatePassport;
 
   const [graphData, setGraphData] = useState(null);
   const [selectedRecordId, setSelectedRecordId] = useState(initialRecordId || '');
@@ -24,7 +40,14 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load records for dropdown
+  // Sync initialRecordId when passed or updated from parent
+  useEffect(() => {
+    if (initialRecordId !== undefined && initialRecordId !== null) {
+      setSelectedRecordId(initialRecordId);
+    }
+  }, [initialRecordId]);
+
+  // Load records for dropdown / pills
   useEffect(() => {
     fetchRecords()
       .then((res) => {
@@ -63,12 +86,17 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
 
   const handleSelectFilter = (id) => {
     setSelectedRecordId(id);
+    if (onSelectRecord) {
+      onSelectRecord(id);
+    }
   };
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
   const findings = graphData?.findings || [];
   const summary = graphData?.summary || { total_nodes: 0, total_edges: 0, missing_references_count: 0 };
+  const resolvedCount = summary.resolved_references_count ?? summary.status_counts?.Matched ?? 0;
+  const missingCount = summary.missing_references_count ?? 0;
 
   return (
     <div className="app-viewport">
@@ -151,6 +179,30 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
             {isBn ? 'সকল রেকর্ড (পূর্ণাঙ্গ গ্রাফ)' : 'All Records (Full Graph)'}
           </button>
 
+          {DEMO_PARCELS.map((p) => {
+            const isSelected = selectedRecordId === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleSelectFilter(p.id)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: isSelected ? 'var(--primary-accent)' : '#EAEFE9',
+                  color: isSelected ? '#FFFFFF' : 'var(--text-main)',
+                  border: isSelected ? '1px solid var(--primary-accent)' : '1px solid transparent',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {isBn ? p.label_bn : p.label_en}
+              </button>
+            );
+          })}
+
           {allRecords.map((r) => {
             const isSelected = selectedRecordId === r.id;
             return (
@@ -166,22 +218,42 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
                   cursor: 'pointer',
                   background: isSelected ? 'var(--primary-accent)' : '#EAEFE9',
                   color: isSelected ? '#FFFFFF' : 'var(--text-main)',
-                  border: 'none'
+                  border: isSelected ? '1px solid var(--primary-accent)' : '1px solid transparent',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {r.id} ({r.mouza?.split('(')[0]?.trim() || r.id})
               </button>
             );
           })}
+
+          {selectedRecordId && !DEMO_PARCELS.some(p => p.id === selectedRecordId) && !allRecords.some(r => r.id === selectedRecordId) && (
+            <button
+              type="button"
+              onClick={() => handleSelectFilter(selectedRecordId)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: 'var(--primary-accent)',
+                color: '#FFFFFF',
+                border: 'none'
+              }}
+            >
+              {selectedRecordId}
+            </button>
+          )}
         </div>
 
         {/* Quick Summary Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}>
           <span style={{ padding: '3px 10px', borderRadius: '12px', background: '#E8F5E9', color: '#2E7D32', border: '1px solid #A5D6A7', fontWeight: 700 }}>
-            {summary.status_counts?.Matched || 0} {isBn ? 'সংযুক্ত' : 'Resolved'}
+            {resolvedCount} {isBn ? 'সংযুক্ত' : 'Resolved'}
           </span>
           <span style={{ padding: '3px 10px', borderRadius: '12px', background: '#FEF9E7', color: '#B78103', border: '1px solid #F9E79F', fontWeight: 700 }}>
-            {summary.missing_references_count || 0} {isBn ? 'অনুপস্থিত বায়া' : 'Missing Ref'}
+            {missingCount} {isBn ? 'অনুপস্থিত বায়া' : 'Missing Ref'}
           </span>
         </div>
       </div>
@@ -220,9 +292,41 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
                 <span>{isBn ? 'গ্রাফ ডাটা লোড হচ্ছে...' : 'Loading relationship graph...'}</span>
               </div>
             ) : error ? (
-              <div style={{ padding: '24px', color: '#C62828', textAlign: 'center' }}>
-                <AlertTriangle size={32} style={{ margin: '0 auto 8px' }} />
-                <p>{error}</p>
+              <div style={{
+                padding: '36px 20px',
+                textAlign: 'center',
+                background: '#FFF8F8',
+                border: '1px solid #FFCDD2',
+                borderRadius: 'var(--radius-std)',
+                margin: '12px 0'
+              }}>
+                <AlertTriangle size={36} color="#D32F2F" style={{ margin: '0 auto 12px' }} />
+                <h3 style={{ fontSize: '1.05rem', color: '#B71C1C', margin: '0 0 6px', fontFamily: 'var(--font-heading)' }}>
+                  {isBn ? 'রেকর্ডটি ডেটাবেসে পাওয়া যায়নি' : 'Record Not Found in Database'}
+                </h3>
+                <p style={{ fontSize: '0.86rem', color: 'var(--text-body)', margin: '0 0 16px', maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>
+                  {error}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleSelectFilter('')}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 'var(--radius-std)',
+                    background: 'var(--primary-accent)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RefreshCw size={14} />
+                  <span>{isBn ? 'সকল রেকর্ডের পূর্ণাঙ্গ গ্রাফ প্রদর্শন করুন' : 'View Full Relationship Graph'}</span>
+                </button>
               </div>
             ) : (
               <div>
@@ -528,10 +632,10 @@ export default function GraphPage({ lang = 'bn', initialRecordId = null, onNavig
                 </div>
 
                 {/* Passport Navigation Button */}
-                {selectedNode.node_type === 'record' && (
+                {(selectedNode.node_type === 'record' || selectedNode.node_type === 'parcel' || selectedNode.node_type === 'transaction') && (
                   <button
                     type="button"
-                    onClick={() => onNavigatePassport && onNavigatePassport(selectedNode.id)}
+                    onClick={() => handleNavigatePassport && handleNavigatePassport(selectedNode.parcel_id || selectedNode.id)}
                     style={{
                       width: '100%',
                       padding: '10px 14px',

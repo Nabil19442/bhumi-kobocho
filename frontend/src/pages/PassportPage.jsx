@@ -332,9 +332,10 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
             <optgroup label={isBn ? "কৃত্রিম লেনদেন হিস্ট্রি পার্সেলসমূহ (২০,০০০+ রেকর্ড)" : "Synthetic Land History Parcels"}>
               <option value="PCL-DHK-GUL-015-0550">PCL-DHK-GUL-015-0550: গুলশান (দাগ: ৫৫০, খতিয়ান: ২২০) — দ্বৈত বিক্রয় টেস্ট</option>
               <option value="PCL-DHK-SAV-045-0784">PCL-DHK-SAV-045-0784: সাভার (দাগ: ৭৮৪, খতিয়ান: ১২৯) — এরিয়া ওভারল্যাপ টেস্ট</option>
-              <option value="PCL-RAJ-PAB-041-1058">PCL-RAJ-PAB-041-1058: পাবনা (দাগ: ১০৫৮, খতিয়ান: ৪১২) — ধারাবাহিক পরিচ্ছন্ন চেইন</option>
-              <option value="PCL-KHL-RPS-018-1540">PCL-KHL-RPS-018-1540: রূপসা (দাগ: ১৫৪০, খতিয়ান: ৭৩) — বহুবিধ লেনদেন</option>
-              <option value="PCL-DHK-SHT-012-1234">PCL-DHK-SHT-012-1234: শান্তিপুর (দাগ: ১২৩৪, খতিয়ান: ৪৫৬) — ডেমো পিডিএফ দলিল</option>
+              <option value="PCL-DHK-MIR-028-1058">PCL-DHK-MIR-028-1058: মিরপুর (দাগ: ১০৫৮, খতিয়ান: ৪১২) — ধারাবাহিক পরিচ্ছন্ন চেইন</option>
+              <option value="PCL-CTG-KOT-088-3310">PCL-CTG-KOT-088-3310: চট্টগ্রাম (দাগ: ৩৩১০, খতিয়ান: ৯৯১) — অসম্পূর্ণ ইতিহাস টেস্ট</option>
+              <option value="PCL-SYL-SAD-032-1540">PCL-SYL-SAD-032-1540: সিলেট (দাগ: ১৫৪০, খতিয়ান: ৬০৫) — বহুবিধ লেনদেনের ইতিহাস</option>
+              <option value="PCL-DHK-SHA-012-1234">PCL-DHK-SHA-012-1234: শান্তিপুর (দাগ: ১২৩৪, খতিয়ান: ৪৫৬) — ডেমো পিডিএফ দলিল</option>
             </optgroup>
             <optgroup label={isBn ? "আর্কাইভ নমুনা রেকর্ডসমূহ" : "Archive Demo Records"}>
               {records.map(r => (
