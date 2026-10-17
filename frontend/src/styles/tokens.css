@@ -46,6 +46,9 @@
   --status-review-bg: #FBEBC4;
   --status-review-text: #7A4E00;
   --status-review-border: #F2D48E;
+  --status-needs-review-bg: var(--status-review-bg);
+  --status-needs-review-text: var(--status-review-text);
+  --status-needs-review-border: var(--status-review-border);
 
   --status-notchecked-bg: #E3EAE8;
   --status-notchecked-text: #3F5256;

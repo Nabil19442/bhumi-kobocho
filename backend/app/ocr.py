@@ -169,6 +169,10 @@ def extract_fields_from_text(
 
     fields = {
         "owner_name": None,
+        "seller_name": None,
+        "buyer_name": None,
+        "mouza": None,
+        "jl_no": None,
         "khatian_no": None,
         "dag_no": None,
         "area_decimal": None,
@@ -222,11 +226,37 @@ def extract_fields_from_text(
             if base_confidence is not None:
                 confidences["document_date"] = base_confidence
 
-    # 3. Owner Name
+    # 3. Seller Name (বিক্রেতার নাম, বিক্রেতা, হস্তান্তরকারী, দাতা, Seller)
+    seller_match = re.search(
+        r"(?:বিক্রেতার\s*নাম|বিক্রেতা|হস্তান্তরকারী|দাতার\s*নাম|দাতার|Seller(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        norm_text,
+        re.IGNORECASE
+    )
+    if seller_match:
+        cand_seller = clean_extracted_field(seller_match.group(1))
+        if cand_seller:
+            fields["seller_name"] = cand_seller
+            if base_confidence is not None:
+                confidences["seller_name"] = base_confidence
+
+    # 4. Buyer Name & Owner Name
     # Priority: buyer (ক্রেতা), grantee (গ্রহীতা), owner (মালিক/মালিকের নাম)
     # Note: (?<!বি) ensures 'বিক্রেতা' (seller) is not mistaken for 'ক্রেতা'
+    buyer_match = re.search(
+        r"(?:ক্রেতার\s*নাম|(?<!বি)ক্রেতা|গ্রহীতার\s*নাম|Buyer(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        norm_text,
+        re.IGNORECASE
+    )
+    if buyer_match:
+        cand_buyer = clean_extracted_field(buyer_match.group(1))
+        if cand_buyer:
+            fields["buyer_name"] = cand_buyer
+            fields["owner_name"] = cand_buyer
+            if base_confidence is not None:
+                confidences["buyer_name"] = base_confidence
+
     name_match = re.search(
-        r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|(?<!বি)ক্রেতা|গ্রহীতা|জমির\s*মালিক|দাতার\s*নাম|Owner(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|জমির\s*মালিক|Owner(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -250,7 +280,33 @@ def extract_fields_from_text(
                         confidences["owner_name"] = base_confidence
                     break
 
-    # 4. Khatian No
+    # 5. Mouza (মৌজা, মৌজা নং, Mouza)
+    mouza_match = re.search(
+        r"(?:মৌজার\s*নাম|মৌজা|Mouza)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        norm_text,
+        re.IGNORECASE
+    )
+    if mouza_match:
+        cand_mouza = clean_extracted_field(mouza_match.group(1))
+        if cand_mouza:
+            fields["mouza"] = cand_mouza
+            if base_confidence is not None:
+                confidences["mouza"] = base_confidence
+
+    # 6. JL No (জেএল নম্বর, জেএল নং, জে.এল. নং, JL No)
+    jl_match = re.search(
+        r"(?:জে[\.\s]*এল[\.\s]*(?:নম্বর|নং)?|JL\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯]+)",
+        norm_text,
+        re.IGNORECASE
+    )
+    if jl_match:
+        cand_jl = clean_extracted_field(jl_match.group(1))
+        if cand_jl:
+            fields["jl_no"] = cand_jl
+            if base_confidence is not None:
+                confidences["jl_no"] = base_confidence
+
+    # 7. Khatian No
     khatian_match = re.search(
         r"(?:খতিয়ান\s*(?:নম্বর|নং)|খতিয়ান|Khatian\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
@@ -263,7 +319,7 @@ def extract_fields_from_text(
             if base_confidence is not None:
                 confidences["khatian_no"] = base_confidence
 
-    # 5. Dag No
+    # 8. Dag No
     dag_match = re.search(
         r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
@@ -276,7 +332,7 @@ def extract_fields_from_text(
             if base_confidence is not None:
                 confidences["dag_no"] = base_confidence
 
-    # 6. Area
+    # 9. Area
     area_match = re.search(
         r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|পরিমাণ|Area)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
         norm_text,
@@ -291,7 +347,7 @@ def extract_fields_from_text(
 
     # Assign field status without fabricating unsupplied confidence numbers
     field_status = {}
-    for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]:
+    for k in ["owner_name", "seller_name", "buyer_name", "mouza", "jl_no", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]:
         if fields[k] is None:
             field_status[k] = "Not checked"
         elif confidences.get(k) is not None and confidences[k] < 0.75:
@@ -302,6 +358,10 @@ def extract_fields_from_text(
     # Normalize Bengali numerals to English digits internally while preserving original for display
     normalized_fields = {
         "owner_name": fields["owner_name"],
+        "seller_name": fields["seller_name"],
+        "buyer_name": fields["buyer_name"],
+        "mouza": fields["mouza"],
+        "jl_no": normalize_digits(fields["jl_no"]) if fields["jl_no"] else None,
         "khatian_no": normalize_digits(fields["khatian_no"]) if fields["khatian_no"] else None,
         "dag_no": normalize_digits(fields["dag_no"]) if fields["dag_no"] else None,
         "area_decimal": normalize_digits(fields["area_decimal"]) if fields["area_decimal"] else None,
@@ -348,6 +408,61 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         if sample_id in r.get("id", "") or sample_id in r.get("sample_file", ""):
             target_record = r
             break
+
+    # If not found in records.json, check development seed dataset (dev_seed_deeds.json)
+    if not target_record:
+        try:
+            from .dev_dataset import get_dev_seed_by_id
+        except ImportError:
+            from backend.app.dev_dataset import get_dev_seed_by_id
+
+        dev_seed = get_dev_seed_by_id(sample_id)
+        if dev_seed:
+            return {
+                "extracted_fields": {
+                    "owner_name": dev_seed.get("buyer_name_bn") or dev_seed.get("owner_name_bn"),
+                    "seller_name": dev_seed.get("seller_name_bn"),
+                    "buyer_name": dev_seed.get("buyer_name_bn"),
+                    "mouza": dev_seed.get("mouza"),
+                    "jl_no": str(dev_seed.get("jl_no") or ""),
+                    "khatian_no": str(dev_seed.get("khatian_no") or ""),
+                    "dag_no": str(dev_seed.get("dag_no") or ""),
+                    "area_decimal": str(dev_seed.get("area_decimal") or ""),
+                    "document_date": dev_seed.get("document_date"),
+                    "deed_no": dev_seed.get("deed_no"),
+                    "raw_text": f"DEV SEED DEED: {dev_seed.get('id')}\nদলিল নং: {dev_seed.get('deed_no')}\nবিক্রেতা: {dev_seed.get('seller_name_bn')}\nক্রেতা: {dev_seed.get('buyer_name_bn')}\nমৌজা: {dev_seed.get('mouza')}\nদাগ: {dev_seed.get('dag_no')}\nখতিয়ান: {dev_seed.get('khatian_no')}\nজমির পরিমাণ: {dev_seed.get('area_decimal')} শতক\nতারিখ: {dev_seed.get('document_date')}"
+                },
+                "confidence_scores": {},
+                "ocr_field_status": {
+                    "owner_name": "Candidate extracted",
+                    "seller_name": "Candidate extracted",
+                    "buyer_name": "Candidate extracted",
+                    "mouza": "Candidate extracted",
+                    "jl_no": "Candidate extracted",
+                    "khatian_no": "Candidate extracted",
+                    "dag_no": "Candidate extracted",
+                    "area_decimal": "Candidate extracted",
+                    "document_date": "Candidate extracted",
+                    "deed_no": "Candidate extracted"
+                },
+                "ocr_engine": "known_demo_specimen",
+                "status": "known_specimen",
+                "sample_id": dev_seed.get("id"),
+                "uploaded_file_sha256": "dev-seed-specimen",
+                "disclaimer": "DEVELOPMENT SEED DATA — strictly fictional record for testing and evaluation.",
+                "normalized_fields": {
+                    "owner_name": dev_seed.get("buyer_name_bn") or dev_seed.get("owner_name_bn"),
+                    "seller_name": dev_seed.get("seller_name_bn"),
+                    "buyer_name": dev_seed.get("buyer_name_bn"),
+                    "mouza": dev_seed.get("mouza"),
+                    "jl_no": normalize_digits(dev_seed.get("jl_no")),
+                    "khatian_no": normalize_digits(dev_seed.get("khatian_no")),
+                    "dag_no": normalize_digits(dev_seed.get("dag_no")),
+                    "area_decimal": normalize_digits(dev_seed.get("area_decimal")),
+                    "document_date": normalize_digits(dev_seed.get("document_date")),
+                    "deed_no": normalize_digits(dev_seed.get("deed_no"))
+                }
+            }
 
     # If "custom" or noisy specimen requested for low-confidence simulation
     if sample_id == "custom" or not target_record:

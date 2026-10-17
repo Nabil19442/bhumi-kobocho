@@ -21,6 +21,11 @@ export function getApiBaseUrl() {
     return clean.endsWith("/api") ? clean : `${clean}/api`;
   }
 
+  // Localhost development fallback if running in dev mode
+  if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
+    return LOCAL_DEV_API_URL;
+  }
+
   return PRODUCTION_API_URL;
 }
 
@@ -60,27 +65,39 @@ async function request(endpoint, options = {}) {
   try {
     res = await fetch(`${currentBase}${endpoint}`, fetchOptions);
   } catch (err) {
-    if (timeoutId) clearTimeout(timeoutId);
+    // If local dev server failed to connect, attempt fallback to live Render backend
+    if (!isRenderBackend && (err.name === 'TypeError' || String(err.message || '').toLowerCase().includes('fetch'))) {
+      try {
+        console.warn(`Local backend unreachable at ${currentBase}. Attempting fallback to live backend (${PRODUCTION_API_URL})...`);
+        res = await fetch(`${PRODUCTION_API_URL}${endpoint}`, fetchOptions);
+      } catch {
+        // Fallback also failed, proceed with original error reporting
+      }
+    }
 
-    const isAborted = err.name === "AbortError";
-    if (isRenderBackend) {
-      const msg = isAborted
-        ? "Render backend took longer than 60 seconds to respond. The free cloud instance is waking up from sleep. Please wait a moment and click Retry."
-        : `Unable to connect to live backend (${currentBase}). The Render cloud instance may be waking up from sleep (~30-50s on free tier). Please wait a moment and click Retry.`;
-      throw new ApiError(msg, null, true, true, {
-        originalError: err.message,
-        apiBase: currentBase,
-        isAborted
-      });
-    } else {
-      const msg = isAborted
-        ? `Request timed out. Please ensure the local backend server is running on ${currentBase}.`
-        : `Backend offline. Please ensure the backend server is running on ${currentBase}.`;
-      throw new ApiError(msg, null, true, false, {
-        originalError: err.message,
-        apiBase: currentBase,
-        isAborted
-      });
+    if (!res) {
+      if (timeoutId) clearTimeout(timeoutId);
+
+      const isAborted = err.name === "AbortError";
+      if (isRenderBackend) {
+        const msg = isAborted
+          ? "Render backend took longer than 60 seconds to respond. The free cloud instance is waking up from sleep. Please wait a moment and click Retry."
+          : `Unable to connect to live backend (${currentBase}). The Render cloud instance may be waking up from sleep (~30-50s on free tier). Please wait a moment and click Retry.`;
+        throw new ApiError(msg, null, true, true, {
+          originalError: err.message,
+          apiBase: currentBase,
+          isAborted
+        });
+      } else {
+        const msg = isAborted
+          ? `Request timed out. Please ensure the local backend server is running on ${currentBase}.`
+          : `Backend offline. Please ensure the backend server is running on ${currentBase} or check connection.`;
+        throw new ApiError(msg, null, true, false, {
+          originalError: err.message,
+          apiBase: currentBase,
+          isAborted
+        });
+      }
     }
   } finally {
     if (timeoutId) clearTimeout(timeoutId);

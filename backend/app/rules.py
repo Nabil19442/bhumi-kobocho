@@ -1,9 +1,9 @@
 import re
 from typing import Dict, Any, List, Optional, Tuple
 try:
-    from .names import evaluate_name_status, is_bangla_text, normalize_name
+    from .names import evaluate_name_status, is_bangla_text, normalize_name, compute_name_similarity
 except ImportError:
-    from backend.app.names import evaluate_name_status, is_bangla_text, normalize_name
+    from backend.app.names import evaluate_name_status, is_bangla_text, normalize_name, compute_name_similarity
 
 ALLOWED_STATUSES = {"Matched", "Mismatch", "Needs review", "Not checked"}
 
@@ -39,6 +39,38 @@ def normalize_khatian_or_dag(val: Any) -> str:
     s = str(val).strip().lower()
     s = normalize_digits(s)
     s = re.sub(r"[\s\-_]+", "", s)
+    return s
+
+def normalize_mouza(val: Any) -> str:
+    """Normalizes Mouza name, removing parenthetical English, JL suffixes, and extra spaces."""
+    if val is None:
+        return ""
+    s = str(val).strip().lower()
+    s = re.sub(r"\(.*?\)", "", s)
+    s = re.sub(r",?\s*(?:jl|জেএল)[\s\-_:]*(?:no|নং)?[\s\-_:]*[\d০-৯]+", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"[\s\-_,.:;]+", "", s)
+    return s
+
+def extract_jl_number(jl_val: Any, mouza_val: Any = None) -> str:
+    """Extracts JL number from explicit JL field or embedded Mouza text."""
+    if jl_val is not None and str(jl_val).strip() != "":
+        clean = normalize_digits(str(jl_val))
+        match = re.search(r"\d+", clean)
+        if match:
+            return match.group(0)
+    if mouza_val:
+        m_str = normalize_digits(str(mouza_val))
+        m_match = re.search(r"(?:jl|জেএল)[\s\-_:]*(?:no|নং)?[\s\-_:]*(\d+)", m_str, re.IGNORECASE)
+        if m_match:
+            return m_match.group(1)
+    return ""
+
+def normalize_deed_no(val: Any) -> str:
+    """Normalizes deed number by converting numerals and standardizing slashes/hyphens."""
+    if val is None:
+        return ""
+    s = normalize_digits(str(val)).strip().lower()
+    s = re.sub(r"[\s\-_]+", "/", s)
     return s
 
 def parse_and_normalize_date(val: Any) -> Optional[Dict[str, Any]]:
@@ -117,8 +149,6 @@ def parse_and_normalize_date(val: Any) -> Optional[Dict[str, Any]]:
             }
 
         # Case D: Both p1 <= 12 and p2 <= 12 and p1 != p2 (e.g. 03/04/2019 or 12/03/2019)
-        # In Bangladesh deed convention, standard order is DD/MM/YYYY.
-        # However, if compared with a conflicting date, ambiguity between DD/MM and MM/DD must be flagged.
         if 1 <= p1 <= 12 and 1 <= p2 <= 12:
             primary_bd = f"{y:04d}-{p2:02d}-{p1:02d}"    # DD/MM/YYYY (Day=p1, Month=p2)
             alt_us = f"{y:04d}-{p1:02d}-{p2:02d}"        # MM/DD/YYYY (Month=p1, Day=p2)
@@ -154,7 +184,6 @@ def evaluate_date_status(extracted_val: Any, reference_val: Any) -> Tuple[str, s
     norm_ext_raw = normalize_digits(str(extracted_val)).strip()
     norm_ref_raw = normalize_digits(str(reference_val)).strip()
 
-    # Exact string match (e.g. identical strings or normalized Bangla digits)
     if norm_ext_raw == norm_ref_raw and norm_ref_raw != "":
         return ("Matched", "DATE_EXACT_MATCH", "তারিখ হুবহু মিলেছে / Exact date match.")
 
@@ -169,12 +198,9 @@ def evaluate_date_status(extracted_val: Any, reference_val: Any) -> Tuple[str, s
     ext_alt = parsed_ext["alternative"]
     ref_alt = parsed_ref["alternative"]
 
-    # Match under project's documented convention (Bangladesh: DD/MM/YYYY or ISO YYYY-MM-DD)
     if ext_primary == ref_primary:
         return ("Matched", "DATE_CONVENTION_MATCH", "বাংলাদেশ দলিল মানদণ্ড (DD/MM/YYYY) অনুযায়ী তারিখ সামঞ্জস্যপূর্ণ / Equivalent dates matched under Bangladesh convention.")
 
-    # Check for ambiguous date format (e.g. 03/04/2019 vs 2019-03-04 or 03/04/2019 vs 04/03/2019)
-    # If the date matches under the alternative MM/DD/YYYY convention, do NOT declare Mismatch! Return Needs review.
     if parsed_ext["is_ambiguous"] or parsed_ref["is_ambiguous"]:
         if (ext_alt == ref_primary) or (ext_primary == ref_alt) or (ext_alt == ref_alt):
             return (
@@ -183,12 +209,92 @@ def evaluate_date_status(extracted_val: Any, reference_val: Any) -> Tuple[str, s
                 f"তারিখ বিন্যাস ({parsed_ext['raw']} বনাম {parsed_ref['raw']}) দ্ব্যর্থক (দিন/মাস বনাম মাস/দিন)। যাচাই প্রয়োজন / Date format is ambiguous between DD/MM/YYYY and MM/DD/YYYY; manual review required."
             )
 
-    # Completely different dates
     return ("Mismatch", "DATE_MISMATCH", "দলিল ও সরকারি রেকর্ডের তারিখে অমিল রয়েছে / Date difference detected between extracted deed and reference record.")
+
+def evaluate_mouza_status(ext_mouza: Any, ref_mouza: Any) -> Tuple[str, str, str]:
+    """Evaluates Mouza name comparison with cross-script transliteration and punctuation cleaning."""
+    if not ext_mouza or str(ext_mouza).strip() == "":
+        return ("Not checked", "MOUZA_NOT_EXTRACTED", "দলিল থেকে মৌজার নাম পাওয়া যায়নি / Mouza name not extracted.")
+    if not ref_mouza or str(ref_mouza).strip() == "":
+        return ("Not checked", "REFERENCE_MOUZA_UNAVAILABLE", "পূর্ববর্তী সরকারি রেকর্ডে মৌজার নাম উল্লেখ নেই / Reference mouza unrecorded.")
+    
+    clean_ext = normalize_mouza(ext_mouza)
+    clean_ref = normalize_mouza(ref_mouza)
+
+    if clean_ext == clean_ref or clean_ext in clean_ref or clean_ref in clean_ext:
+        return ("Matched", "MOUZA_EXACT_MATCH", "মৌজার নাম মিলেছে / Mouza name matches reference record.")
+
+    try:
+        sim = compute_name_similarity(str(ext_mouza), str(ref_mouza))
+        if sim >= 0.70:
+            return ("Matched", "MOUZA_TRANSLITERATION_MATCH", f"মৌজার নাম সামঞ্জস্যপূর্ণ (সাদৃশ্য: {sim:.2f}) / Mouza transliteration matches.")
+    except Exception:
+        pass
+
+    return ("Mismatch", "MOUZA_MISMATCH", f"দলিল ({ext_mouza}) ও সরকারি রেকর্ডের ({ref_mouza}) মৌজায় অমিল / Mouza difference detected.")
+
+def evaluate_jl_status(ext_jl: Any, ref_jl: Any, ext_mouza: Any = None, ref_mouza: Any = None) -> Tuple[str, str, str]:
+    """Evaluates JL number matching with support for embedded JL numbers in Mouza string."""
+    norm_ext = extract_jl_number(ext_jl, ext_mouza)
+    norm_ref = extract_jl_number(ref_jl, ref_mouza)
+
+    if not norm_ext:
+        return ("Not checked", "JL_NOT_EXTRACTED", "দলিল থেকে কোনো জেএল নম্বর পাওয়া যায়নি / JL number not extracted.")
+    if not norm_ref:
+        return ("Not checked", "REFERENCE_JL_UNAVAILABLE", "পূর্ববর্তী সরকারি রেকর্ডে জেএল নম্বর উল্লেখ নেই / Reference JL number unrecorded.")
+
+    if norm_ext == norm_ref:
+        return ("Matched", "JL_EXACT_MATCH", f"জেএল নম্বর ({norm_ext}) মিলেছে / JL number matched.")
+    return ("Mismatch", "JL_MISMATCH", f"দলিল (জেএল {norm_ext}) ও সরকারি রেকর্ডে (জেএল {norm_ref}) অমিল / JL number mismatch.")
+
+def evaluate_seller_status(ext_seller: Any, ref_data: Dict[str, Any]) -> Tuple[str, str, str]:
+    """
+    Evaluates seller name against prior registered owner(s) or buyers in the reference baseline record.
+    """
+    if not ext_seller or str(ext_seller).strip() == "":
+        return ("Not checked", "SELLER_NOT_EXTRACTED", "দলিল থেকে কোনো বিক্রেতার নাম পাওয়া যায়নি / Seller name not extracted.")
+
+    ref_candidates = [
+        ref_data.get("owner_name_bn"),
+        ref_data.get("owner_name_en"),
+        ref_data.get("owner_name"),
+        ref_data.get("buyer_name_bn"),
+        ref_data.get("buyer_name_en")
+    ]
+    ref_candidates = [str(c).strip() for c in ref_candidates if c and str(c).strip()]
+    if not ref_candidates:
+        return ("Not checked", "REFERENCE_OWNER_UNAVAILABLE", "পূর্ববর্তী সরকারি রেকর্ডে মালিক বা বিক্রেতার তথ্য অপ্রাপ্য / Reference owner/seller unrecorded.")
+
+    evals = []
+    for cand in ref_candidates:
+        ev = evaluate_name_status(str(ext_seller), cand)
+        evals.append((ev, cand))
+        if ev[0] == "Matched":
+            return ("Matched", "SELLER_MATCHES_REGISTERED_OWNER", f"বিক্রেতার নাম পূর্ববর্তী নিবন্ধিত মালিকের সাথে মিলেছে ({cand}) / Seller matches registered owner.")
+
+    review_ev = next((pair for pair in evals if pair[0][0] == "Needs review"), None)
+    if review_ev:
+        return ("Needs review", "SELLER_NAME_VARIANT", f"বিক্রেতার নামে বানান বা পদবির রূপভেদ রয়েছে ({review_ev[1]}); ম্যানুয়াল যাচাই প্রয়োজন / Seller name variant requires review.")
+
+    return ("Mismatch", "SELLER_NOT_REGISTERED_OWNER", f"দলিলের বিক্রেতার সাথে পূর্ববর্তী নিবন্ধিত মালিকের নামে অমিল / Seller does not match registered owner of reference record.")
+
+def evaluate_deed_no_status(ext_deed: Any, ref_deed: Any) -> Tuple[str, str, str]:
+    """Evaluates deed number matching with Bengali/English slash normalization."""
+    if not ext_deed or str(ext_deed).strip() == "":
+        return ("Not checked", "DEED_NO_NOT_EXTRACTED", "দলিল থেকে কোনো দলিল নম্বর পাওয়া যায়নি / Deed number not extracted.")
+    if not ref_deed or str(ref_deed).strip() == "":
+        return ("Not checked", "REFERENCE_DEED_UNAVAILABLE", "পূর্ববর্তী সরকারি রেকর্ডে দলিল নম্বর উল্লেখ নেই / Reference deed number unrecorded.")
+
+    norm_ext = normalize_deed_no(ext_deed)
+    norm_ref = normalize_deed_no(ref_deed)
+
+    if norm_ext == norm_ref:
+        return ("Matched", "DEED_NO_EXACT_MATCH", f"দলিল নম্বর ({ext_deed}) হুবহু মিলেছে / Deed number matches exactly.")
+    return ("Needs review", "DEED_NO_DIFFERENT", f"প্রস্তাবিত নতুন দলিল নম্বর ({ext_deed}) পূর্ববর্তী দলিলের ({ref_deed}) চেয়ে আলাদা / Proposed deed number differs from reference prior deed.")
 
 def compare_records(
     extracted_data: Dict[str, Any],
-    reference_data: Dict[str, Any],
+    reference_data: Optional[Dict[str, Any]] = None,
     area_tolerance_decimal: float = 0.05
 ) -> Dict[str, Any]:
     """
@@ -203,10 +309,19 @@ def compare_records(
     - Names support Bengali <-> English cross-script matching with dictionary evidence.
     - Mismatch indicates an observed variance, NOT a legal verdict or fraud determination.
     """
+    if reference_data is None:
+        reference_data = {}
+
     results: List[Dict[str, Any]] = []
 
-    # 1. Owner Name
-    ext_name = extracted_data.get("owner_name") or extracted_data.get("owner_name_bn") or extracted_data.get("owner_name_en")
+    # 1. Owner / Buyer Name
+    ext_name = (
+        extracted_data.get("owner_name") or 
+        extracted_data.get("owner_name_bn") or 
+        extracted_data.get("owner_name_en") or 
+        extracted_data.get("buyer_name") or 
+        extracted_data.get("buyer_name_bn")
+    )
     ref_bn = reference_data.get("owner_name_bn")
     ref_en = reference_data.get("owner_name_en")
     ref_general = reference_data.get("owner_name")
@@ -222,12 +337,10 @@ def compare_records(
         sim = 0.0
         notes = "পূর্ববর্তী সরকারি রেকর্ডে মালিকের নাম উল্লেখ নেই / Reference owner name is unrecorded or unavailable."
     else:
-        # Evaluate against available references
         eval_bn = evaluate_name_status(str(ext_name), str(ref_bn)) if ref_bn else None
         eval_en = evaluate_name_status(str(ext_name), str(ref_en)) if ref_en else None
         eval_gen = evaluate_name_status(str(ext_name), str(ref_general)) if (ref_general and not ref_bn and not ref_en) else None
 
-        # Check same-script reference first if available
         ext_is_bn = is_bangla_text(str(ext_name))
         same_script_eval = eval_bn if ext_is_bn else eval_en
 
@@ -264,7 +377,23 @@ def compare_records(
         "notes": notes
     })
 
-    # 2. Khatian Number
+    # 2. Seller Name (When provided in either extracted or reference)
+    has_seller_data = bool(extracted_data.get("seller_name") or reference_data.get("seller_name_bn") or reference_data.get("seller_name"))
+    if has_seller_data:
+        ext_seller = extracted_data.get("seller_name")
+        s_status, s_reason, s_notes = evaluate_seller_status(ext_seller, reference_data)
+        results.append({
+            "field": "seller_name",
+            "field_label_bn": "বিক্রেতার নাম",
+            "field_label_en": "Seller Name",
+            "status": s_status,
+            "extracted_value": ext_seller,
+            "reference_value": reference_data.get("owner_name_bn") or reference_data.get("seller_name_bn") or reference_data.get("owner_name"),
+            "reason_code": s_reason,
+            "notes": s_notes
+        })
+
+    # 3. Khatian Number
     ext_khatian = extracted_data.get("khatian_no")
     ref_khatian = reference_data.get("khatian_no")
 
@@ -273,7 +402,6 @@ def compare_records(
         k_reason = "KHATIAN_NOT_FOUND"
         k_notes = "দলিল থেকে খতিয়ান নম্বর পাওয়া যায়নি / Khatian number was not extracted from deed."
     elif ref_khatian is None or str(ref_khatian).strip() == "":
-        # Missing reference field must NOT return Mismatch!
         k_status = "Not checked"
         k_reason = "REFERENCE_KHATIAN_UNAVAILABLE"
         k_notes = "পূর্ববর্তী সরকারি রেকর্ডে খতিয়ান নম্বর উল্লেখ নেই / Reference Khatian number is unrecorded or unavailable."
@@ -300,7 +428,7 @@ def compare_records(
         "notes": k_notes
     })
 
-    # 3. Dag Number
+    # 4. Dag Number
     ext_dag = extracted_data.get("dag_no")
     ref_dag = reference_data.get("dag_no")
 
@@ -309,7 +437,6 @@ def compare_records(
         d_reason = "DAG_NOT_FOUND"
         d_notes = "দলিল থেকে দাগ নম্বর পাওয়া যায়নি / Dag number was not extracted from deed."
     elif ref_dag is None or str(ref_dag).strip() == "":
-        # Missing reference field must NOT return Mismatch!
         d_status = "Not checked"
         d_reason = "REFERENCE_DAG_UNAVAILABLE"
         d_notes = "পূর্ববর্তী সরকারি রেকর্ডে দাগ নম্বর উল্লেখ নেই / Reference Dag number is unrecorded or unavailable."
@@ -336,7 +463,46 @@ def compare_records(
         "notes": d_notes
     })
 
-    # 4. Land Area (Decimal)
+    # 5. Mouza (When present in either extracted or reference)
+    has_mouza_data = bool(extracted_data.get("mouza") or reference_data.get("mouza"))
+    if has_mouza_data:
+        ext_mouza = extracted_data.get("mouza")
+        ref_mouza = reference_data.get("mouza")
+        m_status, m_reason, m_notes = evaluate_mouza_status(ext_mouza, ref_mouza)
+        results.append({
+            "field": "mouza",
+            "field_label_bn": "মৌজা",
+            "field_label_en": "Mouza",
+            "status": m_status,
+            "extracted_value": ext_mouza,
+            "reference_value": ref_mouza,
+            "reason_code": m_reason,
+            "notes": m_notes
+        })
+
+    # 6. JL Number (When present in either extracted or reference)
+    has_jl_data = bool(extracted_data.get("jl_no") or reference_data.get("jl_no") or 
+                       (reference_data.get("mouza") and "jl" in str(reference_data.get("mouza")).lower()))
+    if has_jl_data:
+        ext_jl = extracted_data.get("jl_no")
+        ref_jl = reference_data.get("jl_no")
+        jl_status, jl_reason, jl_notes = evaluate_jl_status(
+            ext_jl, ref_jl,
+            ext_mouza=extracted_data.get("mouza"),
+            ref_mouza=reference_data.get("mouza")
+        )
+        results.append({
+            "field": "jl_no",
+            "field_label_bn": "জেএল নম্বর",
+            "field_label_en": "JL Number",
+            "status": jl_status,
+            "extracted_value": ext_jl,
+            "reference_value": ref_jl or extract_jl_number(None, reference_data.get("mouza")),
+            "reason_code": jl_reason,
+            "notes": jl_notes
+        })
+
+    # 7. Land Area (Decimal) with Partial Transfer & Excess Area Overlap Detection
     ext_area_raw = extracted_data.get("area_decimal")
     ref_area_raw = reference_data.get("area_decimal")
 
@@ -348,16 +514,31 @@ def compare_records(
         a_reason = "AREA_NOT_PARSED"
         a_notes = "দলিল থেকে জমির পরিমাণ পড়া যায়নি / Land area not parsed from document."
     elif ref_area is None:
-        # Missing reference field must NOT return Mismatch!
         a_status = "Not checked"
         a_reason = "REFERENCE_AREA_UNAVAILABLE"
         a_notes = "পূর্ববর্তী সরকারি রেকর্ডে জমির পরিমাণ উল্লেখ নেই / Reference land area is unrecorded or unavailable."
     else:
         diff = abs(ext_area - ref_area)
+        is_partial = (
+            extracted_data.get("is_partial_transfer") or 
+            extracted_data.get("is_partial_purchase") or 
+            reference_data.get("is_partial_purchase") or
+            reference_data.get("is_partial_transfer")
+        )
+
         if diff <= area_tolerance_decimal:
             a_status = "Matched"
             a_reason = "AREA_MATCH_WITHIN_TOLERANCE"
             a_notes = f"জমির পরিমাণ গ্রহণযোগ্য সীমার মধ্যে মিলেছে (পার্থক্য: {diff:.3f} শতক) / Area matches within tolerance."
+        elif ext_area < ref_area:
+            if is_partial:
+                a_status = "Matched"
+                a_reason = "PARTIAL_TRANSFER_WITHIN_LIMIT"
+                a_notes = f"আংশিক জমি হস্তান্তর: বিক্রেতার {ref_area:.2f} শতকের মধ্যে {ext_area:.2f} শতক হস্তান্তর প্রস্তাবিত / Partial land transfer within holding balance."
+            else:
+                a_status = "Needs review"
+                a_reason = "PARTIAL_TRANSFER_REQUIRES_PARTITION_REVIEW"
+                a_notes = f"আংশিক জমি হস্তান্তর ({ext_area:.2f} শতক বনাম রেকর্ডের {ref_area:.2f} শতক)। বিক্রেতার জমার অন্তর্ভুক্ত, তবে খারিজ/বাটোয়ারা খতিয়ান যাচাই আবশ্যক / Partial area transfer; requires mutation/partition review."
         else:
             a_status = "Mismatch"
             a_reason = f"AREA_DIFFERENCE_{diff:.2f}_DECIMAL"
@@ -376,7 +557,24 @@ def compare_records(
         "notes": a_notes
     })
 
-    # 5. Document Date (Enhanced Normalization & Ambiguity Review)
+    # 8. Deed Number (When present in either extracted or reference)
+    has_deed_data = bool(extracted_data.get("deed_no") or reference_data.get("deed_no"))
+    if has_deed_data:
+        ext_deed = extracted_data.get("deed_no")
+        ref_deed = reference_data.get("deed_no")
+        deed_status, deed_reason, deed_notes = evaluate_deed_no_status(ext_deed, ref_deed)
+        results.append({
+            "field": "deed_no",
+            "field_label_bn": "দলিল নম্বর",
+            "field_label_en": "Deed No.",
+            "status": deed_status,
+            "extracted_value": ext_deed,
+            "reference_value": ref_deed,
+            "reason_code": deed_reason,
+            "notes": deed_notes
+        })
+
+    # 9. Document Date
     ext_date = extracted_data.get("document_date")
     ref_date = reference_data.get("document_date")
 
@@ -398,11 +596,10 @@ def compare_records(
     for item in results:
         status_counts[item["status"]] = status_counts.get(item["status"], 0) + 1
 
-    # Calculation of demo record-consistency indicator (explicitly transparent)
     total_evaluable = len(results)
     matched_count = status_counts["Matched"]
     review_count = status_counts["Needs review"]
-    consistency_pct = round(((matched_count * 1.0 + review_count * 0.5) / total_evaluable) * 100, 1)
+    consistency_pct = round(((matched_count * 1.0 + review_count * 0.5) / total_evaluable) * 100, 1) if total_evaluable > 0 else 0.0
 
     return {
         "disclaimer": "DEMO DATA — not a legal verdict. Mismatch indicates an observed data variance, not proof of fraud or invalidity.",
