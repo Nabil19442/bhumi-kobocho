@@ -362,8 +362,23 @@ def compare_records(
                 status, reason, sim = review_cand
                 notes = "বানান বা পদবির ভিন্নতা পরিলক্ষিত হয়েছে; সতর্ক পর্যালোচনার জন্য চিহ্নিত / Name spelling, honorific, or transliteration variant flagged for scrutiny."
             else:
-                status, reason, sim = candidates[0]
-                notes = "দলিল ও সরকারি রেকর্ডের মালিকের নামে অমিল পরিলক্ষিত হয়েছে / Name difference detected between deed and reference record."
+                # If owner/buyer name differs from reference owner, check whether this is a legitimate transfer
+                # where the deed seller matches the registered owner of the reference record
+                ext_seller = extracted_data.get("seller_name") or extracted_data.get("seller_name_bn")
+                seller_eval = evaluate_seller_status(ext_seller, reference_data) if ext_seller else ("Not checked", "", "")
+                if seller_eval[0] == "Matched":
+                    status = "Matched"
+                    reason = "VALID_TRANSFER_NEW_BUYER"
+                    sim = 1.0
+                    notes = f"দলিলের বিক্রেতা সরকারি রেকর্ডের নিবন্ধিত মালিকের সাথে মিলেছে; ক্রেতা ({ext_name}) বৈধভাবে স্বত্ব গ্রহীতা হিসেবে প্রস্তাবিত / Seller matches registered owner; buyer is valid proposed transferee."
+                elif seller_eval[0] == "Needs review":
+                    status = "Needs review"
+                    reason = "SELLER_NAME_VARIANT_BUYER_REVIEW"
+                    sim = 0.8
+                    notes = f"বিক্রেতার নামে রূপভেদ রয়েছে; ক্রেতার ({ext_name}) নাম সতর্ক পর্যালোচনার জন্য চিহ্নিত / Seller has name variant; buyer flagged for review."
+                else:
+                    status, reason, sim = candidates[0] if candidates else ("Mismatch", "NAME_MISMATCH", 0.0)
+                    notes = "দলিল ও সরকারি রেকর্ডের মালিকের নামে অমিল পরিলক্ষিত হয়েছে / Name difference detected between deed and reference record."
 
     results.append({
         "field": "owner_name",

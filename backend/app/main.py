@@ -176,6 +176,8 @@ class ExtractedDocumentData(BaseModel):
     deed_no: Optional[str] = Field(None, max_length=50)
     raw_text: Optional[str] = Field(None, max_length=30000)
     parcel_id: Optional[str] = Field(None, max_length=100)
+    is_partial_transfer: Optional[bool] = Field(None)
+    is_partial_purchase: Optional[bool] = Field(None)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -197,7 +199,7 @@ class ProposedPurchaseRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 class CompareRequest(BaseModel):
-    reference_record_id: Optional[str] = Field("rec-demo-001", max_length=100)
+    reference_record_id: Optional[str] = Field(None, max_length=100)
     extracted_data: ExtractedDocumentData
     area_tolerance_decimal: Optional[float] = Field(0.05, ge=0.0, le=100.0)
     language: Optional[str] = Field("bn", max_length=10)

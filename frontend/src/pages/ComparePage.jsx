@@ -18,12 +18,13 @@ import {
   Layers,
   History
 } from 'lucide-react';
-import { compareRecordsApi, fetchRecords, fetchConflictScenarios } from '../api';
+import { compareRecordsApi, fetchRecords, fetchConflictScenarios, fetchDevDeeds } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
 export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onViewPassport, onComparisonUpdated }) {
   const isBn = lang === 'bn';
   const [records, setRecords] = useState([]);
+  const [devDeeds, setDevDeeds] = useState([]);
   const [scenarios, setScenarios] = useState([]);
   const [selectedRecordId, setSelectedRecordId] = useState('rec-demo-001');
   const [tolerance, setTolerance] = useState(0.05);
@@ -33,9 +34,10 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
 
   const loadInitialData = async () => {
     try {
-      const [recordsData, scenariosData] = await Promise.all([
+      const [recordsData, scenariosData, devDeedsData] = await Promise.all([
         fetchRecords().catch(() => ({ records: [] })),
-        fetchConflictScenarios().catch(() => ({ scenarios: [] }))
+        fetchConflictScenarios().catch(() => ({ scenarios: [] })),
+        fetchDevDeeds().catch(() => ({ deeds: [] }))
       ]);
       if (recordsData && recordsData.records) {
         setRecords(recordsData.records);
@@ -54,6 +56,9 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       if (scenariosData && scenariosData.scenarios) {
         setScenarios(scenariosData.scenarios);
       }
+      if (devDeedsData && devDeedsData.deeds) {
+        setDevDeeds(devDeedsData.deeds);
+      }
     } catch (err) {
       console.error(err);
       setError(err);
@@ -65,11 +70,61 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
   }, []);
 
   const SCENARIO_PRESETS = {
+    'rec-demo-001': {
+      dag_no: '1058',
+      khatian_no: '412',
+      deed_no: '1482/2021',
+      area_decimal: '15.5',
+      seller_name: 'মোঃ রফিকুল ইসলাম',
+      buyer_name: 'তন্ময় আহমেদ',
+      owner_name: 'তন্ময় আহমেদ',
+      document_date: '2021-04-12',
+      mouza: 'মিরপুর (Mirpur)',
+      jl_no: '28'
+    },
+    'rec-demo-002': {
+      dag_no: '2490',
+      khatian_no: '835',
+      deed_no: '8901/2019',
+      area_decimal: '8.25',
+      seller_name: 'সুলতানা জাহান',
+      buyer_name: 'সুলতানা জাহান',
+      owner_name: 'সুলতানা জাহান',
+      document_date: '2019-11-20',
+      mouza: 'বাড্ডা (Badda)',
+      jl_no: '12'
+    },
+    'rec-demo-003': {
+      dag_no: '784',
+      khatian_no: '129',
+      deed_no: '2311/2018',
+      area_decimal: '24.0',
+      seller_name: 'আব্দুল করিম শেখ',
+      buyer_name: 'আব্দুল করিম শেখ',
+      owner_name: 'আব্দুল করিম শেখ',
+      document_date: '2018-02-15',
+      mouza: 'সাভার (Savar)',
+      jl_no: '45'
+    },
+    'rec-demo-004': {
+      dag_no: '2490',
+      khatian_no: '410',
+      deed_no: '710/2008',
+      area_decimal: '8.25',
+      seller_name: 'আবুল হোসেন তালুকদার',
+      buyer_name: 'আবুল হোসেন তালুকদার',
+      owner_name: 'আবুল হোসেন তালুকদার',
+      document_date: '2008-03-14',
+      mouza: 'বাড্ডা (Badda)',
+      jl_no: '12'
+    },
     'rec-scen-001-b': {
       dag_no: '550',
       khatian_no: '220',
       deed_no: '4520/2023',
       area_decimal: '10.0',
+      seller_name: 'মোঃ মোর্শেদ আলম',
+      buyer_name: 'তারেক রহমান',
       owner_name: 'তারেক রহমান',
       document_date: '2023-08-15',
       mouza: 'গুলশান (Gulshan)'
@@ -79,6 +134,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '129',
       deed_no: '5812/2022',
       area_decimal: '7.0',
+      seller_name: 'সুলতানা জাহান',
+      buyer_name: 'মাহমুদ হাসান',
       owner_name: 'মাহমুদ হাসান',
       document_date: '2022-11-20',
       mouza: 'সাভার (Savar)'
@@ -88,6 +145,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '412',
       deed_no: '1482/2021',
       area_decimal: '5.0',
+      seller_name: 'মোঃ রফিকুল ইসলাম',
+      buyer_name: 'আমিনুল হক',
       owner_name: 'আমিনুল হক',
       document_date: '2021-04-12',
       mouza: 'মিরপুর (Mirpur)'
@@ -97,6 +156,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '991',
       deed_no: '1099/2024',
       area_decimal: '8.0',
+      seller_name: 'নাসির উদ্দিন',
+      buyer_name: 'নাসির উদ্দিন',
       owner_name: 'নাসির উদ্দিন',
       document_date: '2024-01-10',
       mouza: 'আন্দরকিল্লা (Anderkilla)'
@@ -106,6 +167,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '605',
       deed_no: '8112/2018',
       area_decimal: '6.0',
+      seller_name: 'মাকসুদা বেগম',
+      buyer_name: 'মাকসুদা বেগম',
       owner_name: 'মাকসুদা বেগম',
       document_date: '2018-12-05',
       mouza: 'আম্বরখানা (Amberkhana)'
@@ -115,6 +178,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '456',
       deed_no: '2026-0017',
       area_decimal: '10.0',
+      seller_name: 'আব্দুল করিম',
+      buyer_name: 'মোঃ সাকিব হাসান',
       owner_name: 'মোঃ সাকিব হাসান',
       document_date: '15 অক্টোবর ২০২৬',
       mouza: 'শান্তিপুর (কাল্পনিক)'
@@ -124,6 +189,8 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
       khatian_no: '888888',
       deed_no: '0000/2026',
       area_decimal: '15.0',
+      seller_name: 'অজ্ঞাত ব্যক্তি',
+      buyer_name: 'অজ্ঞাত ব্যক্তি',
       owner_name: 'অজ্ঞাত ব্যক্তি',
       document_date: '2026-01-01',
       mouza: 'অজানা মৌজা'
@@ -134,23 +201,36 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
     setIsLoading(true);
     setError(null);
     try {
-      let extractedPayload = sharedExtractedData;
-      if (SCENARIO_PRESETS[refId]) {
-        extractedPayload = SCENARIO_PRESETS[refId];
-      } else if (!extractedPayload) {
+      let extractedPayload = null;
+      let targetRefId = (refId === 'auto' || !refId) ? null : refId;
+
+      // Check if user selected a dev seed deed
+      const devDeed = devDeeds.find(d => d.id === refId);
+      if (devDeed) {
         extractedPayload = {
-          owner_name: 'মোঃ সাকিব হাসান',
-          khatian_no: '456',
-          dag_no: '1234',
-          area_decimal: '10.0',
-          document_date: '15 অক্টোবর ২০২৬',
-          deed_no: '2026-0017',
-          mouza: 'শান্তিপুর (কাল্পনিক)'
+          seller_name: devDeed.seller_name_bn || devDeed.seller_name_en || '',
+          buyer_name: devDeed.buyer_name_bn || devDeed.buyer_name_en || '',
+          owner_name: devDeed.buyer_name_bn || devDeed.owner_name_bn || devDeed.buyer_name_en || '',
+          mouza: devDeed.mouza || '',
+          jl_no: String(devDeed.jl_no || ''),
+          khatian_no: String(devDeed.khatian_no || ''),
+          dag_no: String(devDeed.dag_no || ''),
+          area_decimal: String(devDeed.area_decimal || ''),
+          deed_no: devDeed.deed_no || '',
+          document_date: devDeed.document_date || '',
+          is_partial_transfer: Boolean(devDeed.is_partial_transfer || devDeed.expected_status === 'PARTIAL_TRANSFER_VALID')
         };
+        targetRefId = devDeed.reference_record_id || devDeed.id;
+      } else if (SCENARIO_PRESETS[refId]) {
+        extractedPayload = SCENARIO_PRESETS[refId];
+      } else if (sharedExtractedData) {
+        extractedPayload = sharedExtractedData;
+      } else {
+        extractedPayload = SCENARIO_PRESETS['rec-demo-001'];
       }
 
       const payload = {
-        reference_record_id: (refId === 'auto' || !refId) ? null : refId,
+        reference_record_id: targetRefId,
         extracted_data: extractedPayload,
         area_tolerance_decimal: parseFloat(tol),
         language: lang,
@@ -420,7 +500,25 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
               <option value="">
                 🔍 {isBn ? 'স্বয়ংক্রিয় অনুসন্ধান: সংশ্লিষ্ট দলিলের ইতিহাস (Search Synthetic Parcel History)' : 'Auto-Search Synthetic Parcel History'}
               </option>
-              
+
+              <optgroup label={isBn ? 'অফিসিয়াল নিবন্ধিত রেফারেন্স রেকর্ড (Official Baseline Records)' : 'Official Registered Baseline Records'}>
+                {records.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.id}: {r.owner_name_bn} | মৌজা: {r.mouza} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no}
+                  </option>
+                ))}
+              </optgroup>
+
+              {devDeeds.length > 0 && (
+                <optgroup label={isBn ? 'ডেভেলপমেন্ট টেস্ট দলিল দৃশ্যপট (Development Test Deeds - 20 Cases)' : 'Development Test Deed Scenarios (20 Cases)'}>
+                  {devDeeds.map(d => (
+                    <option key={d.id} value={d.id}>
+                      {d.id}: {isBn ? d.scenario_name_bn : d.scenario_name} — দাগ {d.dag_no}, খতিয়ান {d.khatian_no}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
               <optgroup label={isBn ? 'দ্বন্দ্ব যাচাই দৃশ্যপট (Conflict Test Scenarios)' : 'Conflict Test Scenarios'}>
                 <option value="rec-scen-001-b">
                   ⚠️ {isBn ? 'দৃশ্যপট ১: একই জমির দ্বৈত বিক্রয় (Duplicate Sale Scenario)' : 'Scenario 1: Duplicate Sale of Same Portion'}
@@ -443,14 +541,6 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
                 <option value="unrecorded-plot">
                   ❓ {isBn ? 'অজানা দাগ/খতিয়ান (Previous Land Record Not Found)' : 'Unrecorded Parcel (Record Not Found)'}
                 </option>
-              </optgroup>
-
-              <optgroup label={isBn ? 'অন্যান্য ডেমো রেকর্ড (Traditional Demo Records)' : 'Traditional Demo Records'}>
-                {records.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.id}: {r.owner_name_bn} | মৌজা: {r.mouza} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no}
-                  </option>
-                ))}
               </optgroup>
             </select>
           </div>
@@ -496,6 +586,92 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
             </div>
           </div>
         </div>
+
+        {/* Active Reference Profile Summary Card */}
+        {(() => {
+          const rec = records.find(r => r.id === selectedRecordId);
+          const dev = devDeeds.find(d => d.id === selectedRecordId);
+          const item = rec || dev || comparison?.reference_record;
+          if (!item && !selectedRecordId) {
+            return (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px 16px',
+                borderRadius: '6px',
+                background: '#FAFBF9',
+                border: '1px solid #CAD7CF',
+                fontSize: '0.82rem',
+                color: 'var(--muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Info size={14} color="var(--primary-accent)" />
+                <span>
+                  {isBn
+                    ? 'স্বয়ংক্রিয় অনুসন্ধান মোড: সংশ্লিষ্ট দলিলের দাগ ও খতিয়ান ব্যবহার করে ডাটাবেজের রেকর্ড ও লেনদেন ধারাবাহিকতা খোঁজা হচ্ছে।'
+                    : 'Auto-search mode: Historical records and transactions are being queried using the document Dag & Khatian.'}
+                </span>
+              </div>
+            );
+          }
+          if (item) {
+            return (
+              <div style={{
+                marginTop: '16px',
+                padding: '14px 18px',
+                borderRadius: '6px',
+                background: '#F8FAF9',
+                border: '1px solid #CAD7CF',
+                fontSize: '0.84rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--primary-accent)', fontFamily: 'var(--font-mono)' }}>
+                      {item.id || selectedRecordId}
+                    </span>
+                    <span style={{
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: rec ? 'var(--status-matched-bg)' : '#E0E7FF',
+                      color: rec ? 'var(--status-matched-text)' : '#3730A3',
+                      border: `1px solid ${rec ? 'var(--status-matched-border)' : '#C7D2FE'}`
+                    }}>
+                      {rec 
+                        ? (isBn ? 'অফিসিয়াল নিবন্ধিত রেকর্ড' : 'Official Registered Baseline') 
+                        : (dev ? (isBn ? 'ডেভেলপমেন্ট টেস্ট দলিল' : 'Development Test Deed') : (isBn ? 'সিমুলেশন রেকর্ড' : 'Simulation Scenario'))}
+                    </span>
+                  </div>
+                  {dev && dev.expected_status && (
+                    <span style={{
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: dev.expected_status.includes('CLEAN') ? 'var(--status-matched-bg)' : 'var(--status-mismatch-bg)',
+                      color: dev.expected_status.includes('CLEAN') ? 'var(--status-matched-text)' : 'var(--status-mismatch-text)',
+                      fontFamily: 'var(--font-mono)'
+                    }}>
+                      {dev.expected_status}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: 'var(--text-body)' }}>
+                  <div><strong>{isBn ? 'মালিক/বিক্রেতা:' : 'Owner/Seller:'}</strong> {item.owner_name_bn || item.seller_name_bn || item.owner_name_en}</div>
+                  {dev && dev.buyer_name_bn && <div><strong>{isBn ? 'ক্রেতা:' : 'Buyer:'}</strong> {dev.buyer_name_bn}</div>}
+                  <div><strong>{isBn ? 'দাগ নম্বর:' : 'Dag No:'}</strong> {item.dag_no}</div>
+                  <div><strong>{isBn ? 'খতিয়ান:' : 'Khatian:'}</strong> {item.khatian_no}</div>
+                  <div><strong>{isBn ? 'জমির পরিমাণ:' : 'Area:'}</strong> {item.area_decimal} {isBn ? 'শতক' : 'dec'}</div>
+                  <div><strong>{isBn ? 'দলিল নম্বর:' : 'Deed No:'}</strong> {item.deed_no || 'N/A'}</div>
+                  <div><strong>{isBn ? 'মৌজা:' : 'Mouza:'}</strong> {item.mouza}</div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {comparison && (

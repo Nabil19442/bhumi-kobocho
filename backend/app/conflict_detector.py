@@ -158,7 +158,7 @@ def detect_conflicts(extracted_deed: Dict[str, Any]) -> Dict[str, Any]:
     status_label_bn = "কোনো দ্বন্দ্ব পাওয়া যায়নি — ধারাবাহিকতা সন্তোষজনক"
     status_label_en = "No Conflict Detected — Clean Title Chain"
 
-    seller_name = extracted_deed.get("seller_name") or extracted_deed.get("owner_name")
+    seller_name = extracted_deed.get("seller_name") or extracted_deed.get("seller_name_bn")
     proposed_area = area_decimal if area_decimal is not None else (
         float(current_tx_record.get("transferred_area", 0.0)) if current_tx_record else 10.0
     )
@@ -182,17 +182,10 @@ def detect_conflicts(extracted_deed: Dict[str, Any]) -> Dict[str, Any]:
         proposed_area > (seller_holdings["balance"] + 0.01)
     )
 
-    # Check for explicitly simulated scenario flags first
+    # Check for explicitly simulated scenario flags on the matching deed transaction
     explicit_scenario = None
     if current_tx_record and current_tx_record.get("conflict_scenario"):
         explicit_scenario = current_tx_record.get("conflict_scenario")
-    else:
-        # Check if any record in parcel has explicit scenario flag
-        for tx in sorted_history:
-            if tx.get("expected_conflict") and tx.get("conflict_scenario") in ("DUPLICATE_SALE", "OVERLAPPING_SALE", "INCOMPLETE_HISTORY"):
-                explicit_scenario = tx.get("conflict_scenario")
-                current_tx_record = tx
-                break
 
     # SCENARIO 1: Duplicate sale
     if explicit_scenario == "DUPLICATE_SALE" or is_dynamic_duplicate_sale or (

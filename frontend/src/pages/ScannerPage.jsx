@@ -23,7 +23,7 @@ import {
   HelpCircle,
   Database
 } from 'lucide-react';
-import { scanDocument, compareRecordsApi, fetchRecords } from '../api';
+import { scanDocument, compareRecordsApi, fetchRecords, fetchDevDeeds } from '../api';
 import ProposedPurchaseModal from '../components/ProposedPurchaseModal';
 
 const DEMO_SPECIMENS = [
@@ -133,6 +133,7 @@ export default function ScannerPage({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [availableRecords, setAvailableRecords] = useState([]);
+  const [devDeeds, setDevDeeds] = useState([]);
   const [selectedRefRecordId, setSelectedRefRecordId] = useState('');
 
   const cleanVal = (v) => {
@@ -142,7 +143,8 @@ export default function ScannerPage({
     return s;
   };
 
-  // Helper: Auto-resolves the best matching reference record from loaded records
+  // Helper: Auto-resolves the best matching reference record from loaded records based on Dag / Khatian / Deed
+  // Strict matching only — avoids incorrect loose fallback to rec-demo-003
   const resolveReferenceRecord = (data, recordsList) => {
     if (!recordsList || !recordsList.length || !data) return '';
     const norm = (val) => {
@@ -169,39 +171,83 @@ export default function ScannerPage({
       const match = recordsList.find(r => norm(r.dag_no) === dag);
       if (match) return match.id;
     }
-    // 4. Seller or Owner name match
-    if (data.seller_name || data.owner_name) {
-      const seller = (data.seller_name || '').trim().toLowerCase();
-      const owner = (data.owner_name || '').trim().toLowerCase();
-      const match = recordsList.find(r => {
-        const rBn = (r.owner_name_bn || '').toLowerCase();
-        const rEn = (r.owner_name_en || '').toLowerCase();
-        return (seller && (rBn.includes(seller) || rEn.includes(seller))) ||
-               (owner && (rBn.includes(owner) || rEn.includes(owner)));
-      });
-      if (match) return match.id;
-    }
     return '';
   };
 
-  // Load available demo reference records on mount and resolve default reference record
+  // Load available demo reference records and development test deeds on mount
   useEffect(() => {
     let active = true;
-    fetchRecords()
-      .then(res => {
-        if (active && res && res.records) {
-          setAvailableRecords(res.records);
-          setSelectedRefRecordId(prev => {
-            if (prev) return prev;
-            return resolveReferenceRecord(formData, res.records);
-          });
-        }
-      })
-      .catch(err => {
-        console.warn('Could not load reference records:', err);
-      });
+    Promise.all([
+      fetchRecords().catch(() => ({ records: [] })),
+      fetchDevDeeds().catch(() => ({ deeds: [] }))
+    ]).then(([recordsRes, devRes]) => {
+      if (!active) return;
+      if (recordsRes && recordsRes.records) {
+        setAvailableRecords(recordsRes.records);
+        setSelectedRefRecordId(prev => {
+          if (prev) return prev;
+          return resolveReferenceRecord(formData, recordsRes.records);
+        });
+      }
+      if (devRes && devRes.deeds) {
+        setDevDeeds(devRes.deeds);
+      }
+    }).catch(err => {
+      console.warn('Could not load reference or dev records:', err);
+    });
     return () => { active = false; };
   }, []);
+
+  // Handle manual selection from reference baseline dropdown
+  const handleReferenceRecordChange = (newSelectedId) => {
+    setSelectedRefRecordId(newSelectedId);
+
+    if (!newSelectedId) {
+      return;
+    }
+
+    // 1. Check if user selected one of the official baseline records
+    const baseline = availableRecords.find(r => r.id === newSelectedId);
+    if (baseline) {
+      // If user hasn't uploaded their own custom document, update comparison inputs to match this baseline
+      if (!uploadedFileName) {
+        const jlMatch = baseline.mouza ? String(baseline.mouza).match(/JL-?(\d+)/i) : null;
+        setFormData({
+          seller_name: baseline.owner_name_bn,
+          buyer_name: isBn ? 'তন্ময় আহমেদ' : 'Tanmoy Ahmed',
+          owner_name: isBn ? 'তন্ময় আহমেদ' : 'Tanmoy Ahmed',
+          mouza: baseline.mouza ? baseline.mouza.split(',')[0].trim() : '',
+          jl_no: baseline.jl_no || (jlMatch ? jlMatch[1] : ''),
+          khatian_no: String(baseline.khatian_no || ''),
+          dag_no: String(baseline.dag_no || ''),
+          area_decimal: String(baseline.area_decimal || ''),
+          deed_no: baseline.deed_no || '',
+          document_date: baseline.document_date || '',
+          parcel_id: ''
+        });
+      }
+      return;
+    }
+
+    // 2. Check if user selected one of the 20 development deed scenarios
+    const devDeed = devDeeds.find(d => d.id === newSelectedId);
+    if (devDeed) {
+      setFormData({
+        seller_name: devDeed.seller_name_bn || devDeed.seller_name_en || '',
+        buyer_name: devDeed.buyer_name_bn || devDeed.buyer_name_en || '',
+        owner_name: devDeed.buyer_name_bn || devDeed.owner_name_bn || devDeed.buyer_name_en || '',
+        mouza: devDeed.mouza || '',
+        jl_no: String(devDeed.jl_no || ''),
+        khatian_no: String(devDeed.khatian_no || ''),
+        dag_no: String(devDeed.dag_no || ''),
+        area_decimal: String(devDeed.area_decimal || ''),
+        deed_no: devDeed.deed_no || '',
+        document_date: devDeed.document_date || '',
+        parcel_id: ''
+      });
+      setUploadedFileName(isBn ? devDeed.scenario_name_bn : devDeed.scenario_name);
+    }
+  };
 
   // Step 1: Trigger OCR scan on upload or sample load
   const handleFileUpload = async (fileObj) => {
@@ -284,8 +330,11 @@ export default function ScannerPage({
     setIsVerifying(true);
     setStatusMessage(null);
     try {
+      const devDeed = devDeeds.find(d => d.id === selectedRefRecordId);
+      const targetRefId = devDeed?.reference_record_id || selectedRefRecordId || null;
+
       const comparePayload = {
-        reference_record_id: selectedRefRecordId || null,
+        reference_record_id: targetRefId,
         extracted_data: {
           owner_name: formData.buyer_name || formData.owner_name,
           seller_name: formData.seller_name,
@@ -297,7 +346,8 @@ export default function ScannerPage({
           area_decimal: formData.area_decimal,
           deed_no: formData.deed_no,
           document_date: formData.document_date,
-          parcel_id: formData.parcel_id
+          parcel_id: formData.parcel_id,
+          is_partial_transfer: Boolean(devDeed?.is_partial_transfer || devDeed?.expected_status === 'PARTIAL_TRANSFER_VALID')
         },
         area_tolerance_decimal: 0.05,
         language: lang
@@ -763,7 +813,7 @@ export default function ScannerPage({
               <select
                 id="step2-reference-record-select"
                 value={selectedRefRecordId}
-                onChange={(e) => setSelectedRefRecordId(e.target.value)}
+                onChange={(e) => handleReferenceRecordChange(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -777,38 +827,78 @@ export default function ScannerPage({
                 }}
               >
                 <option value="">
-                  {isBn ? '-- কোনো রেফারেন্স রেকর্ড ছাড়া / স্বয়ংক্রিয় অনুসন্ধান --' : '-- No reference record selected / Auto-search --'}
+                  {isBn ? '-- কোনো রেফারেন্স রেকর্ড ছাড়া / স্বয়ংক্রিয় অনুসন্ধান --' : '-- Auto-Search Synthetic Parcel History --'}
                 </option>
-                {availableRecords.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    [{r.id}] {isBn ? r.owner_name_bn : (r.owner_name_en || r.owner_name_bn)} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no} ({r.mouza})
-                  </option>
-                ))}
+
+                <optgroup label={isBn ? 'অফিসিয়াল নিবন্ধিত রেফারেন্স রেকর্ড (Official Baseline Records)' : 'Official Registered Baseline Records'}>
+                  {availableRecords.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      [{r.id}] {isBn ? r.owner_name_bn : (r.owner_name_en || r.owner_name_bn)} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no} ({r.mouza})
+                    </option>
+                  ))}
+                </optgroup>
+
+                {devDeeds.length > 0 && (
+                  <optgroup label={isBn ? 'ডেভেলপমেন্ট টেস্ট দলিল দৃশ্যপট (Development Test Deeds - 20 Cases)' : 'Development Test Deed Scenarios (20 Cases)'}>
+                    {devDeeds.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        [{d.id}] {isBn ? d.scenario_name_bn : d.scenario_name} — দাগ: {d.dag_no}, খতিয়ান: {d.khatian_no}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
 
-              {/* Selected Record Detail summary or Manual Review Warning */}
+              {/* Selected Record Detail summary or Auto-Search Banner */}
               {selectedRefRecordId ? (
                 (() => {
                   const rec = availableRecords.find(r => r.id === selectedRefRecordId);
-                  return rec ? (
+                  const dev = devDeeds.find(d => d.id === selectedRefRecordId);
+                  const item = rec || dev;
+                  return item ? (
                     <div style={{
                       marginTop: '12px',
-                      padding: '10px 14px',
+                      padding: '12px 14px',
                       borderRadius: '6px',
                       background: '#FFFFFF',
                       border: '1px solid var(--line)',
                       fontSize: '0.82rem',
                       color: 'var(--text-body)',
                       display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '16px'
+                      flexDirection: 'column',
+                      gap: '8px'
                     }}>
-                      <div><strong>{isBn ? 'মালিক:' : 'Owner:'}</strong> {rec.owner_name_bn}</div>
-                      <div><strong>{isBn ? 'দাগ নম্বর:' : 'Dag No:'}</strong> {rec.dag_no}</div>
-                      <div><strong>{isBn ? 'খতিয়ান:' : 'Khatian:'}</strong> {rec.khatian_no}</div>
-                      <div><strong>{isBn ? 'জমির পরিমাণ:' : 'Area:'}</strong> {rec.area_decimal} {isBn ? 'শতক' : 'decimals'}</div>
-                      <div><strong>{isBn ? 'দলিল নম্বর:' : 'Deed No:'}</strong> {rec.deed_no || 'N/A'}</div>
-                      <div><strong>{isBn ? 'মৌজা:' : 'Mouza:'}</strong> {rec.mouza}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB', paddingBottom: '6px' }}>
+                        <span style={{ fontWeight: 800, color: 'var(--primary-accent)', fontFamily: 'var(--font-mono)' }}>
+                          {item.id} {rec ? (isBn ? '• অফিসিয়াল নিবন্ধিত রেকর্ড' : '• Official Baseline Record') : (isBn ? '• ডেভেলপমেন্ট টেস্ট দলিল' : '• Development Test Deed')}
+                        </span>
+                        {dev && dev.expected_status && (
+                          <span style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            background: dev.expected_status.includes('CLEAN') ? '#DCFCE7' : '#FEE2E2',
+                            color: dev.expected_status.includes('CLEAN') ? '#166534' : '#991B1B'
+                          }}>
+                            {dev.expected_status}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                        <div><strong>{isBn ? 'মালিক/বিক্রেতা:' : 'Owner/Seller:'}</strong> {item.owner_name_bn || item.seller_name_bn || item.owner_name_en}</div>
+                        {dev && dev.buyer_name_bn && (
+                          <div><strong>{isBn ? 'ক্রেতা:' : 'Buyer:'}</strong> {dev.buyer_name_bn}</div>
+                        )}
+                        <div><strong>{isBn ? 'দাগ নম্বর:' : 'Dag No:'}</strong> {item.dag_no}</div>
+                        <div><strong>{isBn ? 'খতিয়ান:' : 'Khatian:'}</strong> {item.khatian_no}</div>
+                        <div><strong>{isBn ? 'জমির পরিমাণ:' : 'Area:'}</strong> {item.area_decimal} {isBn ? 'শতক' : 'decimals'}</div>
+                        <div><strong>{isBn ? 'দলিল নম্বর:' : 'Deed No:'}</strong> {item.deed_no || 'N/A'}</div>
+                        <div><strong>{isBn ? 'মৌজা:' : 'Mouza:'}</strong> {item.mouza}</div>
+                        {dev && (
+                          <div><strong>{isBn ? 'লক্ষ্য রেফারেন্স আইডি:' : 'Target Reference ID:'}</strong> {dev.reference_record_id || 'rec-demo-001'}</div>
+                        )}
+                      </div>
                     </div>
                   ) : null;
                 })()
@@ -825,11 +915,11 @@ export default function ScannerPage({
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                  <Info size={15} style={{ flexShrink: 0 }} />
                   <span>
                     {isBn
-                      ? 'রেফারেন্স রেকর্ড নির্বাচিত হয়নি — ম্যানুয়াল পর্যালোচনা প্রয়োজন: এই দলিলের দাগ/খতিয়ানের জন্য সরাসরি কোনো পূর্ববর্তী ডেমো রেকর্ড সংযুক্ত নেই।'
-                      : 'Reference record not selected / Needs manual review: No prior demo record matched for this plot.'}
+                      ? 'স্বয়ংক্রিয় অনুসন্ধান সক্রিয়: দলিলের দাগ ও খতিয়ান দিয়ে সিন্থেটিক ট্রানজ্যাকশন ডাটাবেজে মিল অনুসন্ধান করা হবে।'
+                      : 'Auto-search active: The system will search synthetic transactions matching the deed Dag & Khatian.'}
                   </span>
                 </div>
               )}

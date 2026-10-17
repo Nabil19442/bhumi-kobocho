@@ -276,3 +276,8 @@ export async function recordProposedPurchaseApi(purchaseData) {
     body: JSON.stringify(purchaseData),
   });
 }
+
+export async function fetchDevDeeds() {
+  return request("/dev/deeds");
+}
+
