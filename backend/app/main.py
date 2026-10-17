@@ -4,7 +4,7 @@ import math
 import urllib.parse
 import logging
 from typing import Dict, Any, Optional, List
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request, Depends, Header, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request, Depends, Header, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -41,7 +41,8 @@ from .guardian import (
     load_records,
     trigger_simulation_event,
     get_alerts,
-    mark_alert_reviewed
+    mark_alert_reviewed,
+    generate_guardian_risk_report
 )
 from .explain import explain_comparison
 from .ocr import (
@@ -216,9 +217,21 @@ def health_check():
 @app.get("/api/records")
 def list_records():
     records = load_records()
+    enriched = []
+    for r in records:
+        r_copy = dict(r)
+        p_txs = get_parcel_by_id(r_copy.get("id"))
+        if p_txs and any(tx.get("record_source") == "User-Submitted Records" for tx in p_txs):
+            latest = p_txs[-1]
+            r_copy["owner_name_bn"] = latest.get("buyer_name_bn", r_copy.get("owner_name_bn"))
+            r_copy["owner_name_en"] = latest.get("buyer_name_en", r_copy.get("owner_name_en"))
+            r_copy["area_decimal"] = latest.get("transferred_area", r_copy.get("area_decimal"))
+            r_copy["current_demo_owner"] = latest.get("buyer_name_bn")
+            r_copy["previous_demo_owner"] = latest.get("seller_name_bn")
+        enriched.append(r_copy)
     return {
         "disclaimer": "DEMO DATA — not a legal verdict",
-        "records": records
+        "records": enriched
     }
 
 @app.get("/api/records/graph")
@@ -649,15 +662,38 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
     rec = next((r for r in records if r.get("id") == plot_id), None)
     timeline = None
 
-    if not rec:
+    # Check transaction registry for parcel history
+    parcel_txs = []
+    if rec:
+        matching_txs = get_parcel_by_id(plot_id)
+        if matching_txs and any(tx.get("record_source") == "User-Submitted Records" for tx in matching_txs):
+            parcel_txs = matching_txs
+    else:
         parcel_txs = get_parcel_by_id(plot_id)
-        if parcel_txs:
-            latest_tx = parcel_txs[-1]
+
+    if parcel_txs:
+        latest_tx = parcel_txs[-1]
+        has_user_transfers = any(tx.get("record_source") == "User-Submitted Records" for tx in parcel_txs)
+
+        if rec:
+            rec = dict(rec)
+            # Update to latest owner from transaction registry
+            rec["owner_name_bn"] = latest_tx.get("buyer_name_bn", rec.get("owner_name_bn"))
+            rec["owner_name_en"] = latest_tx.get("buyer_name_en", rec.get("owner_name_en"))
+            rec["area_decimal"] = latest_tx.get("transferred_area", rec.get("area_decimal"))
+            rec["deed_no"] = latest_tx.get("deed_no", rec.get("deed_no"))
+            rec["document_date"] = latest_tx.get("transaction_date", rec.get("document_date"))
+            rec["current_demo_owner"] = latest_tx.get("buyer_name_bn")
+            rec["previous_demo_owner"] = latest_tx.get("seller_name_bn")
+            rec["seller_remaining_area"] = latest_tx.get("seller_remaining_area")
+        else:
             rec = {
                 "id": plot_id,
                 "parcel_id": plot_id,
                 "owner_name_bn": latest_tx.get("buyer_name_bn"),
                 "owner_name_en": latest_tx.get("buyer_name_en"),
+                "current_demo_owner": latest_tx.get("buyer_name_bn"),
+                "previous_demo_owner": latest_tx.get("seller_name_bn"),
                 "khatian_no": latest_tx.get("khatian_no"),
                 "dag_no": latest_tx.get("dag_no"),
                 "mouza": latest_tx.get("mouza"),
@@ -671,6 +707,10 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
                 "file_hash_sha256": "0" * 64,
                 "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
             }
+
+        # Build timeline from parcel transactions if it has user transfers or was not in records.json
+        is_known_static = plot_id in ("rec-demo-001", "rec-demo-002", "rec-demo-004")
+        if not is_known_static or has_user_transfers:
             timeline = []
             for tx in parcel_txs:
                 d = tx.get("transaction_date") or "তারিখ অপ্রাপ্য"
@@ -685,11 +725,11 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
                     "is_synthetic": True,
                     "disclaimer": "DEMO DATA — not a legal verdict"
                 })
-        else:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Plot record '{plot_id}' not found."
-            )
+    elif not rec:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Plot record '{plot_id}' not found."
+        )
 
     # Generate comparison with self as baseline
     comparison = compare_records(
@@ -1015,6 +1055,26 @@ def review_guardian_alert(
         "disclaimer": "DEMO DATA — not a legal verdict",
         "alert": reviewed
     }
+
+@app.post("/api/guardian/risk-report")
+def api_guardian_risk_report(payload: Dict[str, Any] = Body(...)):
+    """
+    Evaluates land ownership conflict risks and returns Land Guardian Evidence & Risk Report.
+    Identifies 4 canonical risk statuses:
+    - Potential Duplicate Sale
+    - Potential Ownership Conflict
+    - Needs Manual Review
+    - No Conflict Found in Available Records
+    Collects full evidence including previous and current transaction IDs, dates, owners, areas, and sources.
+    """
+    return generate_guardian_risk_report(payload)
+
+@app.get("/api/guardian/risk-report/{parcel_id}")
+def api_guardian_risk_report_by_parcel(parcel_id: str):
+    """
+    Fetches the Land Guardian Evidence & Risk Report for a given parcel ID or Dag number.
+    """
+    return generate_guardian_risk_report(parcel_id)
 
 
 # ============================================================================

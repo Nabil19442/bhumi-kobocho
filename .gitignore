@@ -24,3 +24,6 @@ build/
 .idea/
 *.swp
 *.swo
+
+# Runtime demo persistence
+backend/data/user_transactions.json*

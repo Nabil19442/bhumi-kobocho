@@ -275,6 +275,82 @@ export default function GuardianAlertModal({
             </div>
           )}
 
+          {/* Evidence & Risk Report Section (if available on alert) */}
+          {alert.risk_report && (
+            <div style={{
+              background: '#FEF2F2',
+              border: '1.5px solid #FCA5A5',
+              borderRadius: 'var(--radius-std)',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldAlert size={18} color="#DC2626" />
+                  <strong style={{ fontSize: '0.94rem', color: '#991B1B', fontFamily: 'var(--font-heading)' }}>
+                    {isBn ? (alert.risk_report.risk_status_bn || 'সম্ভাব্য দ্বৈত বিক্রয়') : (alert.risk_report.risk_status || 'Potential Duplicate Sale')}
+                  </strong>
+                </div>
+                <span style={{
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: '4px'
+                }}>
+                  SEVERITY: {alert.risk_report.severity || 'CRITICAL'}
+                </span>
+              </div>
+
+              {/* Conflict Explanation Reason */}
+              <p style={{ margin: 0, fontSize: '0.88rem', color: '#7F1D1D', lineHeight: 1.55 }}>
+                {isBn 
+                  ? (alert.risk_report.conflict_explanation?.reason_bn || alert.risk_report.conflict_explanation?.why_conflicts_bn)
+                  : (alert.risk_report.conflict_explanation?.reason_en || alert.risk_report.conflict_explanation?.why_conflicts_en)}
+              </p>
+
+              {/* Evidence Details Records */}
+              {alert.risk_report.evidence_details && alert.risk_report.evidence_details.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#991B1B', fontFamily: 'var(--font-heading)' }}>
+                    {isBn ? 'সংশ্লিষ্ট প্রমাণ রেকর্ডসমূহ:' : 'Evidence Transaction Records:'}
+                  </span>
+                  {alert.risk_report.evidence_details.map((rec, rIdx) => (
+                    <div
+                      key={rIdx}
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #FECACA',
+                        borderRadius: '6px',
+                        padding: '10px 12px',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ color: '#991B1B' }}>{isBn ? rec.record_role_bn : rec.record_role_en}</strong>
+                        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: '0.72rem' }}>ID: {rec.transaction_id}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink)' }}>
+                        <span>বিক্রেতা: {rec.seller_name} ➔ ক্রেতা: {rec.buyer_name}</span>
+                        <strong style={{ fontFamily: 'var(--font-mono)' }}>{rec.land_area} শতক</strong>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+                        উৎস: {rec.source} | তারিখ: {rec.transaction_date || 'অপ্রাপ্য'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Citizen Recommendation */}
           {(alert.action_recommendation_bn || alert.action_recommendation_en) && (
             <div style={{

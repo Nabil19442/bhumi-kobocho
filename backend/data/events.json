@@ -73,5 +73,34 @@
     "action_recommendation_bn": "সাব-রেজিস্ট্রি দলিলের সার্টিফাইড কপির আবেদন করে অংশীদারিত্ব বিবরণ মিলিয়ে নিন।",
     "action_recommendation_en": "Apply for a certified copy of the deed at the Sub-Registry to verify co-ownership shares.",
     "disclaimer": "DEMO DATA — not a legal verdict"
+  },
+  {
+    "event_id": "evt-558",
+    "record_id": "PCL-DHK-SAV-045-0558",
+    "status_label": "SIMULATED",
+    "event_type": "duplicate_sale_attempt",
+    "title_bn": "দাগ ৫৫৮: দ্বৈত বিক্রয় চেষ্টা সতর্কতা (সিমুলেটেড)",
+    "title_en": "Dag 558: Duplicate Sale Attempt Notice (Simulated)",
+    "timestamp": "2026-10-17T15:00:00Z",
+    "source_system_mock": "Land Guardian Sub-Registry Audit Feed",
+    "field_changes": {
+      "seller_name_bn": {
+        "old_value": "সুলতানা জাহান (বর্তমান মালিক)",
+        "new_value": "আব্দুল করিম (অননুমোদিত বিক্রেতা)",
+        "note_bn": "পূর্বতন বিক্রেতা কর্তৃক পুনরায় বিক্রয় দলিল দাখিল",
+        "note_en": "Prior seller re-attempting sale after full conveyance"
+      },
+      "area_decimal": {
+        "old_value": 10.0,
+        "new_value": 10.0,
+        "note_bn": "ইতিপূর্বে সম্পূর্ণ হস্তান্তরিত ১০ শতক জমি",
+        "note_en": "Exact 10 decimal land previously transferred"
+      }
+    },
+    "description_bn": "সিমুলেটেড সতর্কতা: দাগ নং ৫৫৮-এ আব্দুল করিম ইতিপূর্বে সম্পূর্ণ ১০.০ শতক জমি সুলতানা জাহান-এর নিকট হস্তান্তর করা সত্ত্বেও অন্য একজন ক্রেতার নিকট পুনরায় বিক্রয়ের একটি দলিল দাখিল সংকেত শনাক্ত হয়েছে।",
+    "description_en": "Simulated Alert: On Dag 558, Abdul Karim previously transferred the entire 10.0 decimals to Sultana Jahan, yet a conflicting deed submission attempting to resell the same land to Another Buyer has been flagged.",
+    "action_recommendation_bn": "সাব-রেজিস্ট্রি অফিসে জরুরি নোটিশ প্রেরণ করে দলিল রেজিস্ট্রেশন স্থগিত রাখুন এবং উভয় পক্ষের রেকর্ড পর্যালোচনা করুন।",
+    "action_recommendation_en": "Issue an urgent halt notice to the Sub-Registry office and audit the historical chain of custody.",
+    "disclaimer": "DEMO DATA — not a legal verdict. Synthetic simulation for demonstration purposes."
   }
 ]

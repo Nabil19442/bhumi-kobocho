@@ -1,184 +1,261 @@
-import React from 'react';
-import { ArrowRight, CheckCircle2, Shield, Info, Layers, Sparkles, ScanText } from 'lucide-react';
-import DeedScanVisual from './DeedScanVisual';
+import { 
+  ScanText, 
+  ShieldAlert, 
+  CheckCircle2, 
+  Info, 
+  ArrowRight, 
+  Sparkles
+} from 'lucide-react';
+import Parcel3DVisual from './Parcel3DVisual';
 
 export default function LandingHero({ 
   lang = 'bn', 
   onStartScanning, 
   onViewPassport,
+  onViewGuardian,
   onHowItWorks 
 }) {
   const isBn = lang === 'bn';
 
   return (
-    <section className="landing-hero-section" style={{
-      padding: '48px 0 64px',
-      background: 'var(--bg-primary)',
-      borderBottom: '1px solid #CAD7CF',
-      overflow: 'hidden'
-    }}>
-      <div className="landing-container" style={{
-        maxWidth: 'var(--max-content-width)',
-        margin: '0 auto',
-        padding: '0 var(--gutter-desktop)',
-        boxSizing: 'border-box'
-      }}>
+    <section 
+      className="landing-hero-section-3d" 
+      style={{
+        position: 'relative',
+        padding: 'clamp(40px, 6vw, 76px) 0 clamp(48px, 7vw, 84px)',
+        background: 'linear-gradient(145deg, #061819 0%, #0A2629 45%, #051416 100%)',
+        borderBottom: '1px solid rgba(52, 211, 153, 0.2)',
+        overflow: 'hidden',
+        color: '#FFFFFF'
+      }}
+    >
+      {/* Subtle Topographic & Grid Background Texture */}
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `
+            radial-gradient(circle at 78% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+            radial-gradient(circle at 20% 80%, rgba(39, 66, 160, 0.14) 0%, transparent 50%),
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: '100% 100%, 100% 100%, 48px 48px, 48px 48px',
+          opacity: 0.9,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
+
+      <div 
+        className="landing-container" 
+        style={{
+          position: 'relative',
+          maxWidth: 'var(--max-content-width)',
+          margin: '0 auto',
+          padding: '0 var(--gutter-desktop)',
+          boxSizing: 'border-box',
+          zIndex: 1
+        }}
+      >
         {/* Two-Column Responsive Grid */}
-        <div className="hero-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '44px',
-          alignItems: 'center'
-        }}>
-          {/* Column 1: Value Proposition & CTAs */}
-          <div className="hero-text-block">
-            {/* Hackathon & Team Badge */}
+        <div 
+          className="hero-grid-3d" 
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(320px, 1.15fr) minmax(320px, 1fr)',
+            gap: 'clamp(32px, 5vw, 64px)',
+            alignItems: 'center'
+          }}
+        >
+          {/* Column 1: Hero Text & CTAs */}
+          <div className="hero-text-block" style={{ zIndex: 2 }}>
+            {/* Hackathon & Brand Badge */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '5px 12px',
-              borderRadius: 'var(--radius-std)',
-              background: 'var(--accent-tint)',
-              border: '1px solid #C4D6F5',
-              color: 'var(--primary-accent)',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(52, 211, 153, 0.35)',
+              color: '#6EE7B7',
               fontSize: '0.78rem',
               fontWeight: 700,
               fontFamily: 'var(--font-mono)',
               marginBottom: '20px',
-              letterSpacing: '0.3px'
+              letterSpacing: '0.4px',
+              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.1)'
             }}>
-              <span>LANDTECH INNOVATION HACKATHON 2026</span>
-              <span>•</span>
-              <span>TEAM ZENOX</span>
+              <Sparkles size={14} color="#34D399" />
+              <span>LANDTECH INNOVATION HACKATHON 2026 • TEAM ZENOX</span>
             </div>
 
-            {/* Required Headline: Verify Before You Buy Land */}
-            <h1 className="hero-heading" style={{
-              fontSize: 'clamp(2.2rem, 4.2vw, 3.4rem)',
-              lineHeight: 1.18,
-              fontWeight: 800,
-              color: 'var(--text-main)',
-              fontFamily: 'var(--font-heading)',
-              marginBottom: '18px',
-              letterSpacing: '-0.5px'
-            }}>
+            {/* Main Heading Requested by User */}
+            <h1 
+              className="hero-heading" 
+              style={{
+                fontSize: 'clamp(2.3rem, 4.4vw, 3.8rem)',
+                lineHeight: 1.16,
+                fontWeight: 900,
+                color: '#FFFFFF',
+                fontFamily: 'var(--font-heading)',
+                marginBottom: '20px',
+                letterSpacing: '-0.5px'
+              }}
+            >
               {isBn ? (
                 <>
-                  জমি কেনার আগেই<br />
+                  জমির নিরাপত্তায়,<br />
                   <span style={{
-                    color: 'var(--primary-accent)',
-                    borderBottom: '4px solid var(--primary-accent)',
-                    paddingBottom: '2px',
+                    background: 'linear-gradient(90deg, #34D399 0%, #10B981 40%, #60A5FA 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                     display: 'inline-block'
                   }}>
-                    যাচাই করুন
+                    প্রযুক্তির নিশ্চয়তা
                   </span>
                 </>
               ) : (
                 <>
-                  Verify Before You<br />
+                  Land Security with<br />
                   <span style={{
-                    color: 'var(--primary-accent)',
-                    borderBottom: '4px solid var(--primary-accent)',
-                    paddingBottom: '2px',
+                    background: 'linear-gradient(90deg, #34D399 0%, #10B981 40%, #60A5FA 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                     display: 'inline-block'
                   }}>
-                    Buy Land
+                    Technological Assurance
                   </span>
                 </>
               )}
             </h1>
 
-            {/* Required Supporting Text */}
-            <p className="hero-subheading" style={{
-              fontSize: 'clamp(1.04rem, 1.3vw, 1.18rem)',
-              lineHeight: 1.62,
-              color: 'var(--text-body)',
-              fontFamily: 'var(--font-body)',
-              marginBottom: '28px',
-              maxWidth: '540px'
-            }}>
-              {isBn
-                ? 'দলিল স্ক্যান করুন, পূর্ববর্তী লেনদেনের ইতিহাস দেখুন এবং জমি কেনার সিদ্ধান্ত নেওয়ার আগেই সম্ভাব্য বিরোধ ও দ্বৈত বিক্রয় শনাক্ত করুন।'
-                : 'Scan land deeds, explore previous transaction history, and identify potential land transaction conflicts before making a purchase decision.'}
+            {/* Subtitle Requested by User */}
+            <p 
+              className="hero-subheading" 
+              style={{
+                fontSize: 'clamp(1.02rem, 1.35vw, 1.2rem)',
+                lineHeight: 1.65,
+                color: '#CBD5E1',
+                fontFamily: 'var(--font-body)',
+                marginBottom: '32px',
+                maxWidth: '560px'
+              }}
+            >
+              AI-powered land document verification and ownership conflict detection for a safer land transaction.
+              {isBn && (
+                <span style={{ display: 'block', marginTop: '6px', fontSize: '0.96rem', color: '#94A3B8' }}>
+                  নিরাপদ জমি লেনদেনের জন্য কৃত্রিম বুদ্ধিমত্তা ভিত্তিক দলিল যাচাই এবং সম্ভাব্য মালিকানা বিরোধ শনাক্তকরণ।
+                </span>
+              )}
             </p>
 
             {/* Action Buttons: Primary CTA & Secondary CTA */}
-            <div className="hero-cta-group" style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '14px',
-              marginBottom: '28px'
-            }}>
-              {/* Primary CTA: Verify a Land Deed */}
+            <div 
+              className="hero-cta-group" 
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '14px',
+                marginBottom: '32px'
+              }}
+            >
+              {/* Primary CTA: দলিল যাচাই করুন */}
               <button
                 type="button"
                 id="hero-primary-cta"
                 onClick={onStartScanning}
-                className="btn-primary"
                 style={{
-                  height: '50px',
-                  padding: '0 26px',
-                  fontSize: '1.02rem',
-                  fontWeight: 700,
+                  height: '52px',
+                  padding: '0 28px',
+                  fontSize: '1.04rem',
+                  fontWeight: 800,
                   fontFamily: 'var(--font-heading)',
                   borderRadius: 'var(--radius-std)',
-                  boxShadow: 'var(--shadow-hard-sm)',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#FFFFFF',
+                  border: '1px solid #34D399',
+                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px'
+                  gap: '10px',
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 24px rgba(16, 185, 129, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0px)';
+                  e.currentTarget.style.boxShadow = '0 4px 18px rgba(16, 185, 129, 0.45)';
                 }}
               >
-                <ScanText size={18} />
-                <span>{isBn ? 'দলিল যাচাই শুরু করুন' : 'Verify a Land Deed'}</span>
+                <ScanText size={20} />
+                <span>{isBn ? 'দলিল যাচাই করুন' : 'Verify Deed Now'}</span>
               </button>
 
-              {/* Secondary CTA: Explore How It Works */}
+              {/* Secondary CTA: Land Guardian দেখুন */}
               <button
                 type="button"
                 id="hero-secondary-cta"
-                onClick={onHowItWorks || onStartScanning}
-                className="btn-secondary"
+                onClick={onViewGuardian || onStartScanning}
                 style={{
-                  height: '50px',
-                  padding: '0 22px',
-                  fontSize: '0.98rem',
+                  height: '52px',
+                  padding: '0 24px',
+                  fontSize: '1rem',
                   fontWeight: 700,
                   fontFamily: 'var(--font-heading)',
                   borderRadius: 'var(--radius-std)',
-                  border: '1.5px solid var(--text-main)',
-                  background: 'var(--bg-paper)',
-                  color: 'var(--text-main)',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  color: '#F1F5F9',
+                  border: '1px solid rgba(167, 243, 208, 0.35)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  minHeight: '44px'
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease, border-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)';
+                  e.currentTarget.style.borderColor = '#34D399';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(167, 243, 208, 0.35)';
                 }}
               >
-                <span>{isBn ? 'কীভাবে কাজ করে জানুন' : 'Explore How It Works'}</span>
+                <ShieldAlert size={18} color="#34D399" />
+                <span>{isBn ? 'Land Guardian দেখুন' : 'Explore Land Guardian'}</span>
+                <ArrowRight size={16} />
               </button>
             </div>
 
-            {/* Three Short Reassurance Points */}
-            <div className="hero-reassurance-list" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
-                <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? '২০,০০০+ কৃত্রিম লেনদেন রেকর্ডের সাথে স্বয়ংক্রিয় তুলনা' : 'Automated comparison against 20,000+ transaction records'}</span>
+            {/* Three Reassurance Key Feature Points */}
+            <div 
+              className="hero-reassurance-list" 
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                marginBottom: '26px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.92rem', color: '#E2E8F0', fontFamily: 'var(--font-body)' }}>
+                <CheckCircle2 size={17} style={{ color: '#34D399', flexShrink: 0 }} />
+                <span>{isBn ? '২০,০০০+ কৃত্রিম লেনদেনের সাথে স্বয়ংক্রিয় দ্বৈত বিক্রয় ও ওভারল্যাপ যাচাই' : 'Automated duplicate sale & overlap verification against 20,000+ records'}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
-                <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'সম্ভাব্য দ্বৈত বিক্রয় ও অতিরিক্ত জমির পরিমাণ চিহ্নিতকরণ' : 'Duplicate sale and overlapping land portion detection'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.92rem', color: '#E2E8F0', fontFamily: 'var(--font-body)' }}>
+                <CheckCircle2 size={17} style={{ color: '#34D399', flexShrink: 0 }} />
+                <span>{isBn ? 'মালিকানা ধারাবাহিকতা টাইমলাইন ও নিরপেক্ষ প্রমাণ প্রতিবেদন' : 'Evidence-backed chain of custody timeline & risk report'}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
-                <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'স্থায়ী পার্সেল আইডি ভিত্তিক প্লট পাসপোর্ট ও কিউআর সনদ' : 'Plot Passport & QR code linked to stable Parcel IDs'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.92rem', color: '#E2E8F0', fontFamily: 'var(--font-body)' }}>
+                <CheckCircle2 size={17} style={{ color: '#34D399', flexShrink: 0 }} />
+                <span>{isBn ? 'স্থায়ী পার্সেল আইডি ভিত্তিক ডিজিটাল প্লট পাসপোর্ট ও কিউআর সনদ' : 'Plot Passport & cryptographically hashed QR certificate'}</span>
               </div>
             </div>
 
@@ -186,24 +263,24 @@ export default function LandingHero({
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: '#FDEEE9',
-              border: '1px solid #F3BFB3',
-              color: '#9A2C14',
-              fontSize: '0.8rem',
+              gap: '8px',
+              padding: '7px 14px',
+              borderRadius: '6px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(248, 113, 113, 0.3)',
+              color: '#FCA5A5',
+              fontSize: '0.78rem',
               fontWeight: 600,
               fontFamily: 'var(--font-mono)'
             }}>
-              <Info size={14} style={{ flexShrink: 0 }} />
-              <span>{isBn ? 'ডেমো ডেটা — কোনো আইনি মালিকানার সনদ বা রায় নয়।' : 'DEMO DATA — preliminary verification, not legal title.'}</span>
+              <Info size={14} style={{ flexShrink: 0, color: '#F87171' }} />
+              <span>{isBn ? 'ডেমো ডেটা — নাগরিক বিরোধ সতর্কীকরণ ব্যবস্থা, সরকারি দলিলের আইনি রায় নয়।' : 'DEMO DATABASE — preliminary pre-purchase verification aid, not official legal title.'}</span>
             </div>
           </div>
 
-          {/* Column 2: Interactive Deed Scanning & Verification Illustration */}
-          <div className="hero-parcel-column">
-            <DeedScanVisual
+          {/* Column 2: 3D Floating Land Parcel Visual */}
+          <div className="hero-3d-visual-column" style={{ position: 'relative', zIndex: 2 }}>
+            <Parcel3DVisual
               lang={lang}
               onStartScanning={onStartScanning}
               onViewPassport={onViewPassport}
@@ -211,6 +288,22 @@ export default function LandingHero({
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 960px) {
+          .hero-grid-3d {
+            grid-template-columns: 1fr !important;
+            gap: 36px !important;
+          }
+          .hero-text-block {
+            text-align: left;
+          }
+          .hero-3d-visual-column {
+            order: 2;
+            width: 100%;
+          }
+        }
+      `}</style>
     </section>
   );
 }

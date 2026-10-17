@@ -212,6 +212,14 @@ export async function markAlertReviewedApi(alertId) {
   });
 }
 
+export async function fetchGuardianRiskReport(payload) {
+  return request("/guardian/risk-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchRecordGraph(recordId = null) {
   const query = recordId ? `?record_id=${encodeURIComponent(recordId)}` : '';
   return request(`/records/graph${query}`);

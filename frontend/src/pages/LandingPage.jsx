@@ -32,11 +32,12 @@ export default function LandingPage({
 
   return (
     <div className="landing-page-root" style={{ width: '100%', overflowX: 'hidden' }}>
-      {/* A. Hero Section with Headline, Supporting Text, CTAs, and Interactive Deed Scanning Visual */}
+      {/* A. Hero Section with Headline, Supporting Text, CTAs, and Interactive 3D Land Parcel Visual */}
       <LandingHero
         lang={lang}
         onStartScanning={onStartScanning}
         onViewPassport={onViewPassport}
+        onViewGuardian={onViewGuardian}
         onHowItWorks={() => handleScrollToSection('how-it-works')}
       />
 

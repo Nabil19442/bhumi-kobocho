@@ -528,6 +528,40 @@ def generate_dataset():
         "disclaimer": "DEMO DATA — not a legal verdict. Synthetic baseline for sample_land_deed_demo.pdf"
     })
 
+    # SCENARIO 6: Baseline ownership for Dag 558 (Abdul Karim 10.0 dec)
+    p_dag558 = "PCL-DHK-SAV-045-0558"
+    records.append({
+        "id": "rec-demo-dag-558-baseline",
+        "parcel_id": p_dag558,
+        "deed_no": "1088/2016",
+        "transaction_date": "2016-04-10",
+        "division": "ঢাকা (Dhaka)",
+        "district": "ঢাকা (Dhaka)",
+        "upazila": "সাভার (Savar)",
+        "mouza": "সাভার (Savar)",
+        "jl_no": "45",
+        "khatian_no": "128",
+        "dag_no": "558",
+        "land_class": "নাল (Nal / Agricultural)",
+        "total_parcel_area": 10.0,
+        "transferred_area": 10.0,
+        "seller_remaining_area": 10.0,
+        "seller_name_bn": "বাংলাদেশ সরকার (CS Baseline)",
+        "seller_name_en": "Govt of Bangladesh (CS Baseline)",
+        "seller_nid_last4": "0000",
+        "buyer_name_bn": "আব্দুল করিম",
+        "buyer_name_en": "Abdul Karim",
+        "buyer_nid_last4": "5580",
+        "prior_deed_no": "CS-1990-01",
+        "parent_khatian_no": "CS-128",
+        "transaction_type": "সিএস রেকর্ড / খতিয়ান স্বীকৃতি",
+        "conflict_scenario": "BASELINE_OWNERSHIP",
+        "scenario_role": "baseline_acquisition",
+        "expected_conflict": None,
+        "is_synthetic": True,
+        "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
+    })
+
     # ========================================================
     # 2. GENERATE MASS CADASTRAL PARCELS & HISTORIES (~20,000)
     # ========================================================
