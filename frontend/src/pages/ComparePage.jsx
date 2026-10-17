@@ -13,25 +13,35 @@ import {
   Database,
   RefreshCw,
   Compass,
-  FileBadge
+  FileBadge,
+  AlertOctagon,
+  Layers,
+  History
 } from 'lucide-react';
-import { compareRecordsApi, fetchRecords } from '../api';
+import { compareRecordsApi, fetchRecords, fetchConflictScenarios } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
 export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onViewPassport, onComparisonUpdated }) {
   const isBn = lang === 'bn';
   const [records, setRecords] = useState([]);
-  const [selectedRecordId, setSelectedRecordId] = useState('rec-demo-001');
+  const [scenarios, setScenarios] = useState([]);
+  const [selectedRecordId, setSelectedRecordId] = useState('auto');
   const [tolerance, setTolerance] = useState(0.05);
   const [comparison, setComparison] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadRecords = async () => {
+  const loadInitialData = async () => {
     try {
-      const data = await fetchRecords();
-      if (data && data.records) {
-        setRecords(data.records);
+      const [recordsData, scenariosData] = await Promise.all([
+        fetchRecords().catch(() => ({ records: [] })),
+        fetchConflictScenarios().catch(() => ({ scenarios: [] }))
+      ]);
+      if (recordsData && recordsData.records) {
+        setRecords(recordsData.records);
+      }
+      if (scenariosData && scenariosData.scenarios) {
+        setScenarios(scenariosData.scenarios);
       }
     } catch (err) {
       console.error(err);
@@ -40,22 +50,97 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
   };
 
   useEffect(() => {
-    loadRecords();
+    loadInitialData();
   }, []);
+
+  const SCENARIO_PRESETS = {
+    'rec-scen-001-b': {
+      dag_no: '550',
+      khatian_no: '220',
+      deed_no: '4520/2023',
+      area_decimal: '10.0',
+      owner_name: 'তারেক রহমান',
+      document_date: '2023-08-15',
+      mouza: 'গুলশান (Gulshan)'
+    },
+    'rec-scen-002-b': {
+      dag_no: '784',
+      khatian_no: '129',
+      deed_no: '5812/2022',
+      area_decimal: '7.0',
+      owner_name: 'মাহমুদ হাসান',
+      document_date: '2022-11-20',
+      mouza: 'সাভার (Savar)'
+    },
+    'rec-scen-003-b': {
+      dag_no: '1058',
+      khatian_no: '412',
+      deed_no: '1482/2021',
+      area_decimal: '5.0',
+      owner_name: 'আমিনুল হক',
+      document_date: '2021-04-12',
+      mouza: 'মিরপুর (Mirpur)'
+    },
+    'rec-scen-004-a': {
+      dag_no: '3310',
+      khatian_no: '991',
+      deed_no: '1099/2024',
+      area_decimal: '8.0',
+      owner_name: 'নাসির উদ্দিন',
+      document_date: '2024-01-10',
+      mouza: 'আন্দরকিল্লা (Anderkilla)'
+    },
+    'rec-scen-005-d': {
+      dag_no: '1540',
+      khatian_no: '605',
+      deed_no: '8112/2018',
+      area_decimal: '6.0',
+      owner_name: 'মাকসুদা বেগম',
+      document_date: '2018-12-05',
+      mouza: 'আম্বরখানা (Amberkhana)'
+    },
+    'rec-demo-deed-active': {
+      dag_no: '1234',
+      khatian_no: '456',
+      deed_no: '2026-0017',
+      area_decimal: '10.0',
+      owner_name: 'মোঃ সাকিব হাসান',
+      document_date: '15 অক্টোবর ২০২৬',
+      mouza: 'শান্তিপুর (কাল্পনিক)'
+    },
+    'unrecorded-plot': {
+      dag_no: '999999',
+      khatian_no: '888888',
+      deed_no: '0000/2026',
+      area_decimal: '15.0',
+      owner_name: 'অজ্ঞাত ব্যক্তি',
+      document_date: '2026-01-01',
+      mouza: 'অজানা মৌজা'
+    }
+  };
 
   const runComparison = async (refId = selectedRecordId, tol = tolerance) => {
     setIsLoading(true);
     setError(null);
     try {
+      let extractedPayload = sharedExtractedData;
+      if (SCENARIO_PRESETS[refId]) {
+        extractedPayload = SCENARIO_PRESETS[refId];
+      } else if (!extractedPayload) {
+        extractedPayload = {
+          owner_name: 'মোঃ সাকিব হাসান',
+          khatian_no: '456',
+          dag_no: '1234',
+          area_decimal: '10.0',
+          document_date: '15 অক্টোবর ২০২৬',
+          deed_no: '2026-0017',
+          mouza: 'শান্তিপুর (কাল্পনিক)'
+        };
+      }
+
       const payload = {
         reference_record_id: refId,
-        extracted_data: sharedExtractedData || {
-          owner_name: 'মোঃ রফিকুল ইসলাম',
-          khatian_no: '412',
-          dag_no: '1058',
-          area_decimal: '15.5',
-          document_date: '2021-04-12',
-        },
+        extracted_data: extractedPayload,
         area_tolerance_decimal: parseFloat(tol),
         language: lang,
       };
@@ -79,6 +164,15 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
   const handleRetry = () => {
     loadRecords();
     runComparison(selectedRecordId, tolerance);
+  };
+
+  const formatDisplayVal = (val) => {
+    if (val === null || val === undefined) return isBn ? 'তথ্য পাওয়া যায়নি' : 'Data not found';
+    const s = String(val).trim();
+    if (s === '' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') {
+      return isBn ? 'তথ্য পাওয়া যায়নি' : 'Data not found';
+    }
+    return s;
   };
 
   // 4 official statuses only — each must have an icon and text label
@@ -312,11 +406,41 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
                 cursor: 'pointer'
               }}
             >
-              {records.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.id}: {r.owner_name_bn} | মৌজা: {r.mouza} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no}
+              <option value="auto">
+                🔍 {isBn ? 'স্বয়ংক্রিয় অনুসন্ধান: সংশ্লিষ্ট দলিলের ইতিহাস (Search Synthetic Parcel History)' : 'Auto-Search Synthetic Parcel History'}
+              </option>
+              
+              <optgroup label={isBn ? 'দ্বন্দ্ব যাচাই দৃশ্যপট (Conflict Test Scenarios)' : 'Conflict Test Scenarios'}>
+                <option value="rec-scen-001-b">
+                  ⚠️ {isBn ? 'দৃশ্যপট ১: একই জমির দ্বৈত বিক্রয় (Duplicate Sale Scenario)' : 'Scenario 1: Duplicate Sale of Same Portion'}
                 </option>
-              ))}
+                <option value="rec-scen-002-b">
+                  ⚠️ {isBn ? 'দৃশ্যপট ২: অতিরিক্ত জমি বিক্রয় (Overlapping Area Scenario)' : 'Scenario 2: Overlapping Area Sale'}
+                </option>
+                <option value="rec-scen-003-b">
+                  ✓ {isBn ? 'দৃশ্যপট ৩: স্বাভাবিক বিক্রয় — কোনো দ্বন্দ্ব নেই (Normal Sale / Clean Chain)' : 'Scenario 3: Normal Sale (No Overlap)'}
+                </option>
+                <option value="rec-scen-004-a">
+                  ⚠️ {isBn ? 'দৃশ্যপট ৪: অসম্পূর্ণ ইতিহাস বা যোগসূত্রের ফাঁক (History Continuity Gap)' : 'Scenario 4: Incomplete History Gap'}
+                </option>
+                <option value="rec-scen-005-d">
+                  ✓ {isBn ? 'দৃশ্যপট ৫: বহুবিধ লেনদেনের ধারাবাহিকতা (Multiple Transactions Chain)' : 'Scenario 5: Multi-Transaction Chain'}
+                </option>
+                <option value="rec-demo-deed-active">
+                  📄 {isBn ? 'নমুনা আপলোডকৃত দলিল (Sample Land Deed Demo PDF - Shantipur)' : 'Sample Uploaded Deed (Shantipur Plot 1234)'}
+                </option>
+                <option value="unrecorded-plot">
+                  ❓ {isBn ? 'অজানা দাগ/খতিয়ান (Previous Land Record Not Found)' : 'Unrecorded Parcel (Record Not Found)'}
+                </option>
+              </optgroup>
+
+              <optgroup label={isBn ? 'অন্যান্য ডেমো রেকর্ড (Traditional Demo Records)' : 'Traditional Demo Records'}>
+                {records.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.id}: {r.owner_name_bn} | মৌজা: {r.mouza} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -365,6 +489,217 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
 
       {comparison && (
         <>
+          {/* 1. PREVIOUS RECORD NOT FOUND ALERT (When no matching parcel history exists) */}
+          {comparison.has_history === false && (
+            <div style={{
+              background: '#FFFBEB',
+              border: '2px solid #F59E0B',
+              borderRadius: 'var(--radius-std)',
+              padding: '24px',
+              marginBottom: '28px',
+              boxShadow: 'var(--shadow-hard-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <AlertTriangle size={24} color="#D97706" />
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#92400E', fontFamily: 'var(--font-heading)' }}>
+                  {isBn ? 'পূর্ববর্তী রেকর্ড পাওয়া যায়নি (Previous Land Record Not Found)' : 'Previous Land Record Not Found'}
+                </h3>
+              </div>
+              <p style={{ margin: '0 0 14px', fontSize: '0.94rem', color: '#78350F', lineHeight: 1.6, fontFamily: 'var(--font-body)' }}>
+                {isBn 
+                  ? 'এই দলিলের দাগ বা খতিয়ানের বিপরীতে ২০,০০০ সিন্থেটিক জমি রেকর্ডের ডেটাসেটে কোনো পূর্ববর্তী নিবন্ধিত লেনদেন বা সিএস/এসএ রেকর্ড খুঁজে পাওয়া যায়নি। কোনো কৃত্রিম পূর্ববর্তী তথ্য অনুমান বা তৈরি করা হয়নি। সাব-রেজিস্ট্রি আর্কাইভ ও ভূমি রেকর্ডে সরাসরি অনুসন্ধান প্রয়োজন।'
+                  : 'No prior registered transactions or cadastral baseline records were found matching this Dag and Khatian in the 20,000 synthetic land transaction registry. No fabricated prior data has been generated. Direct archival verification is required.'}
+              </p>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 12px',
+                borderRadius: '16px',
+                background: '#FEF3C7',
+                border: '1px solid #FCD34D',
+                color: '#92400E',
+                fontSize: '0.84rem',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700
+              }}>
+                <Info size={14} />
+                <span>{isBn ? 'স্থিতি: পূর্ববর্তী রেকর্ড পাওয়া যায়নি' : 'Status: Previous Land Record Not Found'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* 2. CONFLICT ALERTS (Duplicate sale, Area overlap, History gap) */}
+          {comparison.conflict_analysis?.conflicts?.map((conflict, cIdx) => (
+            <div key={cIdx} style={{
+              background: conflict.severity === 'CRITICAL' ? '#FEF2F2' : (conflict.severity === 'HIGH' ? '#FFF7ED' : '#FEFCE8'),
+              border: `2px solid ${conflict.severity === 'CRITICAL' ? '#EF4444' : (conflict.severity === 'HIGH' ? '#F97316' : '#EAB308')}`,
+              borderRadius: 'var(--radius-std)',
+              padding: '20px 24px',
+              marginBottom: '24px',
+              boxShadow: 'var(--shadow-hard-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {conflict.severity === 'CRITICAL' ? <AlertOctagon size={22} color="#DC2626" /> : <AlertTriangle size={22} color="#D97706" />}
+                  <h3 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, color: conflict.severity === 'CRITICAL' ? '#991B1B' : '#9A3412', fontFamily: 'var(--font-heading)' }}>
+                    {isBn ? conflict.title_bn : conflict.title_en}
+                  </h3>
+                </div>
+                <span style={{
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  background: conflict.severity === 'CRITICAL' ? '#FEE2E2' : '#FFEDD5',
+                  color: conflict.severity === 'CRITICAL' ? '#B91C1C' : '#C2410C',
+                  fontSize: '0.78rem',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 800,
+                  border: `1px solid ${conflict.severity === 'CRITICAL' ? '#FCA5A5' : '#FDBA74'}`
+                }}>
+                  {conflict.code}
+                </span>
+              </div>
+              <p style={{ margin: '0 0 10px', fontSize: '0.92rem', color: conflict.severity === 'CRITICAL' ? '#7F1D1D' : '#7C2D12', lineHeight: 1.5 }}>
+                {isBn ? conflict.description_bn : conflict.description_en}
+              </p>
+              {conflict.conflicting_deed_no && (
+                <div style={{ fontSize: '0.84rem', fontFamily: 'var(--font-mono)', color: 'var(--text-main)', background: 'rgba(255,255,255,0.7)', padding: '6px 10px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
+                  <strong>{isBn ? 'দ্বন্দ্বপূর্ণ পূর্ববর্তী দলিল:' : 'Conflicting Prior Deed:'}</strong> {conflict.conflicting_deed_no}
+                  {conflict.conflicting_date && ` (${conflict.conflicting_date})`}
+                  {conflict.conflicting_buyer && ` • ${isBn ? 'পূর্ববর্তী ক্রেতা:' : 'Prior Buyer:'} ${conflict.conflicting_buyer}`}
+                  {conflict.excess_decimals && ` • ${isBn ? 'অতিরিক্ত পরিমাণ:' : 'Excess Area:'} ${conflict.excess_decimals} শতক`}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* 3. CLEAN TITLE CHAIN BANNER (When no conflict detected) */}
+          {comparison.conflict_analysis?.has_history && (!comparison.conflict_analysis?.conflicts || comparison.conflict_analysis.conflicts.length === 0) && (
+            <div style={{
+              background: '#F0FDF4',
+              border: '2px solid #22C55E',
+              borderRadius: 'var(--radius-std)',
+              padding: '18px 24px',
+              marginBottom: '24px',
+              boxShadow: 'var(--shadow-hard-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={22} color="#16A34A" />
+                <h3 style={{ margin: 0, fontSize: '1.14rem', fontWeight: 800, color: '#166534', fontFamily: 'var(--font-heading)' }}>
+                  {isBn ? comparison.conflict_analysis.status_label_bn : comparison.conflict_analysis.status_label_en}
+                </h3>
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: '#14532D', lineHeight: 1.5 }}>
+                {isBn 
+                  ? 'এই দলিলের স্বত্বধারার ধারাবাহিকতা এবং হস্তান্তরিত পরিমাণ পূর্ববর্তী লেনদেনের সাথে সামঞ্জস্যপূর্ণ। কোনো দ্বৈত বিক্রয় বা সীমার অতিরিক্ত হস্তান্তরের অমিল পাওয়া যায়নি।'
+                  : 'The chain of title and transferred area are consistent with previous transactions on this parcel. No duplicate conveyances or area overlaps detected.'}
+              </p>
+            </div>
+          )}
+
+          {/* 4. SUPPORTING PREVIOUS REGISTERED DEEDS HISTORY TABLE */}
+          {comparison.conflict_analysis?.supporting_records?.length > 0 && (
+            <div style={{
+              background: 'var(--white)',
+              borderRadius: 'var(--radius-std)',
+              border: '1px solid #CAD7CF',
+              boxShadow: 'var(--shadow-hard-sm)',
+              overflow: 'hidden',
+              marginBottom: '28px'
+            }}>
+              <div style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid #CAD7CF',
+                background: '#FAFBF9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div>
+                  <h3 style={{ fontSize: '1.14rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                    {isBn ? 'সংশ্লিষ্ট পূর্ববর্তী নিবন্ধিত দলিলের ইতিহাস' : 'Supporting Previous Registered Deeds History'}
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                    {isBn ? 'পার্সেল আইডি:' : 'Parcel ID:'} {comparison.conflict_analysis.parcel_id} • {comparison.conflict_analysis.supporting_records.length} {isBn ? 'টি লেনদেনের রেকর্ড' : 'transactions found'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onViewPassport(comparison.conflict_analysis.parcel_id || (comparison.reference_record && comparison.reference_record.id !== 'auto' ? comparison.reference_record.id : selectedRecordId), comparison)}
+                  style={{
+                    background: 'var(--ground)',
+                    border: '1px solid #CAD7CF',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--primary-accent)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <FileBadge size={15} />
+                  <span>{isBn ? 'পার্সেল পাসপোর্ট ও কিউআর' : 'Parcel Passport & QR'}</span>
+                </button>
+              </div>
+
+              <div className="table-responsive-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '660px' }}>
+                  <thead>
+                    <tr style={{
+                      background: 'var(--ground)',
+                      borderBottom: '2px solid #CBD8D2',
+                      fontSize: '0.82rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-main)',
+                      textTransform: 'uppercase'
+                    }}>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'দলিল নম্বর' : 'Deed No'}</th>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'তারিখ' : 'Date'}</th>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'বিক্রেতা' : 'Seller'}</th>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'ক্রেতা' : 'Buyer'}</th>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'জমির পরিমাণ' : 'Area'}</th>
+                      <th style={{ padding: '10px 16px' }}>{isBn ? 'পূর্ববর্তী সূত্র' : 'Prior Link'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparison.conflict_analysis.supporting_records.map((tx, idx) => (
+                      <tr key={idx} style={{
+                        background: idx % 2 === 1 ? '#FAFCF9' : '#FFFFFF',
+                        borderBottom: '1px solid #E3EAE6',
+                        fontSize: '0.88rem'
+                      }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)' }}>
+                          {tx.deed_no}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
+                          {tx.transaction_date}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-main)' }}>
+                          {tx.seller_name_bn}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-main)' }}>
+                          {tx.buyer_name_bn}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--primary-accent)', fontWeight: 700 }}>
+                          {tx.transferred_area} {isBn ? 'শতক' : 'dec'}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}>
+                          {tx.prior_deed_no || (isBn ? 'সিএস রেকর্ড' : 'CS Record')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Consistency Indicator Card */}
           <div style={{
             background: 'var(--white)',
@@ -538,7 +873,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
                             background: '#F1F5F0',
                             border: '1px solid #CBD8D2'
                           }}>
-                            {item.extracted_value !== null ? String(item.extracted_value) : '—'}
+                            {formatDisplayVal(item.extracted_value)}
                           </span>
                         </td>
 
@@ -550,7 +885,7 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
                             background: '#F8FAF8',
                             border: '1px solid #E0E7E3'
                           }}>
-                            {item.reference_value !== null ? String(item.reference_value) : '—'}
+                            {formatDisplayVal(item.reference_value)}
                           </span>
                         </td>
 
@@ -689,7 +1024,10 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
               <button
                 id="view-passport-btn"
                 type="button"
-                onClick={() => onViewPassport(selectedRecordId, comparison)}
+                onClick={() => {
+                  const targetId = comparison.conflict_analysis?.parcel_id || (comparison.reference_record && comparison.reference_record.id !== 'auto' ? comparison.reference_record.id : selectedRecordId);
+                  onViewPassport(targetId, comparison);
+                }}
                 className="btn-primary"
                 style={{
                   width: '100%',

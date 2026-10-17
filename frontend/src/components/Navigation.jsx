@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ScanText, GitCompareArrows, FileBadge, QrCode, ShieldAlert, Network, TrendingUp } from 'lucide-react';
+import { Home, LayoutDashboard, ScanText, History, FileBadge, ClipboardCheck, TrendingUp } from 'lucide-react';
 
 export default function Navigation({ activeTab, setActiveTab, t }) {
   const containerRef = React.useRef(null);
@@ -7,12 +7,11 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
 
   const navItems = [
     { id: 'landing', label: t.lang_toggle === 'English' ? 'হোম পেজ' : 'Home', icon: Home },
-    { id: 'scanner', label: t.nav_scanner, icon: ScanText },
-    { id: 'compare', label: t.nav_compare, icon: GitCompareArrows },
-    { id: 'passport', label: t.nav_passport, icon: FileBadge },
-    { id: 'graph', label: t.nav_graph, icon: Network },
-    { id: 'integrity', label: t.nav_integrity, icon: QrCode },
-    { id: 'guardian', label: t.nav_guardian, icon: ShieldAlert, badge: 'SIMULATED' },
+    { id: 'overview', label: t.nav_overview || 'ওভারভিউ', icon: LayoutDashboard },
+    { id: 'scanner', label: t.nav_verify || 'দলিল যাচাইকরণ', icon: ScanText },
+    { id: 'history', label: t.nav_history || 'লেনদেনের ইতিহাস', icon: History },
+    { id: 'passport', label: t.nav_passport || 'প্লট পাসপোর্ট', icon: FileBadge },
+    { id: 'reports', label: t.nav_reports || 'যাচাই প্রতিবেদন', icon: ClipboardCheck },
     { id: 'landprice', label: t.nav_landprice || 'জমির সম্ভাব্য মূল্য', icon: TrendingUp, badge: 'ML' },
   ];
 

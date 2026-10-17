@@ -1,9 +1,10 @@
 import React from 'react';
 import LandingHero from '../components/LandingHero';
 import WorkflowSection from '../components/WorkflowSection';
+import CoreFeaturesSection from '../components/CoreFeaturesSection';
+import DemoCtaSection from '../components/DemoCtaSection';
 import PassportPreviewSection from '../components/PassportPreviewSection';
 import ComparisonPreviewSection from '../components/ComparisonPreviewSection';
-import GuardianPreviewSection from '../components/GuardianPreviewSection';
 import IntegrityPreviewSection from '../components/IntegrityPreviewSection';
 import ScopeSection from '../components/ScopeSection';
 import LandPricePreviewSection from '../components/LandPricePreviewSection';
@@ -17,7 +18,7 @@ export default function LandingPage({
   onStartCompare,
   onViewPassport,
   onViewIntegrity,
-  onViewGuardian,
+  onViewHistory,
   onViewLandPrice
 }) {
   const handleScrollToSection = (sectionId) => {
@@ -29,7 +30,7 @@ export default function LandingPage({
 
   return (
     <div className="landing-page-root" style={{ width: '100%', overflowX: 'hidden' }}>
-      {/* 3. Hero with 3D land illustration */}
+      {/* A. Hero Section with Headline, Supporting Text, CTAs, and Interactive Deed Scanning Visual */}
       <LandingHero
         lang={lang}
         onStartScanning={onStartScanning}
@@ -37,55 +38,65 @@ export default function LandingPage({
         onHowItWorks={() => handleScrollToSection('how-it-works')}
       />
 
-      {/* 4. "কীভাবে কাজ করে" — four simple steps */}
+      {/* B. How It Works: 4 Transparent Steps */}
       <WorkflowSection
         lang={lang}
         onStartScanning={onStartScanning}
       />
 
-      {/* 5. Plot Passport preview */}
+      {/* C. Core Features: 6 Prominent Capabilities */}
+      <CoreFeaturesSection
+        lang={lang}
+        onStartScanning={onStartScanning}
+        onViewHistory={onViewHistory || onStartScanning}
+        onViewPassport={onViewPassport}
+        onViewLandPrice={onViewLandPrice}
+      />
+
+      {/* D. Live Synthetic Scenario Demo Section */}
+      <DemoCtaSection
+        lang={lang}
+        onStartScanning={onStartScanning}
+        onStartCompare={onStartCompare}
+      />
+
+      {/* Plot Passport Preview */}
       <PassportPreviewSection
         lang={lang}
         onViewPassport={onViewPassport}
       />
 
-      {/* 6. Record comparison example */}
+      {/* Record Comparison & Conflict Inspection Example */}
       <ComparisonPreviewSection
         lang={lang}
         onStartCompare={onStartCompare}
       />
 
-      {/* 6.1. Rural Land Price Intelligence Preview */}
+      {/* Rural Land Price Intelligence Preview */}
       <LandPricePreviewSection
         lang={lang}
         onViewLandPrice={onViewLandPrice}
       />
 
-      {/* 7. Land Guardian simulated alert example */}
-      <GuardianPreviewSection
-        lang={lang}
-        onViewGuardian={onViewGuardian}
-      />
-
-      {/* 8. QR and file integrity explanation */}
+      {/* QR & Integrity Verification Explanation */}
       <IntegrityPreviewSection
         lang={lang}
         onViewIntegrity={onViewIntegrity}
       />
 
-      {/* 9. "কী যাচাই হয়, কী হয় না" (Scope & Boundaries) */}
+      {/* E. Trust and Disclaimer: Scope & Boundaries */}
       <ScopeSection
         lang={lang}
         onStartScanning={onStartScanning}
       />
 
-      {/* 10. Final Call to Action */}
+      {/* Final Call to Action */}
       <FinalCtaSection
         lang={lang}
         onStartScanning={onStartScanning}
       />
 
-      {/* 11. Footer with ZENOX and hackathon information */}
+      {/* Footer */}
       <LandingFooter
         lang={lang}
       />

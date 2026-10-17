@@ -66,6 +66,15 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
     window.print();
   };
 
+  const formatDisplayVal = (val) => {
+    if (val === null || val === undefined) return isBn ? 'তথ্য পাওয়া যায়নি' : 'Data not found';
+    const s = String(val).trim();
+    if (s === '' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') {
+      return isBn ? 'তথ্য পাওয়া যায়নি' : 'Data not found';
+    }
+    return s;
+  };
+
   // 4 official statuses only — each must have an icon and text label
   const renderStatusBadge = (status) => {
     switch (status) {
@@ -320,11 +329,20 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
               cursor: 'pointer'
             }}
           >
-            {records.map(r => (
-              <option key={r.id} value={r.id}>
-                {r.id}: {r.owner_name_bn} — মৌজা: {r.mouza} (দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no})
-              </option>
-            ))}
+            <optgroup label={isBn ? "কৃত্রিম লেনদেন হিস্ট্রি পার্সেলসমূহ (২০,০০০+ রেকর্ড)" : "Synthetic Land History Parcels"}>
+              <option value="PCL-DHK-GUL-015-0550">PCL-DHK-GUL-015-0550: গুলশান (দাগ: ৫৫০, খতিয়ান: ২২০) — দ্বৈত বিক্রয় টেস্ট</option>
+              <option value="PCL-DHK-SAV-045-0784">PCL-DHK-SAV-045-0784: সাভার (দাগ: ৭৮৪, খতিয়ান: ১২৯) — এরিয়া ওভারল্যাপ টেস্ট</option>
+              <option value="PCL-RAJ-PAB-041-1058">PCL-RAJ-PAB-041-1058: পাবনা (দাগ: ১০৫৮, খতিয়ান: ৪১২) — ধারাবাহিক পরিচ্ছন্ন চেইন</option>
+              <option value="PCL-KHL-RPS-018-1540">PCL-KHL-RPS-018-1540: রূপসা (দাগ: ১৫৪০, খতিয়ান: ৭৩) — বহুবিধ লেনদেন</option>
+              <option value="PCL-DHK-SHT-012-1234">PCL-DHK-SHT-012-1234: শান্তিপুর (দাগ: ১২৩৪, খতিয়ান: ৪৫৬) — ডেমো পিডিএফ দলিল</option>
+            </optgroup>
+            <optgroup label={isBn ? "আর্কাইভ নমুনা রেকর্ডসমূহ" : "Archive Demo Records"}>
+              {records.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.id}: {r.owner_name_bn} — মৌজা: {r.mouza} (দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no})
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
       </div>
@@ -639,10 +657,10 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
                         {isBn ? item.field_label_bn : item.field_label_en}
                       </td>
                       <td style={{ padding: '12px 18px', fontFamily: 'var(--font-mono)' }}>
-                        {item.extracted_value !== null ? String(item.extracted_value) : '—'}
+                        {formatDisplayVal(item.extracted_value)}
                       </td>
                       <td style={{ padding: '12px 18px', fontFamily: 'var(--font-mono)' }}>
-                        {item.reference_value !== null ? String(item.reference_value) : '—'}
+                        {formatDisplayVal(item.reference_value)}
                       </td>
                       <td style={{ padding: '12px 18px' }}>
                         {renderStatusBadge(item.status)}

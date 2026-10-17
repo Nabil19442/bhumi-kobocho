@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, ArrowRight, Shield, Menu, X } from 'lucide-react';
+import BackendStatusBadge from './BackendStatusBadge';
 
 export default function LandingHeader({
   lang = 'bn',
@@ -154,10 +155,10 @@ export default function LandingHeader({
 
             <button
               type="button"
-              onClick={() => { setMobileMenuOpen(false); onLaunchApp('guardian'); }}
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('history'); }}
               className="nav-link-btn"
             >
-              {isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'}
+              {isBn ? 'লেনদেনের ইতিহাস' : 'Transaction History'}
             </button>
 
             <button
@@ -171,6 +172,8 @@ export default function LandingHeader({
 
           {/* Header Actions: Language Switcher, CTA, & Mobile Hamburger */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BackendStatusBadge lang={lang} />
+
             {/* Bangla / English Toggle Button */}
             <button
               type="button"
@@ -280,11 +283,11 @@ export default function LandingHeader({
 
             <button
               type="button"
-              onClick={() => { setMobileMenuOpen(false); onLaunchApp('guardian'); }}
+              onClick={() => { setMobileMenuOpen(false); onLaunchApp('history'); }}
               className="mobile-nav-link"
               style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
             >
-              {isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'}
+              {isBn ? 'লেনদেনের ইতিহাস' : 'Transaction History'}
             </button>
 
             <button

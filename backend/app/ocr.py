@@ -141,6 +141,17 @@ def run_tesseract_ocr(
             except OSError:
                 pass
 
+def clean_extracted_field(val: Optional[str]) -> Optional[str]:
+    """Cleans extracted candidate string by stripping unwanted boundary characters and parentheticals."""
+    if not val:
+        return None
+    cleaned = str(val).strip()
+    cleaned = re.sub(r"^[\s:：\-—_,\./]+", "", cleaned)
+    cleaned = re.sub(r"[\s:：\-—_,\./]+$", "", cleaned)
+    # Strip trailing parenthetical noise e.g. (কাল্পনিক), (সম্পূর্ণ কাল্পনিক), (নমুনা)
+    cleaned = re.sub(r"\s*\([^)]*\)", "", cleaned).strip()
+    return cleaned if cleaned else None
+
 def extract_fields_from_text(
     text: str,
     ocr_engine: str = "regex_text_parser",
@@ -150,7 +161,12 @@ def extract_fields_from_text(
     Extracts candidate fields from document text with deterministic regex rules.
     Does NOT fabricate confidence scores. If base_confidence is provided (from Tesseract TSV),
     it is used; otherwise confidence reflects pattern matching certainty or is marked as uncalculated.
+    Normalizes Bengali numerals internally while preserving original text for display.
     """
+    # 0. Clean null bytes and normalize Bengali ya variations
+    norm_text = text.replace("\x00", "")
+    norm_text = norm_text.replace("\u09af\u09bc", "\u09df")  # য + ় -> য়
+
     fields = {
         "owner_name": None,
         "khatian_no": None,
@@ -164,62 +180,114 @@ def extract_fields_from_text(
     confidences: Dict[str, Optional[float]] = {}
 
     # 1. Deed No
-    deed_match = re.search(r"(?:দলিল\s*নম্বর|দলিল\s*নং|Deed\s*No)[^\d০-৯:]*[:\s]+([\d০-৯\w/]+)", text, re.IGNORECASE)
+    deed_match = re.search(
+        r"(?:দলিল\s*(?:নম্বর|নং)|দলিল|Deed\s*(?:No|Number)?)[\s:：\-—]*\n?[\s:：\-—]*([A-Za-z0-9০-৯\-_/]+)",
+        norm_text,
+        re.IGNORECASE
+    )
     if deed_match:
-        fields["deed_no"] = deed_match.group(1).strip()
-        if base_confidence is not None:
-            confidences["deed_no"] = base_confidence
-    else:
-        num_slash_year = re.search(r"\b(\d{3,5}/\d{4})\b", text)
+        cand_deed = clean_extracted_field(deed_match.group(1))
+        if cand_deed:
+            fields["deed_no"] = cand_deed
+            if base_confidence is not None:
+                confidences["deed_no"] = base_confidence
+
+    if not fields["deed_no"]:
+        num_slash_year = re.search(r"\b([\d০-৯]{3,5}/[\d০-৯]{4})\b", norm_text)
         if num_slash_year:
-            fields["deed_no"] = num_slash_year.group(1)
+            fields["deed_no"] = num_slash_year.group(1).strip()
             if base_confidence is not None:
                 confidences["deed_no"] = base_confidence
 
     # 2. Date
-    date_match = re.search(r"(?:তারিখ|Date)[^\d০-৯:]*[:\s]+(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})", text, re.IGNORECASE)
+    bn_months = (
+        "জানুয়ারি|ফেব্রুয়ারি|মার্চ|এপ্রিল|মে|জুন|জুলাই|আগস্ট|সেপ্টেম্বর|অক্টোবর|নভেম্বর|ডিসেম্বর|"
+        "জানুয়ারি|ফেব্রুয়ারি|বৈশাখ|জ্যৈষ্ঠ|আষাঢ়|আষাঢ়|শ্রাবণ|ভাদ্র|আশ্বিন|কার্তিক|অগ্রহায়ণ|অগ্রহায়ণ|পৌষ|মাঘ|ফাল্গুন|চৈত্র"
+    )
+    en_months = "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+    date_pat = (
+        rf"[\d০-৯]{{1,4}}[\s\-/]+(?:{bn_months}|{en_months}|[\d০-৯]{{1,2}})[\s\-/]+[\d০-৯]{{2,4}}|"
+        r"[\d০-৯]{4}[-/][\d০-৯]{1,2}[-/][\d০-৯]{1,2}|"
+        r"[\d০-৯]{1,2}[-/][\d০-৯]{1,2}[-/][\d০-৯]{2,4}"
+    )
+    date_match = re.search(
+        r"(?:তারিখ|Date)[\s:：\-—]*\n?[\s:：\-—]*(" + date_pat + r")",
+        norm_text,
+        re.IGNORECASE
+    )
     if date_match:
-        fields["document_date"] = date_match.group(1).strip()
-        if base_confidence is not None:
-            confidences["document_date"] = base_confidence
+        cand_date = clean_extracted_field(date_match.group(1))
+        if cand_date:
+            fields["document_date"] = cand_date
+            if base_confidence is not None:
+                confidences["document_date"] = base_confidence
 
     # 3. Owner Name
-    name_match = re.search(r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|মালিক|গ্রহীতা|দাতার\s*নাম|Owner\s*Name)\s*[:：\-—]\s*([^\n\r,]+)", text, re.IGNORECASE)
+    # Priority: buyer (ক্রেতা), grantee (গ্রহীতা), owner (মালিক/মালিকের নাম)
+    # Note: (?<!বি) ensures 'বিক্রেতা' (seller) is not mistaken for 'ক্রেতা'
+    name_match = re.search(
+        r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|(?<!বি)ক্রেতা|গ্রহীতা|জমির\s*মালিক|দাতার\s*নাম|Owner(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        norm_text,
+        re.IGNORECASE
+    )
     if name_match:
         owner_candidate = name_match.group(1).strip()
-        owner_candidate = re.sub(r"^(?:মালিকের\s*নাম|মালিক|গ্রহীতা)\s*[:：\-—]\s*", "", owner_candidate).strip()
-        fields["owner_name"] = owner_candidate
-        if base_confidence is not None:
-            confidences["owner_name"] = base_confidence
-    else:
-        for line in text.splitlines():
+        owner_candidate = re.sub(r"^(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|মালিক|গ্রহীতা|ক্রেতা|Owner(?:\s*Name)?)\s*[:：\-—]\s*", "", owner_candidate).strip()
+        cleaned_owner = clean_extracted_field(owner_candidate)
+        if cleaned_owner:
+            fields["owner_name"] = cleaned_owner
+            if base_confidence is not None:
+                confidences["owner_name"] = base_confidence
+
+    if not fields["owner_name"]:
+        for line in norm_text.splitlines():
             clean_line = line.strip()
             if any(p in clean_line for p in ["মোঃ", "মোহাম্মদ", "Md.", "Mohammad", "সুলতানা", "Sultana", "আব্দুল", "Abdul"]):
-                fields["owner_name"] = clean_line
-                if base_confidence is not None:
-                    confidences["owner_name"] = base_confidence
-                break
+                cand = clean_extracted_field(clean_line)
+                if cand:
+                    fields["owner_name"] = cand
+                    if base_confidence is not None:
+                        confidences["owner_name"] = base_confidence
+                    break
 
     # 4. Khatian No
-    khatian_match = re.search(r"(?:খতিয়ান\s*নম্বর|খতিয়ান\s*নং|খতিয়ান|Khatian\s*No)[^\d০-৯:]*[:\s]*([\d০-৯/]+)", text, re.IGNORECASE)
+    khatian_match = re.search(
+        r"(?:খতিয়ান\s*(?:নম্বর|নং)|খতিয়ান|Khatian\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+        norm_text,
+        re.IGNORECASE
+    )
     if khatian_match:
-        fields["khatian_no"] = khatian_match.group(1).strip()
-        if base_confidence is not None:
-            confidences["khatian_no"] = base_confidence
+        cand_k = clean_extracted_field(khatian_match.group(1))
+        if cand_k:
+            fields["khatian_no"] = cand_k
+            if base_confidence is not None:
+                confidences["khatian_no"] = base_confidence
 
     # 5. Dag No
-    dag_match = re.search(r"(?:দাগ\s*নম্বর|দাগ\s*নং|দাগ|Dag\s*No)[^\d০-৯:]*[:\s]*([\d০-৯/]+)", text, re.IGNORECASE)
+    dag_match = re.search(
+        r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+        norm_text,
+        re.IGNORECASE
+    )
     if dag_match:
-        fields["dag_no"] = dag_match.group(1).strip()
-        if base_confidence is not None:
-            confidences["dag_no"] = base_confidence
+        cand_d = clean_extracted_field(dag_match.group(1))
+        if cand_d:
+            fields["dag_no"] = cand_d
+            if base_confidence is not None:
+                confidences["dag_no"] = base_confidence
 
     # 6. Area
-    area_match = re.search(r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|পরিমাণ|Area)[^\d০-৯:]*[:\s]*([\d০-৯\.]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho)?)", text, re.IGNORECASE)
+    area_match = re.search(
+        r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|পরিমাণ|Area)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
+        norm_text,
+        re.IGNORECASE
+    )
     if area_match:
-        fields["area_decimal"] = area_match.group(1).strip()
-        if base_confidence is not None:
-            confidences["area_decimal"] = base_confidence
+        cand_a = clean_extracted_field(area_match.group(1))
+        if cand_a:
+            fields["area_decimal"] = cand_a
+            if base_confidence is not None:
+                confidences["area_decimal"] = base_confidence
 
     # Assign field status without fabricating unsupplied confidence numbers
     field_status = {}
@@ -231,8 +299,19 @@ def extract_fields_from_text(
         else:
             field_status[k] = "Candidate extracted"
 
+    # Normalize Bengali numerals to English digits internally while preserving original for display
+    normalized_fields = {
+        "owner_name": fields["owner_name"],
+        "khatian_no": normalize_digits(fields["khatian_no"]) if fields["khatian_no"] else None,
+        "dag_no": normalize_digits(fields["dag_no"]) if fields["dag_no"] else None,
+        "area_decimal": normalize_digits(fields["area_decimal"]) if fields["area_decimal"] else None,
+        "document_date": normalize_digits(fields["document_date"]) if fields["document_date"] else None,
+        "deed_no": normalize_digits(fields["deed_no"]) if fields["deed_no"] else None,
+    }
+
     return {
         "extracted_fields": fields,
+        "normalized_fields": normalized_fields,
         "confidence_scores": confidences,
         "ocr_field_status": field_status,
         "ocr_engine": ocr_engine,
@@ -336,13 +415,22 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         "status": "known_specimen",
         "sample_id": target_record.get("id"),
         "uploaded_file_sha256": actual_sha256,
-        "disclaimer": "DEMO DATA — not a legal verdict"
+        "disclaimer": "DEMO DATA — not a legal verdict",
+        "normalized_fields": {
+            "owner_name": target_record.get("owner_name_bn"),
+            "khatian_no": normalize_digits(str(target_record.get("khatian_no"))),
+            "dag_no": normalize_digits(str(target_record.get("dag_no"))),
+            "area_decimal": normalize_digits(str(target_record.get("area_decimal"))),
+            "document_date": normalize_digits(str(target_record.get("document_date"))),
+            "deed_no": normalize_digits(str(target_record.get("deed_no"))),
+        }
     }
 
 def extract_text_from_pdf(file_bytes: bytes) -> Tuple[str, bool]:
     """
-    Extracts text from PDF bytes using pypdf.
+    Extracts selectable text from PDF bytes using pypdf.
     Returns (extracted_text, is_scanned_or_empty).
+    Cleans null characters and normalizes Bengali characters if text exists.
     """
     try:
         import pypdf
@@ -350,8 +438,10 @@ def extract_text_from_pdf(file_bytes: bytes) -> Tuple[str, bool]:
         full_text = []
         for page in reader.pages:
             t = page.extract_text()
-            if t:
-                full_text.append(t)
+            if t and t.strip():
+                # Clean null bytes and normalize ya variations
+                clean_t = t.replace("\x00", "").replace("\u09af\u09bc", "\u09df")
+                full_text.append(clean_t)
         combined = "\n".join(full_text).strip()
         if not combined:
             return "", True
@@ -405,11 +495,47 @@ def scan_uploaded_document(
         try:
             pdf_text, is_scanned_or_empty = extract_text_from_pdf(file_bytes)
             if is_scanned_or_empty:
+                # If PDF is scanned/image-based, attempt Tesseract OCR if available and page images exist
+                is_avail, tess_bin, langs = is_tesseract_available()
+                if is_avail and tess_bin:
+                    try:
+                        import pypdf
+                        reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                        ocr_texts = []
+                        conf_list = []
+                        langs_used = "ben+eng"
+                        for page in reader.pages:
+                            for img in page.images:
+                                t, meta = run_tesseract_ocr(img.data, tess_bin, langs)
+                                if t.strip():
+                                    ocr_texts.append(t.strip())
+                                if meta.get("overall_confidence"):
+                                    conf_list.append(meta["overall_confidence"])
+                                if meta.get("languages_used"):
+                                    langs_used = meta["languages_used"]
+                        if ocr_texts:
+                            combined_ocr = "\n".join(ocr_texts)
+                            avg_conf = sum(conf_list) / len(conf_list) if conf_list else None
+                            res = extract_fields_from_text(
+                                combined_ocr,
+                                ocr_engine=f"tesseract_{langs_used}",
+                                base_confidence=avg_conf
+                            )
+                            res["uploaded_file_sha256"] = computed_hash
+                            res["status"] = "success"
+                            return res
+                    except Exception:
+                        pass
+
                 return {
                     "extracted_fields": {
                         "owner_name": None, "khatian_no": None, "dag_no": None,
                         "area_decimal": None, "document_date": None, "deed_no": None,
                         "raw_text": ""
+                    },
+                    "normalized_fields": {
+                        "owner_name": None, "khatian_no": None, "dag_no": None,
+                        "area_decimal": None, "document_date": None, "deed_no": None,
                     },
                     "confidence_scores": {},
                     "ocr_field_status": {k: "Needs review" for k in ["owner_name", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]},

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Globe, AlertTriangle, ArrowLeft, Home } from 'lucide-react';
+import BackendStatusBadge from './BackendStatusBadge';
 
 export default function Header({ lang, setLang, t, onReturnToLanding }) {
   const toggleLanguage = () => {
@@ -106,6 +107,8 @@ export default function Header({ lang, setLang, t, onReturnToLanding }) {
         </div>
 
         <div className="header-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <BackendStatusBadge lang={lang} />
+
           {onReturnToLanding && (
             <button
               type="button"

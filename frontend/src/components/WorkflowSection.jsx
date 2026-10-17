@@ -7,39 +7,39 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
   const steps = [
     {
       stepNumber: isBn ? '১' : '1',
-      title: isBn ? '১. দলিলের তথ্য দিন' : '1. Provide Document Details',
+      title: isBn ? '১. বিক্রেতার দলিল আপলোড করুন' : "1. Upload Seller's Land Deed",
       desc: isBn
-        ? 'দলিল আপলোড করুন বা সংরক্ষিত ডেমো নমুনা নির্বাচন করে প্রয়োজনীয় তথ্য সহজে সাজিয়ে নিন।'
-        : 'Upload deed or pick a pre-loaded synthetic specimen to extract key land parameters.',
+        ? 'বিক্রেতার দেওয়া দলিলের স্ক্যান কপি (PDF বা ছবি) আপলোড করুন অথবা সংরক্ষিত ডেমো নমুনা নির্বাচন করুন।'
+        : "Upload a PDF or image of the seller's land deed, or select a realistic synthetic specimen.",
       icon: FileUp,
-      badge: isBn ? 'ইনপুট' : 'Input'
+      badge: isBn ? 'আপলোড' : 'Step 1'
     },
     {
       stepNumber: isBn ? '২' : '2',
-      title: isBn ? '২. তথ্য মিলিয়ে দেখুন' : '2. Compare Records',
+      title: isBn ? '২. তথ্য শনাক্ত ও পর্যালোচনা' : '2. AI Extracts Key Information',
       desc: isBn
-        ? 'মৌজা রেকর্ডের সাথে নাম, দাগ, খতিয়ান ও ক্ষেত্রফলের সামঞ্জস্য নিয়ম মেনে তুলনা করুন।'
-        : 'Automatically cross-examine names, dag, khatian, and area tolerance against mouza records.',
-      icon: GitCompare,
-      badge: isBn ? 'নিয়ম নিরীক্ষা' : 'Audit'
+        ? 'এআই অপটিক্যাল স্ক্যানার স্বয়ংক্রিয়ভাবে বিক্রেতা, ক্রেতা, দাগ, খতিয়ান, মৌজা ও জমির পরিমাণ শনাক্ত করে এবং সম্পাদনার সুযোগ দেয়।'
+        : 'AI extracts seller, buyer, dag, khatian, mouza, deed number, and land area into an editable review form.',
+      icon: HelpCircle,
+      badge: isBn ? 'এআই এক্সট্র্যাক্ট' : 'Step 2'
     },
     {
       stepNumber: isBn ? '৩' : '3',
-      title: isBn ? '৩. প্লট পাসপোর্ট বুঝুন' : '3. Review Plot Passport',
+      title: isBn ? '৩. লেনদেনের ইতিহাস যাচাই' : '3. Compare With Transaction History',
       desc: isBn
-        ? 'জমির খতিয়ান ইতিহাস, ক্ষেত্রফলের বিবরণ ও ডিজিটাল অবিকৃত অবস্থার একক সারসংক্ষেপ কার্ড দেখুন।'
-        : 'View a unified passport summary showing title history, verified acreage, and integrity.',
-      icon: FileBadge,
-      badge: isBn ? 'সারসংক্ষেপ' : 'Passport'
+        ? 'শনাক্তকৃত দাগ ও খতিয়ানের বিপরীতে সংরক্ষিত ২০,০০০+ লেনদেন রেকর্ডে পূর্ববর্তী সকল হস্তান্তরের তথ্য অনুসন্ধান করা হয়।'
+        : 'Cross-checks the extracted plot and deed numbers against available historical transactions in the synthetic registry.',
+      icon: GitCompare,
+      badge: isBn ? 'হিস্ট্রি তুলনা' : 'Step 3'
     },
     {
       stepNumber: isBn ? '৪' : '4',
-      title: isBn ? '৪. প্রয়োজন হলে আরও যাচাই করুন' : '4. Verify Further If Needed',
+      title: isBn ? '৪. বিরোধ ও ফলাফল পর্যালোচনা' : '4. Review Conflicts & Results',
       desc: isBn
-        ? 'কোনো অসংগতি ধরা পড়লে সরকারি ভূমি অফিসে পরবর্তী যাচাইয়ের স্পষ্ট ও সুনির্দিষ্ট পরামর্শ পান।'
-        : 'When discrepancies appear, receive clear official guidance for the AC Land or Sub-Registry office.',
-      icon: HelpCircle,
-      badge: isBn ? 'পরামর্শ' : 'Next Steps'
+        ? 'দ্বৈত বিক্রয়, অবশিষ্ট জমির সীমার অতিরিক্ত বিক্রি বা দলিলের ফাঁক থাকলে তাৎক্ষণিক সতর্কতা ও প্লট পাসপোর্ট দেখুন।'
+        : 'Inspect duplicate sales, overlapping conveyed areas, missing chain links, and dynamic Plot Passport with QR.',
+      icon: FileBadge,
+      badge: isBn ? 'যাচাই রিপোর্ট' : 'Step 4'
     }
   ];
 

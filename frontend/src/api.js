@@ -1,24 +1,99 @@
-const API_BASE = "http://127.0.0.1:8000/api";
+/**
+ * Centralized API Client for Bhumi Kobocho (ভূমি কবচ)
+ * Handles communication with the FastAPI backend (Render production & local dev).
+ */
+
+const PRODUCTION_API_URL = "https://bhumi-kobocho-api.onrender.com/api";
+const LOCAL_DEV_API_URL = "http://127.0.0.1:8000/api";
+
+/**
+ * Resolves the active backend API base URL with safe fallbacks:
+ * 1. Explicit Vite environment variable (VITE_API_BASE_URL or VITE_API_URL).
+ * 2. Localhost development fallback if running in dev mode on local browser.
+ * 3. Default production Render backend: https://bhumi-kobocho-api.onrender.com/api
+ */
+export function getApiBaseUrl() {
+  const envUrl = typeof import.meta !== "undefined" && 
+    (import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_API_URL);
+
+  if (envUrl && typeof envUrl === "string" && envUrl.trim()) {
+    const clean = envUrl.trim().replace(/\/+$/, "");
+    return clean.endsWith("/api") ? clean : `${clean}/api`;
+  }
+
+  if (typeof window !== "undefined") {
+    const isLocalhost = 
+      window.location.hostname === "localhost" || 
+      window.location.hostname === "127.0.0.1";
+    const isDev = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
+    if (isLocalhost && isDev) {
+      return LOCAL_DEV_API_URL;
+    }
+  }
+
+  return PRODUCTION_API_URL;
+}
+
+export const API_BASE = getApiBaseUrl();
 
 export class ApiError extends Error {
-  constructor(message, status = null, isOffline = false) {
+  constructor(message, status = null, isOffline = false, isWakingUp = false, details = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.isOffline = isOffline;
+    this.isWakingUp = isWakingUp;
+    this.details = details;
   }
 }
 
+/**
+ * Central request wrapper with timeout support, cold-start handling,
+ * and clear user-facing error reporting.
+ */
 async function request(endpoint, options = {}) {
+  const currentBase = getApiBaseUrl();
+  const isRenderBackend = currentBase.includes("onrender.com");
+
+  // Setup abort controller for timeout (Render cold starts may take up to 55 seconds)
+  let timeoutId = null;
+  const fetchOptions = { ...options };
+
+  if (!fetchOptions.signal) {
+    const controller = new AbortController();
+    const timeoutMs = isRenderBackend ? 60000 : 30000;
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    fetchOptions.signal = controller.signal;
+  }
+
   let res;
   try {
-    res = await fetch(`${API_BASE}${endpoint}`, options);
+    res = await fetch(`${currentBase}${endpoint}`, fetchOptions);
   } catch (err) {
-    throw new ApiError(
-      "Backend offline. Please ensure the backend server is running on http://127.0.0.1:8000.",
-      null,
-      true
-    );
+    if (timeoutId) clearTimeout(timeoutId);
+
+    const isAborted = err.name === "AbortError";
+    if (isRenderBackend) {
+      const msg = isAborted
+        ? "Render backend took longer than 60 seconds to respond. The free cloud instance is waking up from sleep. Please wait a moment and click Retry."
+        : `Unable to connect to live backend (${currentBase}). The Render cloud instance may be waking up from sleep (~30-50s on free tier). Please wait a moment and click Retry.`;
+      throw new ApiError(msg, null, true, true, {
+        originalError: err.message,
+        apiBase: currentBase,
+        isAborted
+      });
+    } else {
+      const msg = isAborted
+        ? `Request timed out. Please ensure the local backend server is running on ${currentBase}.`
+        : `Backend offline. Please ensure the backend server is running on ${currentBase}.`;
+      throw new ApiError(msg, null, true, false, {
+        originalError: err.message,
+        apiBase: currentBase,
+        isAborted
+      });
+    }
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
   if (!res.ok) {
@@ -31,10 +106,34 @@ async function request(endpoint, options = {}) {
     } catch {
       // Body not JSON
     }
-    throw new ApiError(errorDetail, res.status, false);
+    throw new ApiError(errorDetail, res.status, false, false, { apiBase: currentBase });
   }
 
   return res.json();
+}
+
+/**
+ * Checks connectivity with the active backend server.
+ * Returns { online: boolean, latencyMs?: number, isWakingUp?: boolean, data?: any, error?: Error }
+ */
+export async function checkBackendConnection() {
+  const startTime = Date.now();
+  try {
+    const data = await request("/health", { method: "GET" });
+    return {
+      online: true,
+      latencyMs: Date.now() - startTime,
+      data,
+      apiBase: getApiBaseUrl()
+    };
+  } catch (err) {
+    return {
+      online: false,
+      error: err,
+      isWakingUp: err.isWakingUp || false,
+      apiBase: getApiBaseUrl()
+    };
+  }
 }
 
 export async function fetchHealth() {
@@ -88,10 +187,7 @@ export async function fetchSimulationEvents() {
   return request("/guardian/events");
 }
 
-// SECURITY NOTE: Frontend-embedded API keys are visible to anyone inspecting the client bundle.
-// This key is used strictly for hackathon demonstration of simulation event triggering,
-// not as an enterprise security boundary. For production, role-based session auth (e.g. OAuth2/JWT)
-// must protect all mutation endpoints.
+// SECURITY NOTE: Hackathon demonstration key for simulation endpoints.
 const DEMO_GUARDIAN_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_GUARDIAN_API_KEY) || "demo-zenox-2026";
 
 export async function triggerSimulationApi(eventId) {
@@ -141,4 +237,27 @@ export async function predictLandPriceApi(payload) {
   });
 }
 
+export async function fetchConflictScenarios() {
+  return request("/history/scenarios");
+}
 
+export async function searchLandHistory(params = {}) {
+  const q = new URLSearchParams(params).toString();
+  return request(`/history/search?${q}`);
+}
+
+export async function detectConflictsApi(extractedData) {
+  return request("/history/detect-conflicts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(extractedData),
+  });
+}
+
+export async function recordProposedPurchaseApi(purchaseData) {
+  return request("/history/record-purchase", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(purchaseData),
+  });
+}

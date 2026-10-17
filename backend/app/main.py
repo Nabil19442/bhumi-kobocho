@@ -50,6 +50,15 @@ from .ocr import (
     scan_document_bytes
 )
 from .graph import build_relationship_graph
+from .conflict_detector import detect_conflicts
+from .transaction_registry import (
+    find_history_for_deed,
+    get_scenario_records,
+    get_parcel_by_id,
+    get_transaction_by_id,
+    record_proposed_purchase,
+    load_transactions
+)
 
 # ML imports via backend.ml to guarantee single shared module instance in sys.modules
 try:
@@ -128,11 +137,23 @@ _ENV_CORS = os.getenv("CORS_ORIGINS", "")
 if _ENV_CORS:
     ALLOWED_CORS_ORIGINS = [o.strip() for o in _ENV_CORS.split(",") if o.strip()]
 else:
-    ALLOWED_CORS_ORIGINS = _DEFAULT_CORS_ORIGINS
+    ALLOWED_CORS_ORIGINS = list(_DEFAULT_CORS_ORIGINS)
+
+# Dynamically include FRONTEND_BASE_URL if set in environment
+_FRONTEND_ENV = os.getenv("FRONTEND_BASE_URL", "").strip().rstrip("/")
+if _FRONTEND_ENV and (_FRONTEND_ENV.startswith("http://") or _FRONTEND_ENV.startswith("https://")):
+    if _FRONTEND_ENV not in ALLOWED_CORS_ORIGINS:
+        ALLOWED_CORS_ORIGINS.append(_FRONTEND_ENV)
+
+# Safe regex allowing legitimate preview and production frontend hosting domains
+# (Render, Vercel, Netlify, Cloudflare Pages, GitHub Pages, Surge) without using wildcard '*'
+DEFAULT_CORS_REGEX = r"^https?://([a-zA-Z0-9-]+\.)*(onrender\.com|vercel\.app|netlify\.app|pages\.dev|github\.io|surge\.sh)(:\d+)?$"
+CORS_ORIGIN_REGEX = os.getenv("CORS_ORIGIN_REGEX", DEFAULT_CORS_REGEX)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -141,12 +162,34 @@ app.add_middleware(
 # SEC-07: Strict typed schema for citizen-uploaded or extracted document fields
 class ExtractedDocumentData(BaseModel):
     owner_name: Optional[str] = Field(None, max_length=150)
+    seller_name: Optional[str] = Field(None, max_length=150)
+    buyer_name: Optional[str] = Field(None, max_length=150)
+    mouza: Optional[str] = Field(None, max_length=100)
+    jl_no: Optional[str] = Field(None, max_length=50)
     khatian_no: Optional[str] = Field(None, max_length=50)
     dag_no: Optional[str] = Field(None, max_length=50)
     area_decimal: Optional[str] = Field(None, max_length=50)
     document_date: Optional[str] = Field(None, max_length=50)
     deed_no: Optional[str] = Field(None, max_length=50)
     raw_text: Optional[str] = Field(None, max_length=30000)
+    parcel_id: Optional[str] = Field(None, max_length=100)
+
+    model_config = ConfigDict(extra="ignore")
+
+class ProposedPurchaseRequest(BaseModel):
+    parcel_id: Optional[str] = Field(None, max_length=100)
+    dag_no: Optional[str] = Field(None, max_length=50)
+    khatian_no: Optional[str] = Field(None, max_length=50)
+    mouza: Optional[str] = Field(None, max_length=100)
+    jl_no: Optional[str] = Field(None, max_length=50)
+    seller_name: Optional[str] = Field(None, max_length=150)
+    buyer_name: Optional[str] = Field(None, max_length=150)
+    area_decimal: Optional[float] = Field(None, ge=0.0, le=100000.0)
+    deed_no: Optional[str] = Field(None, max_length=50)
+    proposed_deed_no: Optional[str] = Field(None, max_length=50)
+    transaction_date: Optional[str] = Field(None, max_length=50)
+    land_class: Optional[str] = Field(None, max_length=100)
+    notes: Optional[str] = Field(None, max_length=500)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -350,32 +393,159 @@ async def scan_document(
         detail="Either a document file or a valid demo sample_id must be provided."
     )
 
+@app.get("/api/history/scenarios")
+def get_conflict_scenarios():
+    """Returns explicit conflict scenarios and specimens for testing and demonstration."""
+    scenarios = get_scenario_records()
+    return {
+        "count": len(scenarios),
+        "scenarios": scenarios,
+        "disclaimer": "DEMO DATA — not a legal verdict. Synthetic records for testing."
+    }
+
+@app.get("/api/history/search")
+def search_land_history(
+    dag_no: Optional[str] = Query(None),
+    khatian_no: Optional[str] = Query(None),
+    mouza: Optional[str] = Query(None),
+    deed_no: Optional[str] = Query(None),
+    parcel_id: Optional[str] = Query(None)
+):
+    """Searches synthetic transaction history by Dag, Khatian, Mouza, Deed, or Parcel ID."""
+    records = find_history_for_deed(
+        dag_no=dag_no,
+        khatian_no=khatian_no,
+        mouza=mouza,
+        deed_no=deed_no,
+        parcel_id=parcel_id
+    )
+    if not records:
+        return {
+            "has_history": False,
+            "status_badge": "Previous Land Record Not Found",
+            "status_label_bn": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি",
+            "records": []
+        }
+    return {
+        "has_history": True,
+        "count": len(records),
+        "records": records
+    }
+
+@app.get("/api/history/parcel/{parcel_id}")
+def get_parcel_history(parcel_id: str):
+    """Returns chronological transaction history for a specific parcel ID."""
+    transactions = get_parcel_by_id(parcel_id)
+    if not transactions:
+        return {
+            "found": False,
+            "parcel_id": parcel_id,
+            "transactions": [],
+            "count": 0
+        }
+    return {
+        "found": True,
+        "parcel_id": parcel_id,
+        "transactions": transactions,
+        "count": len(transactions)
+    }
+
+@app.post("/api/history/detect-conflicts")
+def api_detect_conflicts(extracted_data: ExtractedDocumentData):
+    """
+    Direct endpoint to run conflict detection on extracted deed data against synthetic history.
+    """
+    return detect_conflicts(extracted_data.model_dump())
+
+@app.post("/api/history/record-purchase")
+def api_record_proposed_purchase(req: ProposedPurchaseRequest):
+    """
+    Records a user-proposed land purchase in the synthetic transaction history.
+    Does NOT transfer legal ownership or replace government registration.
+    """
+    return record_proposed_purchase(req.model_dump())
+
 @app.post("/api/compare")
 def compare_document(req: CompareRequest):
     """
-    Compares extracted fields against reference dummy record.
+    Compares extracted fields against reference dummy record or searches synthetic history.
+    Detects potential duplicate sales, area overlaps, and chain gaps.
     Returns strictly: Matched / Mismatch / Needs review / Not checked.
     Returns HTTP 404 for unknown reference record IDs.
     """
-    records = load_records()
-    ref_record = next((r for r in records if r.get("id") == req.reference_record_id), None)
-    
-    if not ref_record:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Reference record '{req.reference_record_id}' not found."
-        )
+    extracted_dict = req.extracted_data.model_dump()
+    conflict_analysis = detect_conflicts(extracted_dict)
+
+    ref_id = (req.reference_record_id or "").strip()
+
+    # 1. Automatic history search mode
+    if ref_id in ("auto", "search_history", "history", ""):
+        if not conflict_analysis.get("has_history"):
+            return {
+                "has_history": False,
+                "status": "NO_PRIOR_RECORD",
+                "status_badge": "Previous Land Record Not Found",
+                "status_label_bn": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি",
+                "status_label_en": "Previous Land Record Not Found",
+                "conflict_analysis": conflict_analysis,
+                "results": [],
+                "explanation": {
+                    "title": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি (Previous Land Record Not Found)",
+                    "summary": "এই দাগ বা খতিয়ানের বিপরীতে কোনো পূর্ববর্তী নিবন্ধিত লেনদেন বা সিএস/এসএ রেকর্ড খুঁজে পাওয়া যায়নি।",
+                    "details": "অনুগ্রহ করে সরাসরি সাব-রেজিস্ট্রি আর্কাইভ ও ভূমি রেকর্ড যাচাই করুন।"
+                },
+                "reference_record": None,
+                "disclaimer": "DEMO DATA — not a legal verdict"
+            }
+
+        supporting = conflict_analysis.get("supporting_records", [])
+        baseline_tx = supporting[0] if supporting else None
+        ref_record = {
+            "id": conflict_analysis.get("parcel_id") or "parcel-baseline",
+            "owner_name_bn": baseline_tx.get("seller_name_bn") if baseline_tx else extracted_dict.get("owner_name"),
+            "khatian_no": baseline_tx.get("khatian_no") if baseline_tx else extracted_dict.get("khatian_no"),
+            "dag_no": baseline_tx.get("dag_no") if baseline_tx else extracted_dict.get("dag_no"),
+            "area_decimal": baseline_tx.get("transferred_area") if baseline_tx else extracted_dict.get("area_decimal"),
+            "document_date": baseline_tx.get("transaction_date") if baseline_tx else extracted_dict.get("document_date"),
+            "deed_no": baseline_tx.get("deed_no") if baseline_tx else extracted_dict.get("deed_no")
+        }
+    else:
+        # 2. Explicit reference record requested
+        records = load_records()
+        ref_record = next((r for r in records if r.get("id") == ref_id), None)
+
+        if not ref_record:
+            parcel_records = get_parcel_by_id(ref_id)
+            if parcel_records:
+                latest = parcel_records[-1]
+                ref_record = {
+                    "id": ref_id,
+                    "owner_name_bn": latest.get("buyer_name_bn"),
+                    "khatian_no": latest.get("khatian_no"),
+                    "dag_no": latest.get("dag_no"),
+                    "area_decimal": latest.get("transferred_area"),
+                    "document_date": latest.get("transaction_date"),
+                    "deed_no": latest.get("deed_no")
+                }
+
+        if not ref_record:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Reference record '{ref_id}' not found."
+            )
 
     result = compare_records(
-        extracted_data=req.extracted_data.model_dump(),
+        extracted_data=extracted_dict,
         reference_data=ref_record,
         area_tolerance_decimal=req.area_tolerance_decimal or 0.05
     )
 
-    # Attach explanation
+    # Attach explanation and conflict analysis
     explanation = explain_comparison(result, lang=req.language or "bn")
     result["explanation"] = explanation
     result["reference_record"] = ref_record
+    result["conflict_analysis"] = conflict_analysis
+    result["has_history"] = conflict_analysis.get("has_history", False)
     return result
 
 def build_synthetic_timeline(rec: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -459,11 +629,49 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
     """
     records = load_records()
     rec = next((r for r in records if r.get("id") == plot_id), None)
+    timeline = None
+
     if not rec:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Plot record '{plot_id}' not found."
-        )
+        parcel_txs = get_parcel_by_id(plot_id)
+        if parcel_txs:
+            latest_tx = parcel_txs[-1]
+            rec = {
+                "id": plot_id,
+                "parcel_id": plot_id,
+                "owner_name_bn": latest_tx.get("buyer_name_bn"),
+                "owner_name_en": latest_tx.get("buyer_name_en"),
+                "khatian_no": latest_tx.get("khatian_no"),
+                "dag_no": latest_tx.get("dag_no"),
+                "mouza": latest_tx.get("mouza"),
+                "district": latest_tx.get("district"),
+                "upazila": latest_tx.get("upazila"),
+                "land_class": latest_tx.get("land_class"),
+                "area_decimal": latest_tx.get("transferred_area"),
+                "document_date": latest_tx.get("transaction_date"),
+                "deed_no": latest_tx.get("deed_no"),
+                "dummy_nid_last4": latest_tx.get("buyer_nid_last4", "0000"),
+                "file_hash_sha256": "0" * 64,
+                "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
+            }
+            timeline = []
+            for tx in parcel_txs:
+                d = tx.get("transaction_date") or "তারিখ অপ্রাপ্য"
+                timeline.append({
+                    "year": d[:4] if len(d) >= 4 else "অপ্রাপ্য",
+                    "date": d,
+                    "title_bn": f"{tx.get('transaction_type', 'দলিল')} (দলিল নং {tx.get('deed_no')})",
+                    "title_en": f"{tx.get('transaction_type', 'Deed')} (Deed #{tx.get('deed_no')})",
+                    "detail_bn": f"বিক্রেতা: {tx.get('seller_name_bn')}, ক্রেতা: {tx.get('buyer_name_bn')}, পরিমাণ: {tx.get('transferred_area')} শতক",
+                    "detail_en": f"Seller: {tx.get('seller_name_en')}, Buyer: {tx.get('buyer_name_en')}, Area: {tx.get('transferred_area')} decimals",
+                    "status_code": "VERIFIED_RECORD",
+                    "is_synthetic": True,
+                    "disclaimer": "DEMO DATA — not a legal verdict"
+                })
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Plot record '{plot_id}' not found."
+            )
 
     # Generate comparison with self as baseline
     comparison = compare_records(
@@ -479,7 +687,8 @@ def get_plot_passport(plot_id: str, lang: str = Query("bn")):
 
     qr_code_base64 = generate_record_qr_base64(rec)
     explanation = explain_comparison(comparison, lang=lang)
-    timeline = build_synthetic_timeline(rec)
+    if timeline is None:
+        timeline = build_synthetic_timeline(rec)
 
     return {
         "disclaimer": "DEMO DATA — not a legal verdict",
@@ -572,7 +781,20 @@ def validate_qr_base_url(base_url: Optional[str]) -> str:
         except Exception:
             pass
 
-    if hostname not in allowed_hosts and not hostname.endswith(".bangladesh.gov"):
+    allowed_suffixes = (
+        ".bangladesh.gov",
+        ".onrender.com",
+        ".vercel.app",
+        ".netlify.app",
+        ".pages.dev",
+        ".github.io",
+        ".surge.sh"
+    )
+    is_trusted = (
+        hostname in allowed_hosts or 
+        any(hostname.endswith(sfx) or hostname == sfx[1:] for sfx in allowed_suffixes)
+    )
+    if not is_trusted:
         raise HTTPException(
             status_code=400,
             detail=f"Origin host '{hostname}' is not in the approved frontend allowlist."
@@ -592,7 +814,21 @@ def get_integrity_qr(record_id: str, base_url: Optional[str] = Query(None)):
     records = load_records()
     rec = next((r for r in records if r.get("id") == record_id), None)
     if not rec:
-        raise HTTPException(status_code=404, detail="Record not found")
+        parcel_txs = get_parcel_by_id(record_id)
+        if parcel_txs:
+            latest = parcel_txs[-1]
+            rec = {
+                "id": record_id,
+                "deed_no": latest.get("deed_no"),
+                "document_date": latest.get("transaction_date"),
+                "mouza": latest.get("mouza"),
+                "dag_no": latest.get("dag_no"),
+                "khatian_no": latest.get("khatian_no"),
+                "file_hash_sha256": "0" * 64,
+                "is_synthetic": True
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Record not found")
     
     verification_url = f"{clean_base_url}/verify/{record_id}"
     qr_b64 = generate_record_qr_base64(rec, base_url=clean_base_url)
@@ -607,6 +843,7 @@ def get_integrity_qr(record_id: str, base_url: Optional[str] = Query(None)):
     }
 
 @app.get("/api/records/verify/{record_id}")
+@app.get("/api/integrity/verify/{record_id}")
 def verify_record_public(record_id: str):
     """
     Narrowly-scoped read-only endpoint for public demo QR verification.
@@ -617,10 +854,35 @@ def verify_record_public(record_id: str):
     records = load_records()
     rec = next((r for r in records if r.get("id") == record_id), None)
     if not rec:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Record '{record_id}' not found."
-        )
+        parcel_txs = get_parcel_by_id(record_id)
+        if parcel_txs:
+            latest = parcel_txs[-1]
+            rec = {
+                "id": record_id,
+                "parcel_id": record_id,
+                "deed_no": latest.get("deed_no"),
+                "document_date": latest.get("transaction_date"),
+                "mouza": latest.get("mouza"),
+                "district": latest.get("district"),
+                "upazila": latest.get("upazila"),
+                "dag_no": str(latest.get("dag_no", "")),
+                "khatian_no": str(latest.get("khatian_no", "")),
+                "area_decimal": latest.get("transferred_area"),
+                "land_class": latest.get("land_class"),
+                "owner_name_bn": latest.get("buyer_name_bn"),
+                "owner_name_en": latest.get("buyer_name_en"),
+                "last_mutation_case": "স্বয়ংক্রিয় রেকর্ড ট্র্যাকিং (Auto-Tracked)",
+                "prior_deed_no": latest.get("prior_deed_no"),
+                "parent_khatian_no": latest.get("parent_khatian_no"),
+                "file_hash_sha256": "0" * 64,
+                "record_source": latest.get("record_source", "Synthetic Demo Records"),
+                "is_synthetic": True
+            }
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Record '{record_id}' not found."
+            )
 
     # Public metadata omitting dummy_nid_last4
     public_metadata = {
@@ -655,6 +917,9 @@ def verify_record_public(record_id: str):
     current_time_iso = datetime.now(timezone.utc).isoformat()
 
     return {
+        "verified": True,
+        "dag_no": str(rec.get("dag_no", "")),
+        "khatian_no": str(rec.get("khatian_no", "")),
         "disclaimer": "DEMO DATA — not a legal verdict",
         "disclaimer_bn": "ডেমো ডেটা — এটি আইনি সিদ্ধান্ত নয়। কিউআর কোড বা হ্যাশ ম্যাচ জমির মালিকানা বা দলিলের আইনগত সত্যতা প্রমাণ করে না।",
         "record_id": record_id,

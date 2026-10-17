@@ -1,6 +1,6 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, Shield, Info, Layers, Sparkles } from 'lucide-react';
-import LandParcel3D from './LandParcel3D';
+import { ArrowRight, CheckCircle2, Shield, Info, Layers, Sparkles, ScanText } from 'lucide-react';
+import DeedScanVisual from './DeedScanVisual';
 
 export default function LandingHero({ 
   lang = 'bn', 
@@ -53,7 +53,7 @@ export default function LandingHero({
               <span>TEAM ZENOX</span>
             </div>
 
-            {/* Exact Required Bangla Hero Heading */}
+            {/* Required Headline: Verify Before You Buy Land */}
             <h1 className="hero-heading" style={{
               fontSize: 'clamp(2.2rem, 4.2vw, 3.4rem)',
               lineHeight: 1.18,
@@ -65,32 +65,32 @@ export default function LandingHero({
             }}>
               {isBn ? (
                 <>
-                  কেনার আগে জমির কাগজগুলো<br />
+                  জমি কেনার আগেই<br />
                   <span style={{
                     color: 'var(--primary-accent)',
                     borderBottom: '4px solid var(--primary-accent)',
                     paddingBottom: '2px',
                     display: 'inline-block'
                   }}>
-                    মিলিয়ে দেখুন
+                    যাচাই করুন
                   </span>
                 </>
               ) : (
                 <>
-                  Verify land records<br />
+                  Verify Before You<br />
                   <span style={{
                     color: 'var(--primary-accent)',
                     borderBottom: '4px solid var(--primary-accent)',
                     paddingBottom: '2px',
                     display: 'inline-block'
                   }}>
-                    before buying
+                    Buy Land
                   </span>
                 </>
               )}
             </h1>
 
-            {/* Exact Required Supporting Text */}
+            {/* Required Supporting Text */}
             <p className="hero-subheading" style={{
               fontSize: 'clamp(1.04rem, 1.3vw, 1.18rem)',
               lineHeight: 1.62,
@@ -100,8 +100,8 @@ export default function LandingHero({
               maxWidth: '540px'
             }}>
               {isBn
-                ? 'দলিলের তথ্য সাজিয়ে দেখুন, রেকর্ডের সঙ্গে মিল খুঁজুন এবং কোন বিষয়গুলো আরও যাচাই করা দরকার তা সহজে বুঝুন।'
-                : 'Organize deed data, spot inconsistencies with official records, and easily understand what needs further verification.'}
+                ? 'দলিল স্ক্যান করুন, পূর্ববর্তী লেনদেনের ইতিহাস দেখুন এবং জমি কেনার সিদ্ধান্ত নেওয়ার আগেই সম্ভাব্য বিরোধ ও দ্বৈত বিক্রয় শনাক্ত করুন।'
+                : 'Scan land deeds, explore previous transaction history, and identify potential land transaction conflicts before making a purchase decision.'}
             </p>
 
             {/* Action Buttons: Primary CTA & Secondary CTA */}
@@ -111,7 +111,7 @@ export default function LandingHero({
               gap: '14px',
               marginBottom: '28px'
             }}>
-              {/* Primary CTA */}
+              {/* Primary CTA: Verify a Land Deed */}
               <button
                 type="button"
                 id="hero-primary-cta"
@@ -131,10 +131,11 @@ export default function LandingHero({
                   minHeight: '44px'
                 }}
               >
-                <span>{isBn ? 'ডেমো দেখুন →' : 'View Demo →'}</span>
+                <ScanText size={18} />
+                <span>{isBn ? 'দলিল যাচাই শুরু করুন' : 'Verify a Land Deed'}</span>
               </button>
 
-              {/* Secondary CTA */}
+              {/* Secondary CTA: Explore How It Works */}
               <button
                 type="button"
                 id="hero-secondary-cta"
@@ -156,7 +157,7 @@ export default function LandingHero({
                   minHeight: '44px'
                 }}
               >
-                <span>{isBn ? 'কীভাবে কাজ করে' : 'How It Works'}</span>
+                <span>{isBn ? 'কীভাবে কাজ করে জানুন' : 'Explore How It Works'}</span>
               </button>
             </div>
 
@@ -169,15 +170,15 @@ export default function LandingHero({
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'সহজ বাংলায় তথ্য' : 'Plain language explanations'}</span>
+                <span>{isBn ? '২০,০০০+ কৃত্রিম লেনদেন রেকর্ডের সাথে স্বয়ংক্রিয় তুলনা' : 'Automated comparison against 20,000+ transaction records'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'অসংগতি চিহ্নিত করার সহায়তা' : 'Assistance in spotting record discrepancies'}</span>
+                <span>{isBn ? 'সম্ভাব্য দ্বৈত বিক্রয় ও অতিরিক্ত জমির পরিমাণ চিহ্নিতকরণ' : 'Duplicate sale and overlapping land portion detection'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 size={16} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'কী যাচাই হয়নি, তা স্পষ্টভাবে দেখানো' : 'Clearly displays unverified data fields'}</span>
+                <span>{isBn ? 'স্থায়ী পার্সেল আইডি ভিত্তিক প্লট পাসপোর্ট ও কিউআর সনদ' : 'Plot Passport & QR code linked to stable Parcel IDs'}</span>
               </div>
             </div>
 
@@ -196,13 +197,17 @@ export default function LandingHero({
               fontFamily: 'var(--font-mono)'
             }}>
               <Info size={14} style={{ flexShrink: 0 }} />
-              <span>{isBn ? 'ডেমো ডেটা। এটি আইনি সিদ্ধান্ত নয়।' : 'DEMO DATA, not a legal verdict.'}</span>
+              <span>{isBn ? 'ডেমো ডেটা — কোনো আইনি মালিকানার সনদ বা রায় নয়।' : 'DEMO DATA — preliminary verification, not legal title.'}</span>
             </div>
           </div>
 
-          {/* Column 2: 3D Land Parcel Illustration */}
+          {/* Column 2: Interactive Deed Scanning & Verification Illustration */}
           <div className="hero-parcel-column">
-            <LandParcel3D lang={lang} onOpenPassport={onViewPassport} />
+            <DeedScanVisual
+              lang={lang}
+              onStartScanning={onStartScanning}
+              onViewPassport={onViewPassport}
+            />
           </div>
         </div>
       </div>

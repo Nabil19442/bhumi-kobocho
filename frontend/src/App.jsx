@@ -3,11 +3,13 @@ import LandingHeader from './components/LandingHeader';
 import LandingPage from './pages/LandingPage';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
+import OverviewPage from './pages/OverviewPage';
 import ScannerPage from './pages/ScannerPage';
+import HistoryPage from './pages/HistoryPage';
 import ComparePage from './pages/ComparePage';
 import PassportPage from './pages/PassportPage';
+import ReportsPage from './pages/ReportsPage';
 import IntegrityPage from './pages/IntegrityPage';
-import GuardianPage from './pages/GuardianPage';
 import GraphPage from './pages/GraphPage';
 import VerificationPage from './pages/VerificationPage';
 import LandPricePage from './pages/LandPricePage';
@@ -143,10 +145,18 @@ export default function App() {
             t={t}
             onStartScanning={() => setActiveTab('scanner')}
             onStartCompare={() => setActiveTab('compare')}
-            onViewPassport={(id) => handleViewPassport(id || 'rec-demo-001')}
+            onViewHistory={() => setActiveTab('history')}
+            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
             onViewIntegrity={() => setActiveTab('integrity')}
-            onViewGuardian={() => setActiveTab('guardian')}
             onViewLandPrice={() => setActiveTab('landprice')}
+          />
+        )}
+
+        {activeTab === 'overview' && (
+          <OverviewPage
+            t={t}
+            lang={lang}
+            onNavigate={(tab) => setActiveTab(tab)}
           />
         )}
 
@@ -156,6 +166,15 @@ export default function App() {
             lang={lang}
             setSharedExtractedData={setSharedExtractedData}
             onProceedToCompare={handleProceedToCompare}
+            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
+          />
+        )}
+
+        {activeTab === 'history' && (
+          <HistoryPage
+            t={t}
+            lang={lang}
+            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
           />
         )}
 
@@ -177,6 +196,14 @@ export default function App() {
             sharedExtractedData={sharedExtractedData}
             comparisonResult={latestComparisonResult}
             onViewGraph={handleViewGraph}
+          />
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportsPage
+            t={t}
+            lang={lang}
+            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
           />
         )}
 
@@ -205,13 +232,6 @@ export default function App() {
             onBackToApp={handleReturnFromVerification}
             onViewPassport={handleViewPassport}
             onViewGraph={handleViewGraph}
-          />
-        )}
-
-        {activeTab === 'guardian' && (
-          <GuardianPage
-            t={t}
-            lang={lang}
           />
         )}
 
