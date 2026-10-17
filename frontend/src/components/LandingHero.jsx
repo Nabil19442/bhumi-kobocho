@@ -81,8 +81,8 @@ export default function LandingHero({
           className="hero-split-grid" 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.22fr)',
-            gap: 'clamp(24px, 3.5vw, 44px)',
+            gridTemplateColumns: 'minmax(300px, 0.92fr) minmax(380px, 1.38fr)',
+            gap: 'clamp(20px, 3vw, 40px)',
             alignItems: 'center'
           }}
         >
@@ -173,7 +173,7 @@ export default function LandingHero({
               {/* Primary CTA: Verify a Land Document */}
               <button
                 type="button"
-                id="hero-verify-document-btn"
+                id="hero-primary-cta"
                 onClick={onStartScanning}
                 className="btn-primary"
                 style={{
@@ -211,7 +211,7 @@ export default function LandingHero({
               {/* Secondary CTA: Explore Land Guardian */}
               <button
                 type="button"
-                id="hero-explore-guardian-btn"
+                id="hero-secondary-cta"
                 onClick={onViewGuardian || onStartScanning}
                 className="btn-secondary"
                 style={{
@@ -257,11 +257,15 @@ export default function LandingHero({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 size={15} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'স্বয়ংক্রিয় দ্বৈত বিক্রয় ও সীমানা বিরোধ শনাক্তকরণ অ্যালগরিদম' : 'Automated duplicate sale & boundary dispute detection engine'}</span>
+                <span>{isBn ? 'স্বয়ংক্রিয় দ্বৈত বিক্রয় ও মিলান যাচাই' : 'Automated duplicate sale & boundary dispute detection engine'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 size={15} style={{ color: '#1B5E20', flexShrink: 0 }} />
-                <span>{isBn ? 'মৌজা আরএস/বিএস রেকর্ডের সাথে চেইন অফ কাস্টডি টাইমলাইন অডিট' : 'Cross-checked chain of custody audit against mouza surveys'}</span>
+                <span>{isBn ? 'মালিকানা ইতিহাস ট্র্যাক ও সম্ভাব্য জটিলতা শনাক্ত' : 'Cross-checked chain of custody audit against mouza surveys'}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem', color: 'var(--text-main)', fontFamily: 'var(--font-body)' }}>
+                <CheckCircle2 size={15} style={{ color: '#1B5E20', flexShrink: 0 }} />
+                <span>{isBn ? 'নির্ভরযোগ্য ডিজিটাল জমির রেকর্ড' : 'Reliable digital land records & evidence audit'}</span>
               </div>
             </div>
 
@@ -280,7 +284,7 @@ export default function LandingHero({
               fontFamily: 'var(--font-mono)'
             }}>
               <Info size={12} style={{ flexShrink: 0, color: '#9A2C14' }} />
-              <span>{isBn ? 'ডেমো ডেটাবেস — ক্রয়ের পূর্বে বিরোধ সতর্কীকরণ ব্যবস্থা, চূড়ান্ত আইনি রায় নয়।' : 'DEMO DATABASE — preliminary pre-purchase intelligence aid, not official legal verdict.'}</span>
+              <span>{isBn ? 'ডেমো ডেটাবেস — ক্রয়ের পূর্বে অবশ্যই সরকারি রেকর্ড যাচাই করুন।' : 'DEMO DATABASE — preliminary pre-purchase intelligence aid, not official legal verdict.'}</span>
             </div>
           </div>
 

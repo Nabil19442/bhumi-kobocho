@@ -21,16 +21,6 @@ export function getApiBaseUrl() {
     return clean.endsWith("/api") ? clean : `${clean}/api`;
   }
 
-  if (typeof window !== "undefined") {
-    const isLocalhost = 
-      window.location.hostname === "localhost" || 
-      window.location.hostname === "127.0.0.1";
-    const isDev = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
-    if (isLocalhost && isDev) {
-      return LOCAL_DEV_API_URL;
-    }
-  }
-
   return PRODUCTION_API_URL;
 }
 
