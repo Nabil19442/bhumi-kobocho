@@ -6,6 +6,7 @@ import DemoCtaSection from '../components/DemoCtaSection';
 import PassportPreviewSection from '../components/PassportPreviewSection';
 import ComparisonPreviewSection from '../components/ComparisonPreviewSection';
 import IntegrityPreviewSection from '../components/IntegrityPreviewSection';
+import GuardianPreviewSection from '../components/GuardianPreviewSection';
 import ScopeSection from '../components/ScopeSection';
 import LandPricePreviewSection from '../components/LandPricePreviewSection';
 import FinalCtaSection from '../components/FinalCtaSection';
@@ -19,7 +20,8 @@ export default function LandingPage({
   onViewPassport,
   onViewIntegrity,
   onViewHistory,
-  onViewLandPrice
+  onViewLandPrice,
+  onViewGuardian
 }) {
   const handleScrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);
@@ -82,6 +84,12 @@ export default function LandingPage({
       <IntegrityPreviewSection
         lang={lang}
         onViewIntegrity={onViewIntegrity}
+      />
+
+      {/* Citizen Land Guardian Simulated Alert Preview */}
+      <GuardianPreviewSection
+        lang={lang}
+        onViewGuardian={onViewGuardian}
       />
 
       {/* E. Trust and Disclaimer: Scope & Boundaries */}

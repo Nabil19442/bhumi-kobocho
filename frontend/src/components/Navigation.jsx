@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutDashboard, ScanText, History, FileBadge, ClipboardCheck, TrendingUp } from 'lucide-react';
+import { Home, LayoutDashboard, ScanText, History, FileBadge, ClipboardCheck, TrendingUp, ShieldAlert } from 'lucide-react';
 
 export default function Navigation({ activeTab, setActiveTab, t }) {
   const containerRef = React.useRef(null);
@@ -11,6 +11,7 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
     { id: 'scanner', label: t.nav_verify || 'দলিল যাচাইকরণ', icon: ScanText },
     { id: 'history', label: t.nav_history || 'লেনদেনের ইতিহাস', icon: History },
     { id: 'passport', label: t.nav_passport || 'প্লট পাসপোর্ট', icon: FileBadge },
+    { id: 'guardian', label: t.nav_guardian || 'ল্যান্ড গার্ডিয়ান', icon: ShieldAlert, badge: 'DEMO' },
     { id: 'reports', label: t.nav_reports || 'যাচাই প্রতিবেদন', icon: ClipboardCheck },
     { id: 'landprice', label: t.nav_landprice || 'জমির সম্ভাব্য মূল্য', icon: TrendingUp, badge: 'ML' },
   ];

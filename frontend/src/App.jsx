@@ -9,6 +9,7 @@ import HistoryPage from './pages/HistoryPage';
 import ComparePage from './pages/ComparePage';
 import PassportPage from './pages/PassportPage';
 import ReportsPage from './pages/ReportsPage';
+import GuardianPage from './pages/GuardianPage';
 import IntegrityPage from './pages/IntegrityPage';
 import GraphPage from './pages/GraphPage';
 import VerificationPage from './pages/VerificationPage';
@@ -110,10 +111,10 @@ export default function App() {
     } else if (sec === 'passport') {
       const el = document.getElementById('passport-preview');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (sec === 'guardian') {
+    } else if (sec === 'guardian' || sec === 'guardian-preview') {
       const el = document.getElementById('guardian-preview');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (sec === 'boundaries') {
+    } else if (sec === 'boundaries' || sec === 'limitations' || sec === 'scope') {
       const el = document.getElementById('audit-scope');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
@@ -149,6 +150,7 @@ export default function App() {
             onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
             onViewIntegrity={() => setActiveTab('integrity')}
             onViewLandPrice={() => setActiveTab('landprice')}
+            onViewGuardian={() => setActiveTab('guardian')}
           />
         )}
 
@@ -196,6 +198,13 @@ export default function App() {
             sharedExtractedData={sharedExtractedData}
             comparisonResult={latestComparisonResult}
             onViewGraph={handleViewGraph}
+          />
+        )}
+
+        {activeTab === 'guardian' && (
+          <GuardianPage
+            t={t}
+            lang={lang}
           />
         )}
 

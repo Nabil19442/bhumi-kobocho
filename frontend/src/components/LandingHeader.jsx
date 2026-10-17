@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Globe, ArrowRight, Shield, Menu, X } from 'lucide-react';
-import BackendStatusBadge from './BackendStatusBadge';
 
 export default function LandingHeader({
   lang = 'bn',
@@ -163,6 +162,14 @@ export default function LandingHeader({
 
             <button
               type="button"
+              onClick={() => handleNavClick('guardian')}
+              className="nav-link-btn"
+            >
+              {isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'}
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleNavClick('limitations')}
               className="nav-link-btn text-muted-link"
             >
@@ -172,15 +179,14 @@ export default function LandingHeader({
 
           {/* Header Actions: Language Switcher, CTA, & Mobile Hamburger */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BackendStatusBadge lang={lang} />
-
             {/* Bangla / English Toggle Button */}
             <button
               type="button"
               onClick={() => setLang(isBn ? 'en' : 'bn')}
               className="lang-toggle-btn"
               style={{
-                height: '42px',
+                height: '44px',
+                minHeight: '44px',
                 padding: '0 12px',
                 borderRadius: 'var(--radius-std)',
                 background: 'var(--bg-card)',
@@ -208,7 +214,8 @@ export default function LandingHeader({
               onClick={() => { setMobileMenuOpen(false); onLaunchApp('scanner'); }}
               className="btn-primary desktop-only"
               style={{
-                height: '42px',
+                height: '44px',
+                minHeight: '44px',
                 padding: '0 16px',
                 borderRadius: 'var(--radius-std)',
                 fontSize: '0.9rem',
@@ -230,8 +237,10 @@ export default function LandingHeader({
               className="mobile-menu-toggle mobile-only"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{
-                height: '42px',
-                width: '42px',
+                height: '44px',
+                width: '44px',
+                minHeight: '44px',
+                minWidth: '44px',
                 borderRadius: 'var(--radius-std)',
                 background: 'var(--bg-card)',
                 border: '1.5px solid var(--line)',
@@ -288,6 +297,15 @@ export default function LandingHeader({
               style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
             >
               {isBn ? 'লেনদেনের ইতিহাস' : 'Transaction History'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleNavClick('guardian')}
+              className="mobile-nav-link"
+              style={{ minHeight: '44px', textAlign: 'left', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-std)', fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}
+            >
+              {isBn ? 'ল্যান্ড গার্ডিয়ান (অ্যালার্ট)' : 'Land Guardian (Alerts)'}
             </button>
 
             <button

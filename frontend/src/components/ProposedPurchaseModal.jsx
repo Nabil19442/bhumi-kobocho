@@ -9,8 +9,6 @@ export default function ProposedPurchaseModal({
   lang = 'bn',
   onPurchaseRecorded
 }) {
-  if (!isOpen) return null;
-
   const isBn = lang === 'bn';
 
   const [buyerName, setBuyerName] = useState('');
@@ -19,6 +17,19 @@ export default function ProposedPurchaseModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Sync state if parcelData changes or modal is opened
+  React.useEffect(() => {
+    if (isOpen) {
+      setAreaDecimal(parcelData?.area_decimal || '10.0');
+      setPurchaseDate(new Date().toISOString().split('T')[0]);
+      setBuyerName('');
+      setResult(null);
+      setErrorMsg(null);
+    }
+  }, [isOpen, parcelData]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
