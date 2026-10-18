@@ -199,53 +199,12 @@ export default function ScannerPage({
   }, []);
 
   // Handle manual selection from reference baseline dropdown
+  // Preserves deed data (formData) and establishes reference baseline for comparison
   const handleReferenceRecordChange = (newSelectedId) => {
     setSelectedRefRecordId(newSelectedId);
-
-    if (!newSelectedId) {
-      return;
-    }
-
-    // 1. Check if user selected one of the official baseline records
-    const baseline = availableRecords.find(r => r.id === newSelectedId);
-    if (baseline) {
-      // If user hasn't uploaded their own custom document, update comparison inputs to match this baseline
-      if (!uploadedFileName) {
-        const jlMatch = baseline.mouza ? String(baseline.mouza).match(/JL-?(\d+)/i) : null;
-        setFormData({
-          seller_name: baseline.owner_name_bn,
-          buyer_name: isBn ? 'তন্ময় আহমেদ' : 'Tanmoy Ahmed',
-          owner_name: isBn ? 'তন্ময় আহমেদ' : 'Tanmoy Ahmed',
-          mouza: baseline.mouza ? baseline.mouza.split(',')[0].trim() : '',
-          jl_no: baseline.jl_no || (jlMatch ? jlMatch[1] : ''),
-          khatian_no: String(baseline.khatian_no || ''),
-          dag_no: String(baseline.dag_no || ''),
-          area_decimal: String(baseline.area_decimal || ''),
-          deed_no: baseline.deed_no || '',
-          document_date: baseline.document_date || '',
-          parcel_id: ''
-        });
-      }
-      return;
-    }
-
-    // 2. Check if user selected one of the 20 development deed scenarios
-    const devDeed = devDeeds.find(d => d.id === newSelectedId);
-    if (devDeed) {
-      setFormData({
-        seller_name: devDeed.seller_name_bn || devDeed.seller_name_en || '',
-        buyer_name: devDeed.buyer_name_bn || devDeed.buyer_name_en || '',
-        owner_name: devDeed.buyer_name_bn || devDeed.owner_name_bn || devDeed.buyer_name_en || '',
-        mouza: devDeed.mouza || '',
-        jl_no: String(devDeed.jl_no || ''),
-        khatian_no: String(devDeed.khatian_no || ''),
-        dag_no: String(devDeed.dag_no || ''),
-        area_decimal: String(devDeed.area_decimal || ''),
-        deed_no: devDeed.deed_no || '',
-        document_date: devDeed.document_date || '',
-        parcel_id: ''
-      });
-      setUploadedFileName(isBn ? devDeed.scenario_name_bn : devDeed.scenario_name);
+    // Changing the selected reference record triggers a fresh comparison
+    if (currentStep === 4) {
+      handleRunVerification(newSelectedId);
     }
   };
 
@@ -326,15 +285,14 @@ export default function ScannerPage({
   };
 
   // Step 3 & 4: Run Verification & Conflict Detection
-  const handleRunVerification = async () => {
+  const handleRunVerification = async (overrideRefId) => {
     setIsVerifying(true);
     setStatusMessage(null);
     try {
-      const devDeed = devDeeds.find(d => d.id === selectedRefRecordId);
-      const targetRefId = devDeed?.reference_record_id || selectedRefRecordId || null;
+      const activeRefId = overrideRefId !== undefined ? overrideRefId : selectedRefRecordId;
 
       const comparePayload = {
-        reference_record_id: targetRefId,
+        reference_record_id: activeRefId || null,
         extracted_data: {
           owner_name: formData.buyer_name || formData.owner_name,
           seller_name: formData.seller_name,
@@ -346,8 +304,7 @@ export default function ScannerPage({
           area_decimal: formData.area_decimal,
           deed_no: formData.deed_no,
           document_date: formData.document_date,
-          parcel_id: formData.parcel_id,
-          is_partial_transfer: Boolean(devDeed?.is_partial_transfer || devDeed?.expected_status === 'PARTIAL_TRANSFER_VALID')
+          parcel_id: formData.parcel_id
         },
         area_tolerance_decimal: 0.05,
         language: lang
@@ -370,12 +327,104 @@ export default function ScannerPage({
     }
   };
 
-  // Determine Verification Report Status
+  // Determine Verification Report Status synthesizing evidence-based risk assessment
   const getReportStatus = () => {
     if (!verificationReport) return null;
+    const ra = verificationReport.risk_assessment;
     const ca = verificationReport.conflict_analysis;
-    const hasHist = verificationReport.has_history || ca?.has_history;
 
+    if (ra) {
+      // 1. Unrelated Reference Record (different plot - NOT a fraud alert)
+      if (ra.is_unrelated_record || ra.status_key === 'NEEDS_REVIEW_UNRELATED') {
+        return {
+          key: 'UNRELATED_RECORD',
+          title: isBn ? ra.title_bn : ra.title_en,
+          badge: isBn ? ra.badge_bn : ra.badge_en,
+          color: '#2563EB',
+          bg: '#EFF6FF',
+          border: '#BFDBFE',
+          icon: Info,
+          desc: isBn ? ra.description_bn : ra.description_en,
+          recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+        };
+      }
+
+      // 2. Clean Chain / Valid Ownership Transfer
+      if (ra.risk_level === 'CLEAN' || ra.status_key === 'CLEAN_CHAIN') {
+        return {
+          key: 'CLEAN_CHAIN',
+          title: isBn ? ra.title_bn : ra.title_en,
+          badge: isBn ? ra.badge_bn : ra.badge_en,
+          color: '#16A34A',
+          bg: '#F0FDF4',
+          border: '#BBF7D0',
+          icon: CheckCircle2,
+          desc: isBn ? ra.description_bn : ra.description_en,
+          recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+        };
+      }
+
+      // 3. Genuine Duplicate Sale Conflict
+      if (ra.status_key === 'DUPLICATE_SALE') {
+        return {
+          key: 'DUPLICATE_SALE',
+          title: isBn ? ra.title_bn : ra.title_en,
+          badge: isBn ? ra.badge_bn : ra.badge_en,
+          color: '#DC2626',
+          bg: '#FEF2F2',
+          border: '#FECACA',
+          icon: AlertTriangle,
+          desc: isBn ? ra.description_bn : ra.description_en,
+          recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+        };
+      }
+
+      // 4. Genuine Area Overlap Conflict
+      if (ra.status_key === 'OVERLAPPING_SALE') {
+        return {
+          key: 'OVERLAPPING_SALE',
+          title: isBn ? ra.title_bn : ra.title_en,
+          badge: isBn ? ra.badge_bn : ra.badge_en,
+          color: '#DC2626',
+          bg: '#FEF2F2',
+          border: '#FECACA',
+          icon: AlertTriangle,
+          desc: isBn ? ra.description_bn : ra.description_en,
+          recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+        };
+      }
+
+      // 5. Unrecorded Parcel / Previous Land Record Not Found
+      if (ra.status_key === 'RECORD_NOT_FOUND' || ra.risk_level === 'UNRECORDED') {
+        return {
+          key: 'RECORD_NOT_FOUND',
+          title: isBn ? ra.title_bn : ra.title_en,
+          badge: isBn ? ra.badge_bn : ra.badge_en,
+          color: '#D97706',
+          bg: '#FFFBEB',
+          border: '#FDE68A',
+          icon: AlertTriangle,
+          desc: isBn ? ra.description_bn : ra.description_en,
+          recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+        };
+      }
+
+      // 6. Variances or other Needs Review on same parcel
+      return {
+        key: 'NEEDS_REVIEW',
+        title: isBn ? ra.title_bn : ra.title_en,
+        badge: isBn ? ra.badge_bn : ra.badge_en,
+        color: ra.risk_level === 'HIGH_RISK' ? '#DC2626' : '#D97706',
+        bg: ra.risk_level === 'HIGH_RISK' ? '#FEF2F2' : '#FFFBEB',
+        border: ra.risk_level === 'HIGH_RISK' ? '#FECACA' : '#FDE68A',
+        icon: AlertTriangle,
+        desc: isBn ? ra.description_bn : ra.description_en,
+        recommendations: isBn ? ra.recommendations_bn : ra.recommendations_en
+      };
+    }
+
+    // Fallback if ra is missing
+    const hasHist = verificationReport.has_history || ca?.has_history;
     if (!hasHist) {
       return {
         key: 'RECORD_NOT_FOUND',
@@ -448,6 +497,97 @@ export default function ScannerPage({
         ? 'সংরক্ষিত লেনদেনের ইতিহাসের সাথে বিক্রেতার জমার হিসাব ও ধারাবাহিক মালিকানার সূত্র সম্পূর্ণ সঙ্গতিপূর্ণ।'
         : 'Continuous title chain verified against chronological synthetic transaction records.'
     };
+  };
+
+  const formatDisplayVal = (val) => {
+    if (val === null || val === undefined) return isBn ? 'তথ্য পাওয়া যায়নি' : 'Not recorded';
+    const s = String(val).trim();
+    if (s === '' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') {
+      return isBn ? 'তথ্য পাওয়া যায়নি' : 'Not recorded';
+    }
+    return s;
+  };
+
+  const renderComparisonStatusBadge = (status) => {
+    switch (status) {
+      case 'Matched':
+        return (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 10px',
+            borderRadius: '14px',
+            background: 'var(--status-matched-bg, #DCFCE7)',
+            border: '1px solid var(--status-matched-border, #86EFAC)',
+            color: 'var(--status-matched-text, #166534)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)'
+          }}>
+            <CheckCircle2 size={13} />
+            <span>{isBn ? 'মিলেছে (Matched)' : 'Matched'}</span>
+          </span>
+        );
+      case 'Mismatch':
+        return (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 10px',
+            borderRadius: '14px',
+            background: 'var(--status-mismatch-bg, #FEE2E2)',
+            border: '1px solid var(--status-mismatch-border, #FCA5A5)',
+            color: 'var(--status-mismatch-text, #991B1B)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)'
+          }}>
+            <AlertTriangle size={13} />
+            <span>{isBn ? 'অমিল (Mismatch)' : 'Mismatch'}</span>
+          </span>
+        );
+      case 'Needs review':
+        return (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 10px',
+            borderRadius: '14px',
+            background: 'var(--status-review-bg, #FEF3C7)',
+            border: '1px solid var(--status-review-border, #FDE68A)',
+            color: 'var(--status-review-text, #92400E)',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)'
+          }}>
+            <AlertTriangle size={13} />
+            <span>{isBn ? 'আরও যাচাই দরকার (Needs review)' : 'Needs review'}</span>
+          </span>
+        );
+      case 'Not checked':
+      default:
+        return (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '3px 10px',
+            borderRadius: '14px',
+            background: '#F3F4F6',
+            border: '1px solid #D1D5DB',
+            color: '#4B5563',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)'
+          }}>
+            <HelpCircle size={13} />
+            <span>{isBn ? 'যাচাই করা হয়নি (Not checked)' : 'Not checked'}</span>
+          </span>
+        );
+    }
   };
 
   const reportStatus = getReportStatus();
@@ -1238,6 +1378,250 @@ export default function ScannerPage({
               </button>
             </div>
           </div>
+
+          {/* Active Reference Baseline Record Profile & Live Switcher */}
+          <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--radius-std)',
+            border: '1.5px solid var(--line)',
+            padding: '20px 24px',
+            marginBottom: '24px',
+            boxShadow: 'var(--shadow-subtle)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Database size={18} style={{ color: 'var(--primary-accent)' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                  {isBn ? 'তুলনার জন্য সক্রিয় রেফারেন্স রেকর্ড' : 'Active Reference Baseline Record'}
+                </h3>
+              </div>
+
+              {selectedRefRecordId ? (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--status-matched-bg)',
+                  border: '1px solid var(--status-matched-border)',
+                  color: 'var(--status-matched-text)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: '12px'
+                }}>
+                  <CheckCircle2 size={13} />
+                  <span>{isBn ? `রেফারেন্স আইডি: ${selectedRefRecordId}` : `Reference ID: ${selectedRefRecordId}`}</span>
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--status-review-bg)',
+                  border: '1px solid var(--status-review-border)',
+                  color: 'var(--status-review-text)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: '12px'
+                }}>
+                  <AlertTriangle size={13} />
+                  <span>{isBn ? 'রেফারেন্স রেকর্ড সংযুক্ত নেই' : 'No Reference Record Selected'}</span>
+                </span>
+              )}
+            </div>
+
+            {/* Quick switcher select directly in Step 4 */}
+            <div style={{ marginBottom: '16px' }}>
+              <label htmlFor="step4-reference-record-select" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                {isBn ? 'রেফারেন্স রেকর্ড পরিবর্তন করে পুনঃতুলনা করুন (স্বয়ংক্রিয়ভাবে ফলাফল আপডেট হবে):' : 'Switch Reference Record to Re-compare (instantly re-evaluates):'}
+              </label>
+              <select
+                id="step4-reference-record-select"
+                value={selectedRefRecordId}
+                onChange={(e) => handleReferenceRecordChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '6px',
+                  border: '1.5px solid var(--text-main)',
+                  fontSize: '0.88rem',
+                  background: '#FFFFFF',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="">
+                  {isBn ? '-- কোনো রেফারেন্স রেকর্ড ছাড়া / স্বয়ংক্রিয় অনুসন্ধান --' : '-- Auto-Search Synthetic Parcel History --'}
+                </option>
+                <optgroup label={isBn ? 'অফিসিয়াল নিবন্ধিত রেফারেন্স রেকর্ড (Official Baseline Records)' : 'Official Registered Baseline Records'}>
+                  {availableRecords.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      [{r.id}] {isBn ? r.owner_name_bn : (r.owner_name_en || r.owner_name_bn)} — দাগ: {r.dag_no}, খতিয়ান: {r.khatian_no} ({r.mouza})
+                    </option>
+                  ))}
+                </optgroup>
+                {devDeeds.length > 0 && (
+                  <optgroup label={isBn ? 'ডেভেলপমেন্ট টেস্ট দলিল দৃশ্যপট (Development Test Deeds - 20 Cases)' : 'Development Test Deed Scenarios (20 Cases)'}>
+                    {devDeeds.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        [{d.id}] {isBn ? d.scenario_name_bn : d.scenario_name} — দাগ: {d.dag_no}, খতিয়ান: {d.khatian_no}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </div>
+
+            {/* Details of currently active reference record */}
+            {(() => {
+              const refData = verificationReport?.reference_record;
+              if (!refData) {
+                return (
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' }}>
+                    {isBn
+                      ? 'কোনো নির্দিষ্ট রেফারেন্স রেকর্ড নির্বাচিত হয়নি। সিস্টেম সংরক্ষিত লেনদেন ইতিহাসের ভিত্তিতে সাধারণ অনুসন্ধান চালিয়েছে।'
+                      : 'No specific reference baseline record was chosen. Analysis ran against synthetic parcel history.'}
+                  </div>
+                );
+              }
+              return (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: '12px',
+                  background: '#F9FAFB',
+                  border: '1px solid var(--line)',
+                  borderRadius: '6px',
+                  padding: '12px 14px',
+                  fontSize: '0.82rem'
+                }}>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'নিবন্ধিত মালিক:' : 'Registered Owner:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{refData.owner_name_bn || refData.owner_name_en || refData.owner_name || 'N/A'}</span></div>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'দাগ নম্বর:' : 'Dag No:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{refData.dag_no || 'N/A'}</span></div>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'খতিয়ান নম্বর:' : 'Khatian No:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{refData.khatian_no || 'N/A'}</span></div>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'মৌজা ও জেএল:' : 'Mouza & JL:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{refData.mouza || 'N/A'} {refData.jl_no ? `(JL ${refData.jl_no})` : ''}</span></div>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'রেকর্ডীয় জমির পরিমাণ:' : 'Registered Land Area:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{refData.area_decimal != null ? `${refData.area_decimal} শতক` : 'N/A'}</span></div>
+                  <div><strong style={{ color: 'var(--text-muted)' }}>{isBn ? 'পূর্ববর্তী দলিল ও তারিখ:' : 'Prior Deed & Date:'}</strong><br /><span style={{ fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{refData.deed_no || 'N/A'} ({refData.document_date || 'N/A'})</span></div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* 9-Field Baseline Comparison Table */}
+          {verificationReport?.results && verificationReport.results.length > 0 && (
+            <div style={{
+              background: 'var(--bg-card)',
+              borderRadius: 'var(--radius-std)',
+              border: '1.5px solid var(--line)',
+              padding: '24px',
+              marginBottom: '24px',
+              boxShadow: 'var(--shadow-subtle)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: '0 0 4px 0' }}>
+                    {isBn ? 'দলিল বনাম রেফারেন্স রেকর্ডের ৯-দফা তথ্য যাচাই' : '9-Point Deed vs. Reference Record Comparison Table'}
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+                    {isBn
+                      ? 'প্রস্তাবিত দলিলের তথ্যের সাথে নির্বাচিত রেফারেন্স রেকর্ডের ফিল্ড-বাই-ফিল্ড তুলনা ও বিশ্লেষণ:'
+                      : 'Field-by-field audit of extracted deed data against selected baseline record:'}
+                  </p>
+                </div>
+
+                {verificationReport.status_counts && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'var(--status-matched-bg)', color: 'var(--status-matched-text)', border: '1px solid var(--status-matched-border)' }}>
+                      Matched: {verificationReport.status_counts.Matched || 0}
+                    </span>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'var(--status-review-bg)', color: 'var(--status-review-text)', border: '1px solid var(--status-review-border)' }}>
+                      Needs review: {verificationReport.status_counts['Needs review'] || 0}
+                    </span>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'var(--status-mismatch-bg)', color: 'var(--status-mismatch-text)', border: '1px solid var(--status-mismatch-border)' }}>
+                      Mismatch: {verificationReport.status_counts.Mismatch || 0}
+                    </span>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: '#F3F4F6', color: '#4B5563', border: '1px solid #D1D5DB' }}>
+                      Not checked: {verificationReport.status_counts['Not checked'] || 0}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--dark-band)', color: '#EAF0E8' }}>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', minWidth: '130px' }}>{isBn ? 'ফিল্ড' : 'Field'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', minWidth: '140px' }}>{isBn ? 'দলিলের তথ্য' : 'Deed Extracted'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', minWidth: '140px' }}>{isBn ? 'রেফারেন্স রেকর্ড' : 'Reference Record'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', minWidth: '120px' }}>{isBn ? 'অবস্থা' : 'Status'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', minWidth: '220px' }}>{isBn ? 'বিশ্লেষণ ও কারণ' : 'Analysis & Notes'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', minWidth: '200px' }}>{isBn ? 'সুপারিশকৃত পদক্ষেপ' : 'Recommended Step'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {verificationReport.results.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--line)', background: idx % 2 === 0 ? 'var(--bg-paper)' : 'var(--bg-card)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-main)' }}>
+                          {isBn ? item.field_label_bn : item.field_label_en}
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{item.field}</div>
+                        </td>
+                        <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-body)' }}>
+                          {formatDisplayVal(item.extracted_value)}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', color: 'var(--text-body)' }}>
+                          {formatDisplayVal(item.reference_value)}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                          {renderComparisonStatusBadge(item.status)}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontSize: '0.8rem', lineHeight: 1.45, color: 'var(--text-body)' }}>
+                          {item.notes}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontSize: '0.78rem', lineHeight: 1.45, color: 'var(--text-muted)' }}>
+                          {isBn ? (item.recommended_next_step_bn || item.recommended_next_step) : (item.recommended_next_step || item.recommended_next_step_bn)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Record Consistency Indicator */}
+              {verificationReport.record_consistency_indicator && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '6px',
+                  background: '#F9FAFB',
+                  border: '1px solid var(--line)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      {isBn ? verificationReport.record_consistency_indicator.label_bn : verificationReport.record_consistency_indicator.label}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {verificationReport.record_consistency_indicator.caution}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 900,
+                    fontFamily: 'var(--font-mono)',
+                    color: verificationReport.record_consistency_indicator.percentage >= 80 ? '#16A34A' : (verificationReport.record_consistency_indicator.percentage >= 50 ? '#D97706' : '#DC2626')
+                  }}>
+                    {verificationReport.record_consistency_indicator.percentage}%
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Active Conflicts Breakdown (if any found) */}
           {conflictsList.length > 0 && (

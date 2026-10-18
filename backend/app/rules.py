@@ -515,10 +515,279 @@ def evaluate_deed_no_status(ext_deed: Any, ref_deed: Any) -> Tuple[str, str, str
         return ("Matched", "DEED_NO_EXACT_MATCH", f"দলিল নম্বর ({ext_deed}) হুবহু মিলেছে / Deed number matches exactly.")
     return ("Needs review", "DEED_NO_DIFFERENT", f"প্রস্তাবিত নতুন দলিল নম্বর ({ext_deed}) পূর্ববর্তী দলিলের ({ref_deed}) চেয়ে আলাদা / Proposed deed number differs from reference prior deed.")
 
+def evaluate_comparison_risk(
+    extracted_data: Dict[str, Any],
+    reference_data: Optional[Dict[str, Any]] = None,
+    comparison_results: Optional[List[Dict[str, Any]]] = None,
+    conflict_analysis: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Evaluates evidence-based risk assessment synthesizing deed data, reference baseline,
+    field-by-field comparison results, and parcel transaction history conflicts.
+
+    CRITICAL REQUIREMENTS:
+    1. A reference record belonging to an unrelated plot (different Dag/Mouza) does NOT
+       create a fraud alert. Instead, it marks is_unrelated_record=True and status NEEDS_REVIEW.
+    2. Missing reference record or unrecorded parcel shows 'Previous Land Record Not Found'
+       without inventing high risk or fraud verdicts.
+    3. Genuine duplicate sales or overlapping area conflicts on the same parcel are flagged
+       with high risk (CRITICAL/HIGH severity) and clear factual descriptions.
+    4. Clean title transfers (seller matches registered owner, matching parcel identifiers)
+       produce CLEAN / LOW severity with 'No Conflict Found in Available Records'.
+    5. Specific field variances on the same parcel are listed in flagged_fields with explainable reasons.
+    """
+    if comparison_results is None:
+        comparison_results = []
+    if reference_data is None:
+        reference_data = {}
+
+    has_ref_data = bool(reference_data and any(v for v in reference_data.values() if v is not None and str(v).strip() != ""))
+
+    # 1. Check if reference record belongs to an UNRELATED parcel
+    ext_dag = normalize_khatian_or_dag(extracted_data.get("dag_no"))
+    ref_dag = normalize_khatian_or_dag(reference_data.get("dag_no")) if has_ref_data else ""
+    ext_mouza = normalize_mouza(extracted_data.get("mouza") or "")
+    ref_mouza = normalize_mouza(reference_data.get("mouza") or "")
+
+    is_unrelated_record = False
+    if has_ref_data and ext_dag and ref_dag and ext_dag != ref_dag:
+        is_unrelated_record = True
+
+    if is_unrelated_record:
+        dag_ext_disp = extracted_data.get("dag_no", "N/A")
+        dag_ref_disp = reference_data.get("dag_no", "N/A")
+        mouza_ext_disp = extracted_data.get("mouza", "N/A")
+        mouza_ref_disp = reference_data.get("mouza", "N/A")
+        return {
+            "risk_level": "NEEDS_REVIEW",
+            "severity": "INFO",
+            "status_key": "NEEDS_REVIEW_UNRELATED",
+            "is_unrelated_record": True,
+            "badge_bn": "ভিন্ন দাগের রেফারেন্স রেকর্ড (পর্যালোচনা আবশ্যক)",
+            "badge_en": "Needs Review (Unrelated Reference Record)",
+            "title_bn": "নির্বাচিত রেফারেন্স রেকর্ডটি ভিন্ন দাগের পার্সেল",
+            "title_en": "Selected Reference Record Belongs to an Unrelated Parcel",
+            "description_bn": (
+                f"দলিলটির দাগ ({dag_ext_disp}, মৌজা: {mouza_ext_disp}) এবং নির্বাচিত রেফারেন্স রেকর্ডের দাগ "
+                f"({dag_ref_disp}, মৌজা: {mouza_ref_disp}) ভিন্ন পার্সেল নির্দেশ করে। ভিন্ন দাগের রেকর্ডের সাথে তথ্যের "
+                f"পার্থক্য কোনো জালিয়াতি বা বিরোধের প্রমাণ নয়। সঠিক তুলনার জন্য সংশ্লিষ্ট দাগের রেকর্ড নির্বাচন করুন।"
+            ),
+            "description_en": (
+                f"The deed parcel (Dag: {dag_ext_disp}, Mouza: {mouza_ext_disp}) and selected reference record "
+                f"(Dag: {dag_ref_disp}, Mouza: {mouza_ref_disp}) refer to different physical plots. "
+                f"Discrepancies against an unrelated baseline do not indicate fraud or conflict. "
+                f"Please select a record corresponding to this plot for comparison."
+            ),
+            "flagged_fields": [],
+            "discrepancies": [],
+            "recommendations_bn": [
+                "প্রস্তাবিত দলিলের দাগ ও খতিয়ান অনুযায়ী সংশ্লিষ্ট রেফারেন্স রেকর্ড নির্বাচন করুন।",
+                "উপজেলা ভূমি অফিসে (এসি ল্যান্ড) সংশ্লিষ্ট দাগের আরএস/বিএস খতিয়ান যাচাই করুন।"
+            ],
+            "recommendations_en": [
+                "Select a reference record matching the deed's Dag and Khatian numbers for an accurate comparison.",
+                "Verify the official RS/BS Record of Rights (Porcha) at the Upazila Land Office for this parcel."
+            ]
+        }
+
+    # 2. Case when no reference baseline record was selected or available
+    if not has_ref_data:
+        ca = conflict_analysis or {}
+        has_history = ca.get("has_history", False)
+        status = ca.get("status", "")
+        conflicts = ca.get("conflicts", [])
+
+        if has_history and (status == "DUPLICATE_SALE" or any(c.get("code") == "DUPLICATE_SALE_DETECTED" for c in conflicts)):
+            return {
+                "risk_level": "HIGH_RISK",
+                "severity": "CRITICAL",
+                "status_key": "DUPLICATE_SALE",
+                "is_unrelated_record": False,
+                "badge_bn": "সম্ভাব্য দ্বৈত বিক্রয় বিরোধ শনাক্ত",
+                "badge_en": "Potential Conflict Found (Duplicate Sale)",
+                "title_bn": "সম্ভাব্য দ্বৈত বিক্রয় বিরোধ শনাক্ত",
+                "title_en": "Potential Conflict Found (Duplicate Sale)",
+                "description_bn": "বিক্রেতা পূর্বে এই দাগের জমি অন্য ক্রেতার নিকট সম্পূর্ণ বিক্রি করেছেন। বর্তমানে কোনো অতিরিক্ত স্বত্ব অবশিষ্ট নেই।",
+                "description_en": "Seller previously conveyed this parcel in an earlier registered transaction. No remaining holding balance.",
+                "flagged_fields": ["seller_name", "dag_no", "deed_no"],
+                "recommendations_bn": [
+                    "মূল বালাম বহিতে পূর্ববর্তী হস্তান্তরের নিবন্ধন যাচাই করুন।",
+                    "সাব-রেজিস্ট্রি অফিস থেকে তল্লাশি দিয়ে নির্দায়ী সনদ (NEC) সংগ্রহ করুন।"
+                ],
+                "recommendations_en": [
+                    "Verify prior transfer registrations in the Volume Book (Balam).",
+                    "Obtain a Non-Encumbrance Certificate (NEC) from the Sub-Registry Office."
+                ]
+            }
+        elif has_history and (status == "OVERLAPPING_SALE" or any(c.get("code") == "OVERLAPPING_AREA_DETECTED" for c in conflicts)):
+            return {
+                "risk_level": "HIGH_RISK",
+                "severity": "HIGH",
+                "status_key": "OVERLAPPING_SALE",
+                "is_unrelated_record": False,
+                "badge_bn": "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ",
+                "badge_en": "Potential Conflict Found (Area Overlap)",
+                "title_bn": "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ",
+                "title_en": "Potential Conflict Found (Area Overlap)",
+                "description_bn": "বিক্রেতার পূর্ববর্তী বিক্রয়ের পর অবশিষ্ট জমির চেয়ে প্রস্তাবিত হস্তান্তরের পরিমাণ বেশি।",
+                "description_en": "Transferred area exceeds seller's remaining unencumbered holding balance.",
+                "flagged_fields": ["area_decimal"],
+                "recommendations_bn": [
+                    "বিক্রেতার বাটোয়ারা ও জমা খারিজের খতিয়ানের মোট জমি হিসাব করুন।"
+                ],
+                "recommendations_en": [
+                    "Audit seller's mutated khatian balance and registered partition deed."
+                ]
+            }
+        elif has_history and (status in ("INCOMPLETE_HISTORY", "CHAIN_GAP") or any(c.get("code") == "CHAIN_GAP_DETECTED" for c in conflicts)):
+            return {
+                "risk_level": "NEEDS_REVIEW",
+                "severity": "MEDIUM",
+                "status_key": "INSUFFICIENT_INFO",
+                "is_unrelated_record": False,
+                "badge_bn": "অসম্পূর্ণ তথ্য বা সূত্রের ঘাটতি",
+                "badge_en": "Insufficient Information / Title Gap",
+                "title_bn": "অসম্পূর্ণ তথ্য বা সূত্রের ঘাটতি",
+                "title_en": "Insufficient Information / Title Gap",
+                "description_bn": "মালিকানার ধারাবাহিকতায় ফাঁক রয়েছে। পূর্ববর্তী মূল দলিল বা খতিয়ানের লিঙ্কেজ খুঁজে পাওয়া যায়নি।",
+                "description_en": "A gap was identified in the chain of title. Prior deed or parent khatian linkage is missing.",
+                "flagged_fields": ["khatian_no", "dag_no"],
+                "recommendations_bn": ["বায়া দলিল ও মূল রেকর্ডের ধারাবাহিকতা খতিয়ে দেখুন।"],
+                "recommendations_en": ["Inspect parent deed (Baya Dolil) and historical khatian lineage."]
+            }
+        elif has_history:
+            return {
+                "risk_level": "CLEAN",
+                "severity": "LOW",
+                "status_key": "CLEAN_CHAIN",
+                "is_unrelated_record": False,
+                "badge_bn": "উপলব্ধ রেকর্ডে কোনো দ্বন্দ্ব পাওয়া যায়নি",
+                "badge_en": "No Conflict Found in Available Records",
+                "title_bn": "উপলব্ধ রেকর্ডে কোনো দ্বন্দ্ব পাওয়া যায়নি",
+                "title_en": "No Conflict Found in Available Records",
+                "description_bn": "সংরক্ষিত লেনদেনের ইতিহাসের সাথে ধারাবাহিক মালিকানার সূত্র সম্পূর্ণ সঙ্গতিপূর্ণ।",
+                "description_en": "Continuous title chain verified against chronological synthetic transaction records.",
+                "flagged_fields": [],
+                "recommendations_bn": ["নিয়মিত নামজারি (মিউটেশন) ও দাখিলা হালনাগাদ রাখুন।"],
+                "recommendations_en": ["Ensure mutation porcha and land tax (dakhila) are kept up to date."]
+            }
+        else:
+            return {
+                "risk_level": "UNRECORDED",
+                "severity": "INFO",
+                "status_key": "RECORD_NOT_FOUND",
+                "is_unrelated_record": False,
+                "badge_bn": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি",
+                "badge_en": "Previous Land Record Not Found",
+                "title_bn": "পূর্ববর্তী রেকর্ড পাওয়া যায়নি",
+                "title_en": "Previous Land Record Not Found",
+                "description_bn": "এই দাগ বা খতিয়ানের বিপরীতে সংরক্ষিত কৃত্রিম লেনদেন আর্কাইভে কোনো পূর্ববর্তী হস্তান্তরের ইতিহাস বা রেফারেন্স রেকর্ড পাওয়া যায়নি।",
+                "description_en": "No prior registered baseline record or historical transactions found for this Dag and Khatian.",
+                "flagged_fields": [],
+                "recommendations_bn": [
+                    "তুলনার জন্য ড্রপডাউন থেকে একটি রেফারেন্স রেকর্ড নির্বাচন করুন।",
+                    "সংশ্লিষ্ট এসি ল্যান্ড অফিস থেকে সরকারি খতিয়ানের সর্বশেষ অবস্থা যাচাই করুন।"
+                ],
+                "recommendations_en": [
+                    "Select an existing baseline record from the dropdown for comparison.",
+                    "Verify official khatian status directly at the relevant AC Land office."
+                ]
+            }
+
+    # 3. Case when reference record IS provided and matches the parcel
+    ca = conflict_analysis or {}
+    status = ca.get("status", "")
+    conflicts = ca.get("conflicts", [])
+
+    if status == "DUPLICATE_SALE" or any(c.get("code") == "DUPLICATE_SALE_DETECTED" for c in conflicts):
+        return {
+            "risk_level": "HIGH_RISK",
+            "severity": "CRITICAL",
+            "status_key": "DUPLICATE_SALE",
+            "is_unrelated_record": False,
+            "badge_bn": "সম্ভাব্য দ্বৈত বিক্রয় বিরোধ শনাক্ত",
+            "badge_en": "Potential Conflict Found (Duplicate Sale)",
+            "title_bn": "সম্ভাব্য দ্বৈত বিক্রয় বিরোধ শনাক্ত",
+            "title_en": "Potential Conflict Found (Duplicate Sale)",
+            "description_bn": "বিক্রেতা পূর্বে এই দাগের জমি অন্য ক্রেতার নিকট সম্পূর্ণ বিক্রি করেছেন। বর্তমানে কোনো অতিরিক্ত স্বত্ব অবশিষ্ট নেই।",
+            "description_en": "Seller previously conveyed this parcel in an earlier registered transaction. No remaining holding balance.",
+            "flagged_fields": ["seller_name", "dag_no", "deed_no"],
+            "recommendations_bn": [
+                "মূল বালাম বহিতে পূর্ববর্তী হস্তান্তরের নিবন্ধন যাচাই করুন।",
+                "সাব-রেজিস্ট্রি অফিস থেকে তল্লাশি দিয়ে নির্দায়ী সনদ (NEC) সংগ্রহ করুন।"
+            ],
+            "recommendations_en": [
+                "Verify prior transfer registrations in the Volume Book (Balam).",
+                "Obtain a Non-Encumbrance Certificate (NEC) from the Sub-Registry Office."
+            ]
+        }
+
+    # Evaluate per-field comparison results against the selected reference baseline record
+    mismatches = [r for r in comparison_results if r.get("status") == "Mismatch"]
+
+    if not mismatches:
+        return {
+            "risk_level": "CLEAN",
+            "severity": "LOW",
+            "status_key": "CLEAN_CHAIN",
+            "is_unrelated_record": False,
+            "badge_bn": "উপলব্ধ রেকর্ডে কোনো দ্বন্দ্ব পাওয়া যায়নি",
+            "badge_en": "No Conflict Found in Available Records",
+            "title_bn": "উপলব্ধ রেকর্ডে কোনো দ্বন্দ্ব পাওয়া যায়নি (বৈধ মালিকানা হস্তান্তর)",
+            "title_en": "No Conflict Found in Available Records (Valid Ownership Transfer)",
+            "description_bn": "দলিলের বিক্রেতা সরকারি রেফারেন্স রেকর্ডের নিবন্ধিত মালিকের সাথে মিলেছে এবং দাগ, খতিয়ান, মৌজা ও জমির পরিমাণ সম্পূর্ণ সামঞ্জস্যপূর্ণ।",
+            "description_en": "The deed seller matches the registered owner in the reference record, and parcel identifiers are consistent.",
+            "flagged_fields": [],
+            "recommendations_bn": [
+                "সাব-রেজিস্ট্রি অফিসে মূল দলিলের সত্যতা নিশ্চিত করে রেজিস্ট্রি সম্পন্ন করুন।",
+                "রেজিস্ট্রির পর দ্রুত এসি ল্যান্ড অফিসে নামজারির আবেদন করুন।"
+            ],
+            "recommendations_en": [
+                "Proceed with registration after standard identity verification at Sub-Registry.",
+                "Apply for mutation promptly following completion of deed registration."
+            ]
+        }
+    else:
+        flagged_fields = [m.get("field", "") for m in mismatches]
+        labels_bn = [m.get("field_label_bn", m.get("field", "")) for m in mismatches]
+        labels_en = [m.get("field_label_en", m.get("field", "")) for m in mismatches]
+        has_critical = any(f in ("seller_name", "owner_name", "area_decimal") for f in flagged_fields)
+        is_area_overlap = any(f == "area_decimal" for f in flagged_fields)
+
+        status_key = "OVERLAPPING_SALE" if is_area_overlap else "NEEDS_REVIEW_VARIANCES"
+        badge_bn = "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ" if is_area_overlap else "তথ্যের অমিল চিহ্নিত (সতর্ক পর্যালোচনা আবশ্যক)"
+        badge_en = "Potential Conflict Found (Area Overlap)" if is_area_overlap else "Field Variances Detected (Review Required)"
+        title_bn = "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ" if is_area_overlap else "রেফারেন্স রেকর্ডের সাথে তথ্যের অমিল পরিলক্ষিত হয়েছে"
+        title_en = "Potential Conflict Found (Area Overlap)" if is_area_overlap else "Field Variances Detected Against Reference Record"
+
+        return {
+            "risk_level": "HIGH_RISK" if has_critical else "NEEDS_REVIEW",
+            "severity": "HIGH" if has_critical else "MEDIUM",
+            "status_key": status_key,
+            "is_unrelated_record": False,
+            "badge_bn": badge_bn,
+            "badge_en": badge_en,
+            "title_bn": title_bn,
+            "title_en": title_en,
+            "description_bn": f"রেফারেন্স রেকর্ডের সাথে নিম্নলিখিত ফিল্ডগুলোতে অমিল রয়েছে: {', '.join(labels_bn)}। দলিলের মূল বালাম ও সংশ্লিষ্ট খতিয়ান যাচাই করুন।",
+            "description_en": f"Discrepancies detected against the reference record in: {', '.join(labels_en)}. Cross-check against the original Volume Book (Balam) and mutation khatian.",
+            "flagged_fields": flagged_fields,
+            "discrepancies": mismatches,
+            "recommendations_bn": [
+                "অসংশোধিত তথ্যের কারণ নিশ্চিত করতে পূর্ববর্তী মূল বালাম বহি পর্যালোচনা করুন।",
+                "তহসিল ও এসি ল্যান্ড অফিসে পর্চা ও জমাখারিজের রেকর্ড মিলিয়ে নিন।"
+            ],
+            "recommendations_en": [
+                "Review the original Volume Book (Balam) to determine the cause of variance.",
+                "Cross-examine official mutation records at the local Tahsil and AC Land offices."
+            ]
+        }
+
 def compare_records(
     extracted_data: Dict[str, Any],
     reference_data: Optional[Dict[str, Any]] = None,
-    area_tolerance_decimal: float = 0.05
+    area_tolerance_decimal: float = 0.05,
+    conflict_analysis: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Compares extracted deed/land document fields against reference record.
@@ -846,10 +1115,18 @@ def compare_records(
     review_count = status_counts["Needs review"]
     consistency_pct = round(((matched_count * 1.0 + review_count * 0.5) / total_evaluable) * 100, 1) if total_evaluable > 0 else 0.0
 
+    risk_assessment = evaluate_comparison_risk(
+        extracted_data=extracted_data,
+        reference_data=reference_data,
+        comparison_results=results,
+        conflict_analysis=conflict_analysis
+    )
+
     return {
         "disclaimer": "DEMO DATA — not a legal verdict. Mismatch indicates an observed data variance, not proof of fraud or invalidity.",
         "results": results,
         "status_counts": status_counts,
+        "risk_assessment": risk_assessment,
         "record_consistency_indicator": {
             "label": "Demo Record-Consistency Indicator",
             "label_bn": "ডেমো রেকর্ড-সামঞ্জস্য সূচক",

@@ -34,7 +34,7 @@ if "backend" not in sys.modules:
 
 # Relative imports for app package modules
 from .limiter import limiter
-from .rules import compare_records
+from .rules import compare_records, evaluate_comparison_risk
 from .integrity import check_file_integrity, generate_record_qr_base64, calculate_sha256
 from .guardian import (
     load_events,
@@ -642,7 +642,8 @@ def compare_document(req: CompareRequest):
     result = compare_records(
         extracted_data=extracted_dict,
         reference_data=ref_record,
-        area_tolerance_decimal=req.area_tolerance_decimal or 0.05
+        area_tolerance_decimal=req.area_tolerance_decimal or 0.05,
+        conflict_analysis=conflict_analysis
     )
 
     # Attach explanation and conflict analysis
