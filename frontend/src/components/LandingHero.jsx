@@ -1,22 +1,28 @@
 import React from 'react';
+import bnTranslations from '../i18n/bn.json';
+import enTranslations from '../i18n/en.json';
 
 /**
  * LandingHero
  * 
  * Matches Option C reference design:
  * - Left column:
- *   - Editorial typography: "দলিল দেখুন। গরমিল ধরুন।"
- *   - Subtitle: "ছবি তুলুন, বাকিটা ভূমি কবচ করবে। কোথায় মিলছে না, কেন, আর এরপর কী করবেন: সহজ বাংলায়।"
- *   - Primary CTA: "দলিল স্ক্যান করুন →"
+ *   - Editorial typography: "দলিল দেখুন। জমি জানুন।"
+ *   - Subtitle: deed reading, previous owners, history, cases, and price
+ *   - Primary CTA: "দলিল যাচাই করুন →"
  *   - Badge: "DEMO DATA · NOT A LEGAL VERDICT"
  * - Right column:
  *   - Specimen sale deed card slightly rotated with animated scanning beam
- *   - Verified and mismatched status pills
+ *   - Informative status pills (Deed details, Previous owners, Case records)
  */
 export default function LandingHero({
   lang = 'bn',
   onStartScanning
 }) {
+  const t = (key) => {
+    const dict = lang === 'bn' ? bnTranslations : enTranslations;
+    return dict[key] || bnTranslations[key] || key;
+  };
   const isBn = lang === 'bn';
 
   return (
@@ -56,17 +62,8 @@ export default function LandingHero({
               color: '#FFFFFF'
             }}
           >
-            {isBn ? (
-              <>
-                দলিল দেখুন।<br />
-                <span style={{ color: '#B7DFCA' }}>গরমিল ধরুন।</span>
-              </>
-            ) : (
-              <>
-                Inspect Deeds.<br />
-                <span style={{ color: '#B7DFCA' }}>Spot Flaws.</span>
-              </>
-            )}
+            {t('landing_hero_title_1')}<br />
+            <span style={{ color: '#B7DFCA' }}>{t('landing_hero_title_2')}</span>
           </h1>
 
           <p 
@@ -78,9 +75,7 @@ export default function LandingHero({
               margin: '0 0 30px'
             }}
           >
-            {isBn
-              ? 'ছবি তুলুন, বাকিটা ভূমি কবচ করবে। কোথায় মিলছে না, কেন, আর এরপর কী করবেন: সহজ বাংলায়।'
-              : 'Upload a deed photo, Bhumi Kobocho handles the rest. Identify discrepancies and next steps in plain language.'}
+            {t('landing_hero_subtitle')}
           </p>
 
           <button
@@ -111,7 +106,7 @@ export default function LandingHero({
               e.currentTarget.style.background = '#B7DFCA';
             }}
           >
-            {isBn ? 'দলিল স্ক্যান করুন →' : 'Scan Deed →'}
+            {t('landing_hero_cta')}
           </button>
 
           <div 
@@ -123,7 +118,7 @@ export default function LandingHero({
               letterSpacing: '0.5px'
             }}
           >
-            DEMO DATA · NOT A LEGAL VERDICT
+            {t('landing_hero_disclaimer')}
           </div>
         </div>
 
@@ -205,32 +200,31 @@ export default function LandingHero({
                   borderRadius: '999px'
                 }}
               >
-                {isBn ? '✓ নাম' : '✓ Name'}
-              </span>
-
-              <span 
-                className="specimen-hl"
-                style={{
-                  background: '#FADFD7',
-                  color: '#9A2C14',
-                  border: '1px solid #F3BFB3',
-                  padding: '5px 11px',
-                  borderRadius: '999px'
-                }}
-              >
-                {isBn ? '≠ পরিমাণ' : '≠ Area'}
+                {t('landing_hero_badge_deed')}
               </span>
 
               <span 
                 style={{
-                  background: '#E3EAE8',
-                  color: '#3F5256',
-                  border: '1px solid #9AAFAA',
+                  background: '#E1F0F5',
+                  color: '#0D4B5D',
+                  border: '1px solid #B8DFEB',
                   padding: '5px 11px',
                   borderRadius: '999px'
                 }}
               >
-                {isBn ? '– যাচাই হয়নি' : '– Unverified'}
+                {t('landing_hero_badge_owners')}
+              </span>
+
+              <span 
+                style={{
+                  background: '#EAE8F8',
+                  color: '#392A72',
+                  border: '1px solid #C8C2EC',
+                  padding: '5px 11px',
+                  borderRadius: '999px'
+                }}
+              >
+                {t('landing_hero_badge_cases')}
               </span>
             </div>
 

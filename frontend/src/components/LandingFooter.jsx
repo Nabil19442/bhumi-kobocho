@@ -158,7 +158,7 @@ export default function LandingFooter({ lang = 'bn' }) {
               lineHeight: 1.7
             }}>
               <li>{isBn ? '• দলিল স্ক্যানার ও ফিল্ড এক্সট্রাকশন' : '• Deed Scanner & OCR Review'}</li>
-              <li>{isBn ? '• অসঙ্গতি নিরীক্ষা ও নিয়ম ইঞ্জিন' : '• Mismatch Detector & Rule Engine'}</li>
+              <li>{isBn ? '• জমির দাম বিশ্লেষণ (ML)' : '• Land Price Analysis (ML)'}</li>
               <li>{isBn ? '• নাগরিক প্লট পাসপোর্ট' : '• Citizen Plot Passport'}</li>
               <li>{isBn ? '• কিউআর ও SHA-256 ফাইল সত্যতা' : '• QR & SHA-256 Bit Integrity'}</li>
               <li>{isBn ? '• ল্যান্ড গার্ডিয়ান সিমুলেটেড অ্যালার্ট' : '• Land Guardian Simulated Alert'}</li>

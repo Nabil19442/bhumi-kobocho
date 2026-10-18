@@ -22,9 +22,11 @@ import {
   GitCompare,
   Edit2,
   Check,
-  X
+  X,
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
-import { checkLandApi, fetchHealth } from '../api';
+import { checkLandApi, fetchHealth, predictLandPriceApi } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
 
 const DEMO_SPECIMENS = [
@@ -64,7 +66,8 @@ export default function CheckLandPage({
   t,
   lang = 'bn',
   onViewPassport,
-  onProceedToCompare
+  onProceedToCompare,
+  onViewLandPrice
 }) {
   const isBn = lang === 'bn';
 
@@ -78,6 +81,114 @@ export default function CheckLandPage({
   // Editable fields state for correcting low-confidence OCR reads
   const [editingKey, setEditingKey] = useState(null);
   const [editValues, setEditValues] = useState({});
+
+  // Synthetic land price estimation state for found parcel
+  const [priceEstimate, setPriceEstimate] = useState(null);
+  const [isPriceEstimating, setIsPriceEstimating] = useState(false);
+  const [priceError, setPriceError] = useState(null);
+
+  const formatBdt = (num) => {
+    if (num === undefined || num === null || isNaN(num)) return '০';
+    const formatted = Math.round(Number(num)).toLocaleString('en-IN');
+    if (!isBn) return formatted;
+    const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return formatted.replace(/[0-9]/g, d => bnDigits[Number(d)]);
+  };
+
+  // Prefill and estimate synthetic land price when a parcel is found
+  useEffect(() => {
+    if (!result || result.status !== 'found' || !result.parcel) {
+      setPriceEstimate(null);
+      setPriceError(null);
+      setIsPriceEstimating(false);
+      return;
+    }
+
+    let isMounted = true;
+    async function runPriceEstimation() {
+      setIsPriceEstimating(true);
+      setPriceError(null);
+      try {
+        const area = parseFloat(result.parcel.total_area || 10.0) || 10.0;
+        const clampedArea = Math.min(Math.max(area, 0.5), 500.0);
+
+        // Resolve synthetic locations based on parcel or fallback
+        let districtId = 'dist_north_rangpur';
+        let upazilaId = 'upz_pirgacha';
+        let mouzaId = 'mouza_chhatra_01';
+
+        const pid = result.parcel.parcel_id || '';
+        const mouzaStr = result.parcel.mouza || '';
+
+        if (pid.includes('SYL') || mouzaStr.includes('সিলেট') || mouzaStr.includes('আম্বরখানা')) {
+          districtId = 'dist_northeast_sylhet';
+          upazilaId = 'upz_golapganj';
+          mouzaId = 'mouza_fulbari_01';
+        } else if (pid.includes('RAJ') || mouzaStr.includes('রাজশাহী')) {
+          districtId = 'dist_west_rajshahi';
+          upazilaId = 'upz_godagari';
+          mouzaId = 'mouza_matikata_01';
+        } else if (pid.includes('KHL') || mouzaStr.includes('খুলনা')) {
+          districtId = 'dist_south_khulna';
+          upazilaId = 'upz_dumuria';
+          mouzaId = 'mouza_shahpur_01';
+        } else if (pid.includes('MYM') || mouzaStr.includes('ময়মনসিংহ')) {
+          districtId = 'dist_central_mymensingh';
+          upazilaId = 'upz_fulbaria';
+          mouzaId = 'mouza_radhakanai_01';
+        }
+
+        // Resolve land type
+        const lClass = (result.parcel.land_class || '').toLowerCase();
+        let landType = 'agricultural_nal';
+        if (lClass.includes('ভিটি') || lClass.includes('homestead') || lClass.includes('বাড়ি')) {
+          landType = 'homestead_viti';
+        } else if (lClass.includes('বাগান') || lClass.includes('orchard')) {
+          landType = 'orchard_bagan';
+        } else if (lClass.includes('পুকুর') || lClass.includes('pond') || lClass.includes('ডোবা')) {
+          landType = 'pond_doba';
+        } else if (lClass.includes('বাণিজ্যিক') || lClass.includes('দোকান') || lClass.includes('shop')) {
+          landType = 'commercial_shop';
+        }
+
+        const payload = {
+          land_area_decimal: clampedArea,
+          district_id: districtId,
+          upazila_id: upazilaId,
+          mouza_id: mouzaId,
+          land_type: landType,
+          road_access_type: 'paved_pucca_road',
+          road_width_ft: 12.0,
+          distance_to_paved_road_m: 100.0,
+          distance_to_local_market_km: 1.5,
+          distance_to_upazila_center_km: 5.0,
+          flood_risk_level: 'none',
+          drainage_quality: 'moderate_sloped',
+          access_road_available: true,
+          electricity_available: true,
+          water_access_available: true
+        };
+
+        const priceRes = await predictLandPriceApi(payload);
+        if (isMounted) {
+          setPriceEstimate(priceRes);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('Synthetic land price prediction failed:', err);
+          setPriceError(err);
+          setPriceEstimate(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsPriceEstimating(false);
+        }
+      }
+    }
+
+    runPriceEstimation();
+    return () => { isMounted = false; };
+  }, [result]);
 
   // Loading step timer simulation for smooth progressive feedback
   useEffect(() => {
@@ -811,10 +922,169 @@ export default function CheckLandPage({
                   </div>
                 )}
               </div>
+
+              {/* CARD 5: ESTIMATED LAND PRICE (EXPERIMENTAL ML) */}
+              <div style={{
+                background: '#FFFFFF',
+                borderRadius: '16px',
+                border: '1.5px solid #E2E8F0',
+                padding: '24px',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <TrendingUp size={22} style={{ color: '#059669' }} />
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                      {isBn ? 'সম্ভাব্য মূল্য (পরীক্ষামূলক)' : 'Estimated Price (Experimental)'}
+                    </h2>
+                  </div>
+                  <span style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    background: '#ECFDF5',
+                    color: '#065F46',
+                    border: '1px solid #A7F3D0',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <Sparkles size={12} />
+                    <span>ML DEMO</span>
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '0.84rem', color: '#64748B', marginBottom: '16px' }}>
+                  {isBn
+                    ? 'কৃত্রিম মেশিন লার্নিং মডেল ভিত্তিক আনুমানিক মূল্য সীমা (ঐচ্ছিক সহায়ক তথ্য):'
+                    : 'Machine learning estimated price range based on synthetic spatial factors:'}
+                </div>
+
+                {/* Mandatory Disclaimer Badge */}
+                <div style={{
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px'
+                }}>
+                  <AlertCircle size={16} style={{ color: '#D97706', marginTop: '2px', flexShrink: 0 }} />
+                  <div style={{ fontSize: '0.82rem', color: '#92400E', lineHeight: 1.5 }}>
+                    <strong>{isBn ? 'সতর্কবার্তা: ' : 'Disclaimer: '}</strong>
+                    {isBn
+                      ? 'Synthetic training data. Not a market valuation. Do not use to value real land. (কৃত্রিম ডেটায় প্রশিক্ষিত মডেল — এটি কোনো বাস্তব বাজারমূল্য বা আইনি মূল্যায়ন নয়। প্রকৃত জমি মূল্যায়নে এটি ব্যবহার করবেন না।)'
+                      : 'Synthetic training data. Not a market valuation. Do not use to value real land.'}
+                  </div>
+                </div>
+
+                {isPriceEstimating ? (
+                  <div style={{
+                    padding: '28px',
+                    textAlign: 'center',
+                    background: '#F8FAFC',
+                    borderRadius: '10px',
+                    color: '#64748B',
+                    fontSize: '0.9rem'
+                  }}>
+                    <RefreshCw size={18} className="spin" style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <span>{isBn ? 'সম্ভাব্য মূল্য প্রাক্কলন করা হচ্ছে...' : 'Estimating synthetic land value...'}</span>
+                  </div>
+                ) : priceEstimate && priceEstimate.predicted_total_price_bdt ? (
+                  <div>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      gap: '14px',
+                      marginBottom: '18px'
+                    }}>
+                      {/* Total Range */}
+                      <div style={{
+                        background: '#F0FDF4',
+                        border: '1px solid #BBF7D0',
+                        borderRadius: '10px',
+                        padding: '16px'
+                      }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          {isBn ? 'মোট সম্ভাব্য মূল্য সীমা (৮০%)' : 'Total Price Range (80% CI)'}
+                        </div>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#14532D', fontFamily: 'var(--font-heading)' }}>
+                          ৳{formatBdt(priceEstimate.total_price_interval?.lower)} – ৳{formatBdt(priceEstimate.total_price_interval?.upper)}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#15803D', marginTop: '4px' }}>
+                          {isBn ? `গড় পূর্বাভাস: ৳${formatBdt(priceEstimate.predicted_total_price_bdt)}` : `Point estimate: ৳${formatBdt(priceEstimate.predicted_total_price_bdt)}`}
+                        </div>
+                      </div>
+
+                      {/* Per Decimal Range */}
+                      <div style={{
+                        background: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '10px',
+                        padding: '16px'
+                      }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          {isBn ? 'প্রতি শতক সম্ভাব্য মূল্য সীমা' : 'Price Range Per Decimal'}
+                        </div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-heading)' }}>
+                          ৳{formatBdt(priceEstimate.price_per_decimal_interval?.lower)} – ৳{formatBdt(priceEstimate.price_per_decimal_interval?.upper)}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px' }}>
+                          {isBn ? `গড়: ৳${formatBdt(priceEstimate.predicted_price_per_decimal_bdt)} / শতক` : `Avg: ৳${formatBdt(priceEstimate.predicted_price_per_decimal_bdt)} / decimal`}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingTop: '8px', borderTop: '1px solid #F1F5F9' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                        {isBn ? 'মডেল: HistGradientBoostingRegressor · ২০,০০০ কৃত্রিম প্রশিক্ষণ রেকর্ড' : 'Algorithm: HistGradientBoostingRegressor · 20k Synthetic Samples'}
+                      </span>
+                      {onViewLandPrice && (
+                        <button
+                          type="button"
+                          onClick={onViewLandPrice}
+                          style={{
+                            background: '#0F172A',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 14px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'background 0.15s ease'
+                          }}
+                        >
+                          <span>{isBn ? 'সম্পূর্ণ মূল্য টুল দেখুন' : 'Open Full Valuation Tool'}</span>
+                          <ArrowRight size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '16px',
+                    borderRadius: '10px',
+                    background: '#F8FAFC',
+                    border: '1px dashed #CBD5E1',
+                    color: '#64748B',
+                    fontSize: '0.86rem',
+                    textAlign: 'center'
+                  }}>
+                    {isBn ? 'এই পার্সেলের জন্য কৃত্রিম মূল্য বিশ্লেষণ উপলব্ধ নয়।' : 'Synthetic land price estimation unavailable for this parcel.'}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
-          {/* CARD 5: WHAT WAS NOT CHECKED & NEXT STEPS */}
+          {/* CARD 6: WHAT WAS NOT CHECKED & NEXT STEPS */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',

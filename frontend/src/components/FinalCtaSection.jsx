@@ -88,8 +88,8 @@ export default function FinalCtaSection({ lang = 'bn', onStartScanning }) {
             margin: '0 auto 22px'
           }}>
             {isBn
-              ? 'দলিলের তথ্য যাচাই করুন এবং উপলব্ধ রেকর্ডের সঙ্গে সম্ভাব্য অসামঞ্জস্য শনাক্ত করুন।'
-              : 'Verify deed details and identify potential inconsistencies against available land records.'}
+              ? 'দলিলের তথ্য, আগের মালিক, লেনদেনের ইতিহাস ও মামলার তথ্য জানুন।'
+              : 'Read deed details, previous owners, transaction history and linked cases.'}
           </p>
 
           {/* Primary Action Button */}

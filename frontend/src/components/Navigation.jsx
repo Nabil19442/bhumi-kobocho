@@ -27,6 +27,7 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
   const primaryItems = [
     { id: 'landing', label: isBn ? 'হোম পেজ' : 'Home', icon: Home },
     { id: 'check', label: t.nav_check || (isBn ? 'জমি যাচাই' : 'Check Land'), icon: Search },
+    { id: 'landprice', label: t.nav_landprice || (isBn ? 'জমির মূল্য' : 'Land Price'), icon: TrendingUp, badge: 'ML' },
     { id: 'guardian', label: t.nav_guardian || (isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'), icon: ShieldAlert, badge: 'DEMO' },
     { id: 'integrity', label: t.nav_integrity || (isBn ? 'হ্যাশ ও কিউআর' : 'QR & Hash'), icon: QrCode },
   ];
@@ -39,7 +40,6 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
     { id: 'passport', label: t.nav_passport || (isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'), icon: FileBadge },
     { id: 'reports', label: t.nav_reports || (isBn ? 'যাচাই প্রতিবেদন' : 'Reports'), icon: ClipboardCheck },
     { id: 'graph', label: t.nav_graph || (isBn ? 'সম্পর্ক গ্রাফ' : 'Graph'), icon: Network },
-    { id: 'landprice', label: t.nav_landprice || (isBn ? 'জমির সম্ভাব্য মূল্য' : 'Land Price'), icon: TrendingUp, badge: 'ML' },
   ];
 
   const isMoreActive = moreItems.some(item => item.id === activeTab);

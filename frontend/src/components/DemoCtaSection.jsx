@@ -19,8 +19,8 @@ export default function DemoCtaSection({
     },
     {
       id: 'scen-2',
-      title: isBn ? 'অতিরিক্ত জমির পরিমাণ অমিল' : 'Overlapping Area Mismatch',
-      badge: isBn ? 'সীমা লঙ্ঘন' : 'Area Overlap',
+      title: isBn ? 'অতিরিক্ত জমির পরিমাণ সীমা' : 'Excess Area Exceeded',
+      badge: isBn ? 'সীমা লঙ্ঘন' : 'Area Limit',
       color: '#D97706',
       bg: '#FFFBEB',
       border: '#FDE68A'

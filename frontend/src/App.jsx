@@ -174,6 +174,7 @@ export default function App() {
               lang={lang}
               onViewPassport={(id) => handleViewPassport(id)}
               onProceedToCompare={handleProceedToCompare}
+              onViewLandPrice={() => setActiveTab('landprice')}
             />
           )}
 

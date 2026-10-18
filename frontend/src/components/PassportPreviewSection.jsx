@@ -215,7 +215,7 @@ export default function PassportPreviewSection({ lang = 'bn', onViewPassport }) 
                 fontFamily: 'var(--font-mono)'
               }}>
                 <CheckCircle2 size={14} />
-                <span>{isBn ? 'দাগ ও খতিয়ান মিলেছে (Matched)' : 'Dag & Khatian Matched'}</span>
+                <span>{isBn ? 'দাগ ও খতিয়ান সংরক্ষিত (Recorded)' : 'Dag & Khatian Recorded'}</span>
               </span>
 
               {/* Needs Review Chip */}

@@ -1,288 +1,182 @@
 import React from 'react';
-import { 
-  ScanText, 
-  ShieldCheck, 
-  ShieldAlert, 
-  History, 
-  Network, 
-  ArrowRight, 
-  Sparkles 
-} from 'lucide-react';
+import bnTranslations from '../i18n/bn.json';
+import enTranslations from '../i18n/en.json';
 
 /**
- * CoreFeaturesSection
+ * CoreFeaturesSection ("যা যা পাবেন / What you get")
  * 
- * Features of Bhumi Kobocho:
- * 1. AI-powered deed scanning and information extraction
- * 2. Land ownership verification
- * 3. Land Guardian and duplicate-sale detection
- * 4. Land transaction history
- * 5. Land record relationship graph
+ * 4 Core Feature Cards (Accessible buttons):
+ * 1. Check a deed (দলিল যাচাই) -> onStartScanning
+ * 2. Land price analysis (জমির দাম বিশ্লেষণ) [ML · Experimental badge] -> onViewLandPrice
+ * 3. Plot Passport (প্লট পাসপোর্ট) -> onViewPassport
+ * 4. Land Guardian (ল্যান্ড গার্ডিয়ান) -> onViewGuardian
  */
 export default function CoreFeaturesSection({
   lang = 'bn',
   onStartScanning,
-  onViewHistory,
+  onViewLandPrice,
   onViewPassport,
   onViewGuardian
 }) {
-  const isBn = lang === 'bn';
+  const t = (key) => {
+    const dict = lang === 'bn' ? bnTranslations : enTranslations;
+    return dict[key] || bnTranslations[key] || key;
+  };
 
-  const features = [
+  const cards = [
     {
-      id: 'scanner',
-      title: isBn ? 'এআই দলিল স্ক্যানার ও তথ্য নিষ্কাশন' : 'AI-Powered Deed Scanning & Extraction',
-      desc: isBn
-        ? 'বাংলা ও ইংরেজি হস্তলিখিত বা মুদ্রিত দলিলের ছবি ও পিডিএফ থেকে বিক্রেতা, ক্রেতা, দাগ নং, খতিয়ান ও জমির পরিমাণ নিমেষেই নির্ভুলভাবে শনাক্ত ও সম্পাদনা।'
-        : 'Extracts seller, buyer, dag number, khatian, mouza, and acreages from Bengali and English deed documents into verified, editable records.',
-      icon: ScanText,
-      badge: isBn ? 'অপটিক্যাল এআই' : 'AI Extraction',
-      action: onStartScanning,
-      btnText: isBn ? 'দলিল স্ক্যান করুন' : 'Scan a Deed'
+      id: 'check-deed',
+      title: t('landing_card_check_title'),
+      badge: null,
+      desc: t('landing_card_check_desc'),
+      onClick: onStartScanning
     },
     {
-      id: 'ownership',
-      title: isBn ? 'জমির মালিকানা ও ধারাবাহিকতা যাচাই' : 'Land Ownership & Title Verification',
-      desc: isBn
-        ? 'মৌজা খতিয়ানের মূল রেকর্ডের সাথে বর্তমান দলিলের ধারাবাহিক চেইন যাচাই করে জমির প্রকৃত মালিকানা ও স্বত্বের নির্ভুল সামঞ্জস্য নিরীক্ষা।'
-        : 'Verifies ownership consistency against mouza baseline surveys, validating the true chain of title and legal ownership claims.',
-      icon: ShieldCheck,
-      badge: isBn ? 'স্বত্ব যাচাই' : 'Title Verification',
-      action: onViewPassport || onStartScanning,
-      btnText: isBn ? 'মালিকানা যাচাই' : 'Verify Ownership'
+      id: 'land-price',
+      title: t('landing_card_price_title'),
+      badge: t('landing_card_price_badge'),
+      desc: t('landing_card_price_desc'),
+      onClick: onViewLandPrice
     },
     {
-      id: 'guardian',
-      title: isBn ? 'ল্যান্ড গার্ডিয়ান ও দ্বৈত বিক্রয় শনাক্তকরণ' : 'Land Guardian & Duplicate-Sale Detection',
-      desc: isBn
-        ? 'একই জমি পূর্বে হস্তান্তর করে থাকলে অথবা বিক্রেতার অবশিষ্ট পরিমাণের চেয়ে অতিরিক্ত বিক্রির চেষ্টা হলে স্বয়ংক্রিয় দ্বৈত বিক্রয় ও ওভারল্যাপ সতর্কতা।'
-        : 'Automated detection preventing duplicate conveyances of previously sold parcels and transactions exceeding seller remaining balance.',
-      icon: ShieldAlert,
-      badge: isBn ? 'ঝুঁকি সতর্কতা' : 'Duplicate Alert',
-      action: onViewGuardian || onStartScanning,
-      btnText: isBn ? 'ল্যান্ড গার্ডিয়ান দেখুন' : 'Explore Guardian'
+      id: 'plot-passport',
+      title: t('landing_card_passport_title'),
+      badge: null,
+      desc: t('landing_card_passport_desc'),
+      onClick: () => onViewPassport && onViewPassport('PCL-DHK-SAV-045-0558')
     },
     {
-      id: 'history',
-      title: isBn ? 'জমির পূর্ববর্তী লেনদেনের ইতিহাস' : 'Land Transaction History',
-      desc: isBn
-        ? 'নির্দিষ্ট পার্সেল আইডির অধীনে ২০,০০০+ ঐতিহাসিক রেকর্ডের সম্পূর্ণ ধারাবাহিক মালিকানা চেইন, হস্তান্তরের তারিখ ও দলিলের কালানুক্রমিক ইতিহাস।'
-        : 'Comprehensive chronological chain of custody and transfer history across 20,000+ synthetic parcel records.',
-      icon: History,
-      badge: isBn ? '২০,০০০+ রেকর্ড' : '20,000+ Records',
-      action: onViewHistory || onStartScanning,
-      btnText: isBn ? 'ইতিহাস অনুসন্ধান' : 'Search History'
-    },
-    {
-      id: 'graph',
-      title: isBn ? 'জমির রেকর্ড সম্পর্ক গ্রাফ' : 'Land Record Relationship Graph',
-      desc: isBn
-        ? 'দলিল, মালিক, উত্তরাধিকারী, দাগ ও খতিয়ানের জটিল সংযোগগুলো একটি স্পষ্ট ও ইন্টারঅ্যাক্টিভ নলেজ গ্রাফের মাধ্যমে ভিজ্যুয়ালাইজ করে মালিকানা স্পষ্ট করে।'
-        : 'Interactive knowledge graph visualizing relationships between deeds, owners, heirs, survey dags, and khatian nodes for clear ownership chains.',
-      icon: Network,
-      badge: isBn ? 'নলেজ গ্রাফ' : 'Knowledge Graph',
-      action: onViewPassport || onStartScanning,
-      btnText: isBn ? 'সম্পর্ক গ্রাফ খুলুন' : 'Open Relationship Graph'
+      id: 'land-guardian',
+      title: t('landing_card_guardian_title'),
+      badge: null,
+      desc: t('landing_card_guardian_desc'),
+      onClick: onViewGuardian
     }
   ];
 
   return (
-    <section 
-      id="features-section" 
-      className="landing-section" 
+    <div 
+      id="c"
       style={{
-        padding: 'clamp(32px, 4vw, 48px) 0',
-        background: 'var(--bg-primary)',
-        borderBottom: '1px solid var(--line)'
+        background: '#F1F5F0',
+        color: '#10272A',
+        borderRadius: '40px 40px 0 0',
+        position: 'relative',
+        zIndex: 2
       }}
     >
       <div 
-        className="landing-container" 
         style={{
-          maxWidth: 'var(--max-content-width)',
+          maxWidth: '1200px',
           margin: '0 auto',
-          padding: '0 var(--gutter-desktop)',
+          padding: '72px 24px',
           boxSizing: 'border-box'
         }}
       >
-        {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 26px' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-std)',
-            background: 'var(--accent-tint)',
-            border: '1px solid #C4D6F5',
-            color: 'var(--primary-accent)',
-            fontSize: '0.76rem',
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            marginBottom: '8px'
-          }}>
-            <Sparkles size={13} />
-            <span>{isBn ? 'মূল সক্ষমতা' : 'CORE CAPABILITIES'}</span>
-          </div>
-
-          <h2 style={{
-            fontSize: 'clamp(1.7rem, 2.8vw, 2.2rem)',
-            fontWeight: 800,
-            color: 'var(--text-main)',
-            fontFamily: 'var(--font-heading)',
-            lineHeight: 1.25,
-            marginBottom: '8px',
-            letterSpacing: '-0.3px'
-          }}>
-            {isBn ? 'ভূমি কবচের প্রধান ফিচারসমূহ' : 'Main Features of Bhumi Kobocho'}
-          </h2>
-
-          <p style={{
-            fontSize: '0.96rem',
-            color: 'var(--text-body)',
-            fontFamily: 'var(--font-body)',
-            lineHeight: 1.5,
-            margin: 0
-          }}>
-            {isBn
-              ? 'কৃত্রিম বুদ্ধিমত্তা ও ওপেন ডেটা আর্কিটেকচারের সমন্বয়ে জমি যাচাইয়ের সবচেয়ে নির্ভরযোগ্য ও আধুনিক প্রযুক্তি।'
-              : 'Reliable land verification technology combining artificial intelligence, open cadastral standards, and knowledge graphs.'}
-          </p>
-        </div>
-
-        {/* Feature Cards Grid: 5 Core Features */}
-        <div 
-          className="features-cards-grid"
+        {/* Section Heading */}
+        <h2 
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '16px'
+            fontFamily: "'Anek Bangla', system-ui, sans-serif",
+            fontWeight: 800,
+            fontSize: 'clamp(28px, 4vw, 40px)',
+            margin: '0 0 34px',
+            textAlign: 'center',
+            letterSpacing: '-0.5px'
           }}
         >
-          {features.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.id}
-                className="feature-clean-card"
+          {t('landing_what_you_get')}
+        </h2>
+
+        {/* 4 Feature Cards Grid */}
+        <div 
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '18px'
+          }}
+        >
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              className="ref-feature-card"
+              onClick={card.onClick}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                textAlign: 'left',
+                background: '#FFFFFF',
+                border: '1.5px solid #CBD8D2',
+                borderRadius: '18px',
+                padding: '26px',
+                cursor: 'pointer',
+                minHeight: '44px',
+                width: '100%',
+                boxSizing: 'border-box',
+                fontFamily: "'Hind Siliguri', system-ui, sans-serif",
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+                outline: 'none'
+              }}
+            >
+              <div 
                 style={{
-                  background: 'var(--white)',
-                  borderRadius: '10px',
-                  border: '1.5px solid var(--line)',
-                  padding: '18px 18px',
+                  fontFamily: "'Anek Bangla', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: '22px',
+                  color: '#10272A',
                   display: 'flex',
-                  flexDirection: 'column',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  boxShadow: '0 2px 8px rgba(16, 39, 42, 0.04)',
-                  transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
-                  boxSizing: 'border-box'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.borderColor = 'var(--primary-accent)';
-                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(39, 66, 160, 0.08)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0px)';
-                  e.currentTarget.style.borderColor = 'var(--line)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 39, 42, 0.04)';
+                  gap: '8px',
+                  width: '100%'
                 }}
               >
-                <div>
-                  {/* Top Bar: Icon & Badge */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '12px'
-                  }}>
-                    <div style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '8px',
-                      background: 'var(--accent-tint)',
-                      border: '1px solid #C4D6F5',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--primary-accent)'
-                    }}>
-                      <Icon size={19} />
-                    </div>
-
-                    <span style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.70rem',
-                      fontWeight: 700,
-                      color: 'var(--text-muted)',
-                      background: 'var(--bg-primary)',
-                      border: '1px solid var(--line)',
-                      padding: '2px 7px',
-                      borderRadius: '4px'
-                    }}>
-                      {item.badge}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 style={{
-                    fontSize: '1.06rem',
-                    fontWeight: 800,
-                    color: 'var(--text-main)',
-                    fontFamily: 'var(--font-heading)',
-                    marginBottom: '6px',
-                    lineHeight: 1.3
-                  }}>
-                    {item.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p style={{
-                    fontSize: '0.88rem',
-                    color: 'var(--text-body)',
-                    fontFamily: 'var(--font-body)',
-                    lineHeight: 1.5,
-                    margin: 0
-                  }}>
-                    {item.desc}
-                  </p>
-                </div>
-
-                {/* Bottom Action Button */}
-                <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px dashed var(--line)' }}>
-                  <button
-                    type="button"
-                    onClick={item.action}
+                <span>{card.title}</span>
+                {card.badge && (
+                  <span 
                     style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      color: 'var(--primary-accent)',
+                      fontSize: '11px',
+                      background: '#E6F4EA',
+                      color: '#137333',
                       fontWeight: 700,
-                      fontSize: '0.88rem',
-                      fontFamily: 'var(--font-heading)',
-                      transition: 'gap 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.gap = '9px';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.gap = '6px';
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      fontFamily: "'Hind Siliguri', system-ui, sans-serif",
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    <span>{item.btnText}</span>
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
+                    {card.badge}
+                  </span>
+                )}
               </div>
-            );
-          })}
+              <div 
+                style={{
+                  fontSize: '16px',
+                  lineHeight: 1.6,
+                  color: '#2D4649',
+                  marginTop: '8px'
+                }}
+              >
+                {card.desc}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
-    </section>
+
+      {/* Feature Card Hover and Accessible Focus Effects */}
+      <style>{`
+        .ref-feature-card:hover {
+          transform: translateY(-4px) !important;
+          border-color: #B7DFCA !important;
+          box-shadow: 0 12px 28px rgba(16, 39, 42, 0.08) !important;
+        }
+        .ref-feature-card:focus-visible {
+          outline: 2px solid #0D2B2E !important;
+          outline-offset: 3px !important;
+          border-color: #0D2B2E !important;
+        }
+      `}</style>
+    </div>
   );
 }

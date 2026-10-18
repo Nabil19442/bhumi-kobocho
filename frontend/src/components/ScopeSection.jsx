@@ -6,16 +6,16 @@ export default function ScopeSection({ lang = 'bn', onStartScanning }) {
 
   const doesCheckList = [
     {
-      title: isBn ? 'তথ্য তুলনা ও সামঞ্জস্য পরীক্ষা' : 'Record Cross-Comparison',
+      title: isBn ? 'দলিলের তথ্য ও ধারাবাহিকতা দেখা' : 'Deed Details & Title History',
       desc: isBn
-        ? 'ব্যবহারকারীর প্রদত্ত দলিলের তথ্যের সাথে সংরক্ষিত রেফারেন্স রেকর্ডের সুনির্দিষ্ট তুলনা।'
-        : 'Comparing supplied deed parameters against recorded baseline datasets.'
+        ? 'আপলোডকৃত দলিলের তথ্য পড়ে ডেমো রেজিস্ট্রি থেকে পূর্ববর্তী মালিক ও লেনদেনের ইতিহাস তুলে ধরা।'
+        : 'Reading deed parameters and displaying previous owners and transaction history from synthetic records.'
     },
     {
-      title: isBn ? 'অসংগতি ও ক্ষেত্রফল পার্থক্য চিহ্নিতকরণ' : 'Area Tolerance & Difference Flags',
+      title: isBn ? 'মামলা ও অবস্থা সংক্রান্ত তথ্য' : 'Linked Cases & Legal Status',
       desc: isBn
-        ? 'গাণিতিক ক্ষেত্রফলের পার্থক্য (সহনশীলতার অতিরিক্ত) ও নামের বানানের অমিল চিহ্নিত করা।'
-        : 'Detecting acreage deviations exceeding mathematical tolerance and spelling variants.'
+        ? 'জমির সাথে সম্পর্কিত দেওয়ানি মামলা, নামজারি মামলা বা অধিগ্রহণ সংক্রান্ত ডেমো তথ্য উপস্থাপন।'
+        : 'Displaying synthetic demonstration records for civil cases, mutation cases, or acquisition status.'
     },
     {
       title: isBn ? 'শনাক্তকৃত দলিলের ফিল্ড পর্যালোচনা' : 'Extracted Field Review',

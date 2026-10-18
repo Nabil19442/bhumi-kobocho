@@ -2,25 +2,32 @@ import React, { useState } from 'react';
 import { 
   FileUp, 
   ScanText, 
-  GitCompare, 
-  FileCheck2, 
+  History, 
+  Sparkles, 
   ArrowRight, 
   CheckCircle2,
   Compass,
   Layers,
-  Sparkles,
-  ShieldCheck,
+  FileCheck2,
   ChevronRight
 } from 'lucide-react';
+import bnTranslations from '../i18n/bn.json';
+import enTranslations from '../i18n/en.json';
 
 /**
- * WorkflowSection: Land Verification Process
+ * WorkflowSection: Land Information Flow
  * 
- * Distinctive horizontal connected timeline:
- * Document Upload → AI Extraction → Ownership Cross-check → Risk Report
- * Visually connected to the cadastral living map aesthetic.
+ * 4 Steps:
+ * 1 Upload the deed
+ * 2 See deed details
+ * 3 See owners, history and cases
+ * 4 See the experimental price and next official steps
  */
 export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
+  const t = (key) => {
+    const dict = lang === 'bn' ? bnTranslations : enTranslations;
+    return dict[key] || bnTranslations[key] || key;
+  };
   const isBn = lang === 'bn';
   const [activeStep, setActiveStep] = useState(0);
 
@@ -29,57 +36,49 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
       id: 'upload',
       number: '০১',
       numberEn: '01',
-      phase: 'INGESTION',
-      title: isBn ? 'দলিল আপলোড' : 'Document Upload',
+      phase: 'DEED UPLOAD',
+      title: t('workflow_step1_title'),
       subtitle: isBn ? 'ছবি বা স্ক্যান কপি গ্রহণ' : 'Image or PDF ingestion',
-      desc: isBn
-        ? 'বিক্রেতা বা আবেদনকারীর দলিলের স্ক্যান কপি (ছবি বা PDF) আপলোড করুন অথবা ডেমো দলিল নির্বাচন করুন।'
-        : 'Upload a scanned deed document (image or PDF) or choose a pre-loaded demonstration deed.',
+      desc: t('workflow_step1_desc'),
       icon: FileUp,
       sampleTag: 'PDF / JPEG',
       specimen: isBn ? 'দলিল স্ক্যান ফাইল গৃহীত' : 'Deed specimen loaded'
     },
     {
-      id: 'extract',
+      id: 'details',
       number: '০২',
       numberEn: '02',
-      phase: 'AI EXTRACTION',
-      title: isBn ? 'এআই তথ্য শনাক্তকরণ' : 'AI Extraction',
-      subtitle: isBn ? 'অপটিক্যাল এআই পার্সিং' : 'Optical entity parsing',
-      desc: isBn
-        ? 'অপটিক্যাল এআই স্বয়ংক্রিয়ভাবে বিক্রেতা, ক্রেতা, দাগ নং, খতিয়ান, মৌজা ও জমির পরিমাণ নির্ভুলভাবে এক্সট্রাক্ট করে।'
-        : 'Optical AI accurately extracts seller, buyer, plot (dag), khatian, mouza, and acreages into structured fields.',
+      phase: 'DEED DETAILS',
+      title: t('workflow_step2_title'),
+      subtitle: isBn ? 'দলিলের মূল তথ্য' : 'Deed parameters',
+      desc: t('workflow_step2_desc'),
       icon: ScanText,
-      sampleTag: 'OCR 99.4%',
+      sampleTag: 'DEED OCR',
       specimen: isBn ? 'দাগ: ৫৫৮ • খতিয়ান: ১২৮' : 'Dag: 558 • Khatian: 128'
     },
     {
-      id: 'crosscheck',
+      id: 'history',
       number: '০৩',
       numberEn: '03',
-      phase: 'CADASTRAL AUDIT',
-      title: isBn ? 'মালিকানা ক্রস-চেক' : 'Ownership Cross-check',
-      subtitle: isBn ? 'রেকর্ড ও চেইন যাচাই' : 'Cadastre & chain audit',
-      desc: isBn
-        ? 'শনাক্তকৃত দাগ ও খতিয়ানের বিপরীতে সংরক্ষিত মৌজা ডেটাবেসে ধারাবাহিক মালিকানা চেইন ও বিক্রেতার ব্যালেন্স নিরীক্ষা।'
-        : 'Cross-checks extracted plot and khatian numbers against historical registry records and seller remaining balance.',
-      icon: GitCompare,
-      sampleTag: '20,000+ RECORDS',
+      phase: 'OWNERS & CASES',
+      title: t('workflow_step3_title'),
+      subtitle: isBn ? 'মালিকানা চেইন ও মামলার তথ্য' : 'Title chain & linked cases',
+      desc: t('workflow_step3_desc'),
+      icon: History,
+      sampleTag: 'HISTORY & CASES',
       specimen: isBn ? 'ধারাবাহিকতা: ৪টি হস্তান্তর' : 'Custody: 4 recorded transfers'
     },
     {
-      id: 'report',
+      id: 'price-next',
       number: '০৪',
       numberEn: '04',
-      phase: 'VERDICT & PASSPORT',
-      title: isBn ? 'ঝুঁকি অডিট প্রতিবেদন' : 'Risk Report & Passport',
-      subtitle: isBn ? 'প্রমাণ সনদ প্রস্তুত' : 'Evidence report & certificate',
-      desc: isBn
-        ? 'দ্বৈত বিক্রয় ঝুঁকি বা স্বত্ব ফাঁক থাকলে তাত্ক্ষণিক সতর্কতা এবং নিরপেক্ষ ডিজিটাল প্লট পাসপোর্ট সনদ প্রস্তুত।'
-        : 'Instantly generates an evidence-backed verification report highlighting duplicate sales and title integrity.',
-      icon: FileCheck2,
-      sampleTag: 'VERIFIED PASSPORT',
-      specimen: isBn ? 'স্থিতি: নিরাপদ লেনদেন সনদ' : 'Status: Title Clear & Verified'
+      phase: 'PRICE & NEXT STEPS',
+      title: t('workflow_step4_title'),
+      subtitle: isBn ? 'সম্ভাব্য দাম ও নির্দেশনা' : 'Price estimate & official steps',
+      desc: t('workflow_step4_desc'),
+      icon: Sparkles,
+      sampleTag: 'ML · EXPERIMENTAL',
+      specimen: isBn ? 'সম্ভাব্য দর ও নির্দেশিকা' : 'Price estimate & guidance'
     }
   ];
 
@@ -103,7 +102,7 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
           boxSizing: 'border-box'
         }}
       >
-        {/* Section Header: Editorial & Connected to Map Concept */}
+        {/* Section Header */}
         <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 32px' }}>
           <div style={{
             display: 'inline-flex',
@@ -121,7 +120,7 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
             letterSpacing: '0.6px'
           }}>
             <Compass size={13} color="var(--primary-accent)" />
-            <span>{isBn ? 'স্বচ্ছ যাচাই প্রক্রিয়া' : 'CADASTRAL VERIFICATION PIPELINE'}</span>
+            <span>{isBn ? 'স্বচ্ছ প্রক্রিয়া' : 'LAND PROCESS PIPELINE'}</span>
           </div>
 
           <h2 style={{
@@ -133,7 +132,7 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
             marginBottom: '10px',
             letterSpacing: '-0.3px'
           }}>
-            {isBn ? 'দলিল থেকে ডিজিটাল সত্যতা: চার ধাপের যাচাই' : 'Land Verification Process'}
+            {t('landing_workflow_heading')}
           </h2>
 
           <p style={{
@@ -143,9 +142,7 @@ export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
             lineHeight: 1.55,
             margin: 0
           }}>
-            {isBn
-              ? 'দলিল আপলোড থেকে শুরু করে এআই এক্সট্রাকশন এবং মৌজা রেকর্ডের সঙ্গে তুলনামূলক নিরীক্ষার স্বচ্ছ প্রবাহ।'
-              : 'From raw deed document to optical extraction, historical cross-checks, and cryptographic verification report.'}
+            {t('landing_workflow_sub')}
           </p>
         </div>
 
