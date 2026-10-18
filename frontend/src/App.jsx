@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 
+const CheckLandPage = lazy(() => import('./pages/CheckLandPage'));
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const ScannerPage = lazy(() => import('./pages/ScannerPage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
@@ -129,7 +130,7 @@ export default function App() {
           lang={lang}
           setLang={setLang}
           activeTab={activeTab}
-          onLaunchApp={(tab = 'scanner') => setActiveTab(tab)}
+          onLaunchApp={(tab = 'check') => setActiveTab(tab)}
           onNavigateSection={handleNavigateSection}
         />
       ) : (
@@ -156,7 +157,7 @@ export default function App() {
             <LandingPage
               lang={lang}
               t={t}
-              onStartScanning={() => setActiveTab('scanner')}
+              onStartScanning={() => setActiveTab('check')}
               onStartCompare={() => setActiveTab('compare')}
               onViewHistory={() => setActiveTab('history')}
               onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
@@ -164,6 +165,15 @@ export default function App() {
               onViewLandPrice={() => setActiveTab('landprice')}
               onViewGuardian={() => setActiveTab('guardian')}
               onViewReports={() => setActiveTab('reports')}
+            />
+          )}
+
+          {activeTab === 'check' && (
+            <CheckLandPage
+              t={t}
+              lang={lang}
+              onViewPassport={(id) => handleViewPassport(id)}
+              onProceedToCompare={handleProceedToCompare}
             />
           )}
 

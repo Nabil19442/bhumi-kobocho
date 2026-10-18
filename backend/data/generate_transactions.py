@@ -562,6 +562,72 @@ def generate_dataset():
         "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
     })
 
+    # SCENARIO 7: Badda Plot 2490 (Samples 2 & 4)
+    # rec-demo-004 in 2008, followed by rec-demo-002 in 2019
+    p_badda = "PCL-DHK-GUL-012-2490"
+    records.append({
+        "id": "rec-scen-badda-004",
+        "parcel_id": p_badda,
+        "deed_no": "710/2008",
+        "transaction_date": "2008-03-14",
+        "division": "ঢাকা (Dhaka)",
+        "district": "ঢাকা (Dhaka)",
+        "upazila": "গুলশান (Gulshan)",
+        "mouza": "বাড্ডা (Badda)",
+        "jl_no": "12",
+        "khatian_no": "410",
+        "dag_no": "2490",
+        "land_class": "ভিটি (Viti / Homestead)",
+        "total_parcel_area": 8.25,
+        "transferred_area": 8.25,
+        "seller_remaining_area": 0.0,
+        "seller_name_bn": "মোজাম্মেল হোসেন",
+        "seller_name_en": "Mozammel Hossain",
+        "seller_nid_last4": "3391",
+        "buyer_name_bn": "আবুল হোসেন তালুকদার",
+        "buyer_name_en": "Abul Hossain Talukdar",
+        "buyer_nid_last4": "1209",
+        "prior_deed_no": "CS-1992-05",
+        "parent_khatian_no": "SA-410",
+        "transaction_type": "সাব-কবলা (Sale Deed)",
+        "conflict_scenario": "NORMAL_SALE_BASELINE",
+        "scenario_role": "prior_acquisition_badda",
+        "expected_conflict": None,
+        "is_synthetic": True,
+        "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
+    })
+    records.append({
+        "id": "rec-scen-badda-002",
+        "parcel_id": p_badda,
+        "deed_no": "8901/2019",
+        "transaction_date": "2019-11-20",
+        "division": "ঢাকা (Dhaka)",
+        "district": "ঢাকা (Dhaka)",
+        "upazila": "গুলশান (Gulshan)",
+        "mouza": "বাড্ডা (Badda)",
+        "jl_no": "12",
+        "khatian_no": "835",
+        "dag_no": "2490",
+        "land_class": "ভিটি (Viti / Homestead)",
+        "total_parcel_area": 8.25,
+        "transferred_area": 8.25,
+        "seller_remaining_area": 0.0,
+        "seller_name_bn": "আবুল হোসেন তালুকদার",
+        "seller_name_en": "Abul Hossain Talukdar",
+        "seller_nid_last4": "1209",
+        "buyer_name_bn": "সুলতানা জাহান",
+        "buyer_name_en": "Sultana Jahan",
+        "buyer_nid_last4": "4431",
+        "prior_deed_no": "710/2008",
+        "parent_khatian_no": "410",
+        "transaction_type": "সাব-কবলা (Sale Deed)",
+        "conflict_scenario": "NORMAL_SALE",
+        "scenario_role": "badda_conveyance",
+        "expected_conflict": None,
+        "is_synthetic": True,
+        "disclaimer": "DEMO DATA — not a legal verdict. Synthetic record for conflict simulation."
+    })
+
     # ========================================================
     # 2. GENERATE MASS CADASTRAL PARCELS & HISTORIES (~20,000)
     # ========================================================

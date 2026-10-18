@@ -453,13 +453,80 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
     with open(RECORDS_FILE, "r", encoding="utf-8") as f:
         records = json.load(f)
 
+    clean_sid = str(sample_id).strip().lower()
+
+    # Check for sample PDF specimen
+    if clean_sid in ["sample-clean", "sample-pdf", "pdf-sample", "sample_land_deed_demo.pdf"]:
+        pdf_path = os.path.join(SAMPLES_DIR, "sample_land_deed_demo.pdf")
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+            res = scan_uploaded_document(pdf_bytes, filename="sample_land_deed_demo.pdf")
+            res["sample_id"] = "sample-clean"
+            return res
+
+    # Check for scenario conflict specimens
+    if clean_sid in ["sample-duplicate", "duplicate", "gulshan-550"]:
+        return {
+            "extracted_fields": {
+                "owner_name": "তারেক রহমান",
+                "seller_name": "মোঃ মোর্শেদ আলম",
+                "buyer_name": "তারেক রহমান",
+                "mouza": "গুলশান (Gulshan)",
+                "jl_no": "15",
+                "khatian_no": "220",
+                "dag_no": "550",
+                "land_class": "ভিটি (Viti / Homestead)",
+                "area_decimal": "10.0",
+                "document_date": "2023-08-15",
+                "deed_no": "4520/2023",
+                "raw_text": "DEMO SPECIMEN: Gulshan Plot 550\nদলিল নং: 4520/2023\nমালিক: তারেক রহমান\nখতিয়ান: 220\nদাগ: 550"
+            },
+            "confidence_scores": {},
+            "ocr_field_status": {
+                k: "Candidate extracted" for k in ["owner_name", "seller_name", "buyer_name", "mouza", "jl_no", "khatian_no", "dag_no", "area_decimal", "document_date", "deed_no"]
+            },
+            "ocr_engine": "known_demo_specimen",
+            "status": "known_specimen",
+            "sample_id": "sample-duplicate",
+            "uploaded_file_sha256": "demo-specimen-gulshan-550",
+            "disclaimer": "DEMO DATA — not a legal verdict",
+            "normalized_fields": {
+                "owner_name": "তারেক রহমান",
+                "seller_name": "মোঃ মোর্শেদ আলম",
+                "buyer_name": "তারেক রহমান",
+                "mouza": "গুলশান (Gulshan)",
+                "jl_no": "15",
+                "khatian_no": "220",
+                "dag_no": "550",
+                "area_decimal": "10.0",
+                "document_date": "2023-08-15",
+                "deed_no": "4520/2023"
+            }
+        }
+
+    # Alias mapping for demo specimens
+    alias_map = {
+        "sample-001": "rec-demo-001",
+        "sample-002": "rec-demo-002",
+        "sample-003": "rec-demo-003",
+        "sample-004": "rec-demo-004",
+        "001": "rec-demo-001",
+        "002": "rec-demo-002",
+        "003": "rec-demo-003",
+        "004": "rec-demo-004",
+    }
+    lookup_id = alias_map.get(clean_sid, clean_sid)
+
     # Resolve sample_id e.g. "001", "002", "rec-demo-001"
     target_record = None
     for r in records:
-        if r.get("id") == sample_id:
+        r_id = str(r.get("id", "")).lower()
+        r_file = str(r.get("sample_file", "")).lower()
+        if r_id == lookup_id or r_file == lookup_id or r_id == clean_sid or r_file == clean_sid:
             target_record = r
             break
-        if sample_id in r.get("id", "") or sample_id in r.get("sample_file", ""):
+        if lookup_id in r_id or lookup_id in r_file or clean_sid in r_id or clean_sid in r_file:
             target_record = r
             break
 
@@ -561,21 +628,34 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         file_bytes = sf.read()
     actual_sha256 = calculate_sha256(file_bytes)
 
+    mouza_str = target_record.get("mouza") or ""
+    jl_calc = "28" if "মিরপুর" in mouza_str or "Mirpur" in mouza_str else ("12" if "বাড্ডা" in mouza_str or "Badda" in mouza_str else ("45" if "সাভার" in mouza_str or "Savar" in mouza_str else "15"))
+
     return {
         "extracted_fields": {
             "owner_name": target_record.get("owner_name_bn"),
+            "seller_name": target_record.get("seller_name_bn") or "পূর্ববর্তী রেকর্ডীয় মালিক",
+            "buyer_name": target_record.get("owner_name_bn"),
+            "mouza": mouza_str,
+            "jl_no": str(target_record.get("jl_no") or jl_calc),
             "khatian_no": str(target_record.get("khatian_no")),
             "dag_no": str(target_record.get("dag_no")),
+            "land_class": target_record.get("land_class") or "নাল (Nal / Agricultural)",
             "area_decimal": str(target_record.get("area_decimal")),
             "document_date": target_record.get("document_date"),
             "deed_no": target_record.get("deed_no"),
-            "raw_text": f"DEMO SPECIMEN: {target_record.get('id')}\nমালিক: {target_record.get('owner_name_bn')}\nখতিয়ান: {target_record.get('khatian_no')}\nদাগ: {target_record.get('dag_no')}\nজমির পরিমাণ: {target_record.get('area_decimal')} শতাংশ"
+            "raw_text": f"DEMO SPECIMEN: {target_record.get('id')}\nমালিক: {target_record.get('owner_name_bn')}\nমৌজা: {mouza_str}\nখতিয়ান: {target_record.get('khatian_no')}\nদাগ: {target_record.get('dag_no')}\nজমির পরিমাণ: {target_record.get('area_decimal')} শতাংশ"
         },
         "confidence_scores": {},
         "ocr_field_status": {
             "owner_name": "Candidate extracted",
+            "seller_name": "Candidate extracted",
+            "buyer_name": "Candidate extracted",
+            "mouza": "Candidate extracted",
+            "jl_no": "Candidate extracted",
             "khatian_no": "Candidate extracted",
             "dag_no": "Candidate extracted",
+            "land_class": "Candidate extracted",
             "area_decimal": "Candidate extracted",
             "document_date": "Candidate extracted",
             "deed_no": "Candidate extracted"
@@ -587,8 +667,13 @@ def load_known_demo_specimen(sample_id: str) -> Dict[str, Any]:
         "disclaimer": "DEMO DATA — not a legal verdict",
         "normalized_fields": {
             "owner_name": target_record.get("owner_name_bn"),
+            "seller_name": target_record.get("seller_name_bn") or "পূর্ববর্তী রেকর্ডীয় মালিক",
+            "buyer_name": target_record.get("owner_name_bn"),
+            "mouza": mouza_str,
+            "jl_no": normalize_digits(str(target_record.get("jl_no") or jl_calc)),
             "khatian_no": normalize_digits(str(target_record.get("khatian_no"))),
             "dag_no": normalize_digits(str(target_record.get("dag_no"))),
+            "land_class": target_record.get("land_class") or "নাল (Nal / Agricultural)",
             "area_decimal": normalize_digits(str(target_record.get("area_decimal"))),
             "document_date": normalize_digits(str(target_record.get("document_date"))),
             "deed_no": normalize_digits(str(target_record.get("deed_no"))),

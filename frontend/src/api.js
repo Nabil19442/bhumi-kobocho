@@ -281,3 +281,17 @@ export async function fetchDevDeeds() {
   return request("/dev/deeds");
 }
 
+export async function checkLandApi(data) {
+  if (data instanceof FormData) {
+    return request("/check-land", {
+      method: "POST",
+      body: data
+    });
+  }
+  return request("/check-land", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+

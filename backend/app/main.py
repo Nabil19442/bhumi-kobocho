@@ -51,6 +51,7 @@ from .ocr import (
     scan_document_bytes,
     is_tesseract_available
 )
+from .check_land import check_land
 from .graph import build_relationship_graph, build_parcel_graph
 from .conflict_detector import detect_conflicts
 from .transaction_registry import (
@@ -445,6 +446,91 @@ async def scan_document(
     raise HTTPException(
         status_code=400,
         detail="Either a document file or a valid demo sample_id must be provided."
+    )
+
+@app.post("/api/check-land")
+async def check_land_endpoint(
+    request: Request
+):
+    """
+    Check Before You Buy (জমি যাচাই) endpoint.
+    A purely informative deed reading and synthetic registry lookup.
+    Accepts:
+    - Multipart file upload ('file') and optional 'sample_id', 'lang'.
+    - JSON payload with 'extracted_data' and optional 'lang'.
+    Validates file upload and applies rate-limiting exactly like /api/scan.
+    """
+    limiter.check_rate_limit(request, "check_land", max_requests=30, window_seconds=60)
+
+    content_type = request.headers.get("content-type", "")
+
+    # 1. JSON Request (manual entry, direct test payloads)
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON body.")
+        
+        extracted_data = body.get("extracted_data")
+        if not extracted_data:
+            extracted_data = {k: v for k, v in body.items() if k not in ["confidence_scores", "lang"]}
+        
+        confidence_scores = body.get("confidence_scores", {})
+        return check_land(extracted_data, confidence_scores=confidence_scores)
+
+    # 2. Multipart / Form Request
+    form = await request.form()
+    sample_id = form.get("sample_id")
+    file = form.get("file")
+
+    # If demo specimen requested
+    if sample_id and isinstance(sample_id, str) and sample_id.strip():
+        try:
+            scan_res = load_known_demo_specimen(sample_id.strip())
+            return check_land(
+                scan_res.get("extracted_fields", {}),
+                confidence_scores=scan_res.get("confidence_scores", {}),
+                uploaded_file_sha256=scan_res.get("uploaded_file_sha256")
+            )
+        except (FileNotFoundError, ValueError) as e:
+            logger.warning("Demo specimen request failed for sample_id '%s': %s", sample_id, e)
+            raise HTTPException(status_code=404, detail="Requested demo specimen is not available.")
+
+    # If file uploaded
+    if file and hasattr(file, "filename") and file.filename:
+        filename = file.filename or ""
+        file_bytes = await read_upload_file_safely(file, max_size=MAX_UPLOAD_SIZE, request=request)
+        validate_file_content(file_bytes, filename)
+        scan_res = scan_uploaded_document(file_bytes, filename=filename)
+        return check_land(
+            scan_res.get("extracted_fields", {}),
+            confidence_scores=scan_res.get("confidence_scores", {}),
+            uploaded_file_sha256=scan_res.get("uploaded_file_sha256")
+        )
+
+    # If raw extracted_data passed in form
+    extracted_data_str = form.get("extracted_data")
+    if extracted_data_str and isinstance(extracted_data_str, str):
+        try:
+            import json
+            extracted_data = json.loads(extracted_data_str)
+            return check_land(extracted_data)
+        except Exception:
+            pass
+
+    # If individual fields passed in form
+    form_extracted = {}
+    for key in ["deed_no", "dag_no", "khatian_no", "mouza", "area_decimal", "seller_name", "buyer_name", "owner_name", "document_date"]:
+        val = form.get(key)
+        if val:
+            form_extracted[key] = str(val).strip()
+
+    if form_extracted:
+        return check_land(form_extracted)
+
+    raise HTTPException(
+        status_code=400,
+        detail="Either a document file, a valid demo sample_id, or extracted_data must be provided."
     )
 
 @app.get("/api/history/scenarios")

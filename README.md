@@ -228,44 +228,112 @@ Render's standard native Python runtime does not allow installing system package
 
 ---
 
-## 12. Automated Test Suite (Pytest)
+---
+
+## 12. "Check Before You Buy" Flow (জমি যাচাই)
+
+The **Check Before You Buy** feature (addressing problem statement **P5** of the LandTech Hackathon) provides a simplified, purely informative citizen flow designed specifically for prospective land purchasers.
+
+> **Crucial Ethical Guardrails**:
+> - **NO scoring, NO algorithmic comparison, and NO "safe/fraud" verdicts**.
+> - Uses neutral, factual phrasing: *"The registry shows..."* or *"No record found in this demo registry"*.
+> - All cases and ownership chains are **100% synthetic demonstration data**.
+> - Every card displays: `DEMO DATA, not a legal verdict`.
+
+### Screenshot Placeholder
+```
++-----------------------------------------------------------------------------------------+
+| [DEMO DATA — NOT A LEGAL VERDICT] Check Before You Buy (জমি কেনার আগে যাচাই)            |
++-----------------------------------------------------------------------------------------+
+| [1. Upload Deed / Select Synthetic Specimen]  -->  [দলিল দেখুন / Read this deed]       |
++-----------------------------------------------------------------------------------------+
+| [Card 1: Deed Information]        | [Card 2: Previous Owners (Newest First)]            |
+| - Deed No, Date, Deed Type        | - Current Owner: মোঃ সাকিব হাসান (2026)             |
+| - Seller, Buyer, Mouza, Dag, Area | - Prior Owner: মোঃ রহিম উদ্দিন (2015)               |
++-----------------------------------------------------------------------------------------+
+| [Card 3: Past Transaction Table]  | [Card 4: Linked Cases & Status]                     |
+| - Date, From, To, Deed No, Area   | - Civil Title Suit (Pending) / Mortgage (Active)    |
++-----------------------------------------------------------------------------------------+
+| [Card 5: What Was NOT Checked]    | [Card 6: Recommended Next Official Steps]           |
+| - Live court records, bank liens  | - Verify original AC Land mutation volumes & DCR    |
++-----------------------------------------------------------------------------------------+
+```
+
+### Endpoint: `POST /api/check-land`
+Accepts multipart file upload (`file`, optional `sample_id`) or JSON payload (`{"extracted_data": {...}}`).
+- Reuses the OCR extraction engine.
+- Performs a direct cadastral lookup by `mouza + khatian + dag` (falling back to `deed_no`).
+- Returns structured JSON:
+  ```json
+  {
+    "status": "found" | "not_found",
+    "disclaimer": "DEMO DATA, not a legal verdict...",
+    "deed_info": [{"key": "dag_no", "label_bn": "দাগ নম্বর", "label_en": "Dag No", "value": "1234", "confidence": 0.95}],
+    "parcel": {"parcel_id": "PCL-DHK-SHA-012-1234", "mouza": "শান্তিপুর", "dag_no": "1234", "total_area": 10.0},
+    "ownership_history": [{"order": 1, "owner_name_bn": "মোঃ সাকিব হাসান", "is_current": true, ...}],
+    "transactions": [{"date": "2026-10-15", "from_bn": "মোঃ রহিম উদ্দিন", "to_bn": "মোঃ সাকিব হাসান", "deed_no": "2026-0017", "area": 10.0}],
+    "cases": [{"case_id": "CS-2023-8812", "type": "court_case", "status": "pending", "is_synthetic": true}],
+    "not_checked": ["Live civil court records", "Live bank liens", ...],
+    "next_official_steps": ["Verify AC Land mutation", "Sub-Registry search", ...]
+  }
+  ```
+
+### Synthetic Case Registry (`backend/app/case_registry.py`)
+- Seeded, deterministic dataset in `backend/data/land_cases.json` covering civil title suits (`court_case`), mutation records (`mutation_case`), institutional credit liens (`mortgage`), and public acquisition inquiries (`khas_acquisition`).
+- Covers all demo parcels with realistic variety (e.g. pending title suit on Gulshan 550, active mortgage on Savar 784, clean parcel on Shantipur 1234).
+- 90% of parcels in the database return an empty case list with the standard unverified disclaimer notice.
+
+---
+
+## 13. Automated Test Suite (Pytest)
 Run:
 ```bash
 python -m pytest backend/tests -q
 ```
-**Current Status: 181 passed (100% passing)**
+**Current Status: 191 passed (100% passing)**
 
 ### Core Test Categories:
-1. **Rule Engine**: Validates exact numeric matching, area tolerance thresholds, and mutation chain validation.
-2. **Bilingual Name Normalization**: Tests honorific stripping (*Md.*, *Mohammad*, *মোঃ*, *মোহাম্মদ*) and fuzzy similarity scoring.
-3. **Cryptographic Integrity & QR**: Asserts SHA-256 bit-tamper detection, valid ISO-8601 UTC timestamps, and QR payload integrity.
-4. **Citizen Guardian**: Asserts alert uniqueness under high concurrency, diff calculation, and review acknowledgment.
-5. **API & OCR**: Validates health checks with OCR availability reporting, rate limiting, and deed extraction endpoints.
+1. **Rule Engine & Conflicts**: Validates exact numeric matching, area tolerance thresholds, and mutation chain validation.
+2. **Check Before You Buy Flow**: Asserts clean parcels, parcels with pending cases/mortgages, unknown parcels, manual JSON input, and upload validation on `/api/check-land`.
+3. **Synthetic Case Registry**: Validates case lookup, clean parcel empty state, and case status integrity.
+4. **Bilingual Name Normalization**: Tests honorific stripping (*Md.*, *Mohammad*, *মোঃ*, *মোহাম্মদ*) and fuzzy similarity scoring.
+5. **Cryptographic Integrity & QR**: Asserts SHA-256 bit-tamper detection, valid ISO-8601 UTC timestamps, and QR payload integrity.
+6. **Citizen Guardian**: Asserts alert uniqueness under high concurrency, diff calculation, and review acknowledgment.
+7. **API & OCR**: Validates health checks with OCR availability reporting, rate limiting, and deed extraction endpoints.
 
 ---
 
-## 13. Interactive Demo Script & Walkthrough
+## 14. Interactive Demo Script & Walkthrough
 
-1. **Deed Scanner (`/scanner`)**:
-   - Upload any deed scan or choose one of the pre-configured synthetic specimens (*Clean Deed*, *Double Sale Conflict*, *Area Overlap*).
-   - Review the extracted fields and see OCR confidence indicators.
-   - Click **Run Verification** to execute deterministic conflict detection.
+1. **Check Before You Buy (`/check`)**:
+   - Access directly from the top navigation bar or the home page primary CTA (*"দলিল স্ক্যান করুন"*).
+   - Click any synthetic specimen button (e.g., **নমুনা ১: শান্তিপুর দাগ ১২৩৪ (PDF)** or **নমুনা ৫: গুলশান দাগ ৫৫০**).
+   - Review the complete deed fields in the **দলিলের তথ্য (Deed Information)** card.
+   - Inspect the **এই জমির আগের মালিক (Previous Owners)** vertical timeline with the current owner highlighted.
+   - Trace historical transfers in the **লেনদেনের ইতিহাস (Transaction History)** table.
+   - Review pending litigation or mortgage liens in the **মামলা ও অন্যান্য অবস্থা (Cases & Status)** card.
+   - Read the **যা যাচাই হয়নি (What Was NOT Checked)** list and official next steps.
 
-2. **Mismatch & Conflict Detector (`/compare`)**:
-   - View the structured comparison between deed fields and the baseline record.
+2. **Deed Scanner & Verify (`/scanner`)**:
+   - Located under the **"More / আরও"** navigation menu.
+   - Upload any deed scan or choose a pre-configured synthetic specimen.
+   - Review extracted fields and OCR confidence scores.
+
+3. **Mismatch & Conflict Detector (`/compare`)**:
+   - Located under the **"More / আরও"** navigation menu.
+   - View the structured field-by-field comparison against a selected reference baseline.
    - Inspect the **Transaction History Check** verifying recorded deed history, chain of title, and prior transfers.
-   - Read the plain-language explanation in Bangla or toggle to English.
 
-3. **Plot Passport (`/passport`)**:
+4. **Plot Passport (`/passport`)**:
    - Inspect the unified citizen passport with digital QR code and recorded coordinates.
    - Trace chronological ownership changes (Survey &rarr; Saf-Kabala deed &rarr; Mutation).
    - Print or save as PDF.
 
-4. **Hash & QR Integrity (`/integrity`)**:
+5. **Hash & QR Integrity (`/integrity`)**:
    - Test instant SHA-256 bit fingerprint verification.
    - Compare authentic versus tampered file bytes to observe detection in action.
 
-5. **Citizen Land Guardian (`/guardian`)**:
+6. **Citizen Land Guardian (`/guardian`)**:
    - Simulate an external mutation or survey alteration event.
    - Observe real-time in-app alerts with old versus proposed diffs.
    - Acknowledge and review the event.
