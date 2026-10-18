@@ -1192,6 +1192,33 @@ export default function ScannerPage({
                 <span>{isBn ? 'প্রস্তাবিত জমি ক্রয় রেকর্ড করুন' : 'Record Proposed Purchase'}</span>
               </button>
 
+              {onProceedToCompare && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (setSharedExtractedData) {
+                      setSharedExtractedData(formData);
+                    }
+                    onProceedToCompare(formData);
+                  }}
+                  className="btn-secondary"
+                  style={{
+                    height: '40px',
+                    padding: '0 16px',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#FFFFFF'
+                  }}
+                >
+                  <GitCompare size={15} />
+                  <span>{isBn ? 'অন্যান্য রেকর্ডের সাথে তুলনা' : 'Cross-Compare Records'}</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}

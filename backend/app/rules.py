@@ -73,12 +73,42 @@ def normalize_deed_no(val: Any) -> str:
     s = re.sub(r"[\s\-_]+", "/", s)
     return s
 
+MONTH_NAME_TO_INT: Dict[str, int] = {
+    # Bengali Gregorian & Traditional Months
+    "জানুয়ারি": 1, "জানুয়ারি": 1, "বৈশাখ": 1,
+    "ফেব্রুয়ারি": 2, "ফেব্রুয়ারি": 2, "জ্যৈষ্ঠ": 2,
+    "মার্চ": 3, "আষাঢ়": 3, "আষাঢ়": 3,
+    "এপ্রিল": 4, "শ্রাবণ": 4,
+    "মে": 5, "ভাদ্র": 5,
+    "জুন": 6, "আশ্বিন": 6,
+    "জুলাই": 7, "কার্তিক": 7,
+    "আগস্ট": 8, "আগষ্ট": 8, "অগ্রহায়ণ": 8, "অগ্রহায়ণ": 8,
+    "সেপ্টেম্বর": 9, "পৌষ": 9,
+    "অক্টোবর": 10, "মাঘ": 10,
+    "নভেম্বর": 11, "ফাল্গুন": 11,
+    "ডিসেম্বর": 12, "চৈত্র": 12,
+    # English Months
+    "january": 1, "jan": 1,
+    "february": 2, "feb": 2,
+    "march": 3, "mar": 3,
+    "april": 4, "apr": 4,
+    "may": 5,
+    "june": 6, "jun": 6,
+    "july": 7, "jul": 7,
+    "august": 8, "aug": 8,
+    "september": 9, "sep": 9, "sept": 9,
+    "october": 10, "oct": 10,
+    "november": 11, "nov": 11,
+    "december": 12, "dec": 12
+}
+
 def parse_and_normalize_date(val: Any) -> Optional[Dict[str, Any]]:
     """
     Parses dates in various formats:
     - ISO: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
     - Bangladesh / Commonwealth: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
     - Bangla numerals: ১২/০৩/২০১৯, ২০১৯-০৩-১২
+    - Bengali & English textual dates: ১৫ অক্টোবর ২০২৬, 15 October 2026, 15-Oct-2026, ২০২৬ সালের ১৫ অক্টোবর
     - Bengali separators: hyphens, slashes, periods, spaces, en-dashes
     
     Returns structured dict with primary normalized date (YYYY-MM-DD),
@@ -86,9 +116,66 @@ def parse_and_normalize_date(val: Any) -> Optional[Dict[str, Any]]:
     """
     if val is None:
         return None
-    s = normalize_digits(str(val)).strip()
+    raw_str = str(val).strip()
+    s = normalize_digits(raw_str).strip()
     if not s:
         return None
+
+    # Check for Textual Month formats first
+    # e.g., "15 অক্টোবর 2026", "15 October 2026", "15th October 2026", "15-Oct-2026"
+    textual_pat1 = re.search(r"(\d{1,2})(?:st|nd|rd|th|ই|শে|রা|লা)?[\s\-_/]+([^\d\s\-_/]+)[\s\-_/,]+(\d{2,4})", s, re.IGNORECASE)
+    if textual_pat1:
+        d_val = int(textual_pat1.group(1))
+        m_word = textual_pat1.group(2).lower()
+        y_val = int(textual_pat1.group(3))
+        if y_val < 100:
+            y_val += 2000
+        m_val = MONTH_NAME_TO_INT.get(m_word)
+        if m_val and 1 <= d_val <= 31:
+            primary = f"{y_val:04d}-{m_val:02d}-{d_val:02d}"
+            return {
+                "primary": primary,
+                "alternative": primary,
+                "is_ambiguous": False,
+                "year": y_val, "month": m_val, "day": d_val,
+                "raw": s
+            }
+
+    # e.g., "October 15, 2026" or "অক্টোবর ১৫, ২০২৬"
+    textual_pat2 = re.search(r"([^\d\s\-_/]+)[\s\-_/]+(\d{1,2})(?:st|nd|rd|th|ই|শে|রা|লা)?[\s\-_/,]+(\d{2,4})", s, re.IGNORECASE)
+    if textual_pat2:
+        m_word = textual_pat2.group(1).lower()
+        d_val = int(textual_pat2.group(2))
+        y_val = int(textual_pat2.group(3))
+        if y_val < 100:
+            y_val += 2000
+        m_val = MONTH_NAME_TO_INT.get(m_word)
+        if m_val and 1 <= d_val <= 31:
+            primary = f"{y_val:04d}-{m_val:02d}-{d_val:02d}"
+            return {
+                "primary": primary,
+                "alternative": primary,
+                "is_ambiguous": False,
+                "year": y_val, "month": m_val, "day": d_val,
+                "raw": s
+            }
+
+    # e.g., "2026 সালের 15 অক্টোবর"
+    textual_pat3 = re.search(r"(\d{4})\s*(?:সালের)?\s*(\d{1,2})(?:st|nd|rd|th|ই|শে|রা|লা)?\s+([^\d\s\-_/]+)", s, re.IGNORECASE)
+    if textual_pat3:
+        y_val = int(textual_pat3.group(1))
+        d_val = int(textual_pat3.group(2))
+        m_word = textual_pat3.group(3).lower()
+        m_val = MONTH_NAME_TO_INT.get(m_word)
+        if m_val and 1 <= d_val <= 31:
+            primary = f"{y_val:04d}-{m_val:02d}-{d_val:02d}"
+            return {
+                "primary": primary,
+                "alternative": primary,
+                "is_ambiguous": False,
+                "year": y_val, "month": m_val, "day": d_val,
+                "raw": s
+            }
 
     # Normalize various date separators (slash, dash, period, en-dash, whitespace)
     cleaned = re.sub(r"[/\.\-–—\s]+", "/", s)
@@ -161,6 +248,142 @@ def parse_and_normalize_date(val: Any) -> Optional[Dict[str, Any]]:
             }
 
     return None
+
+def get_recommended_next_step(field: str, status: str, reason_code: str = "") -> Tuple[str, str]:
+    """
+    Returns explainable next verification steps (step_bn, step_en) for every field evaluation.
+    Adheres strictly to neutral civil verification standards.
+    """
+    if status == "Matched":
+        return (
+            "সরকারি রেকর্ডের সাথে তথ্য সামঞ্জস্যপূর্ণ; কোনো অতিরিক্ত সংশোধন প্রয়োজন নেই।",
+            "Data is consistent with registered records; no corrective action needed."
+        )
+
+    if field == "owner_name":
+        if status == "Needs review":
+            return (
+                "নামজারি খতিয়ান, ওয়ারিশান সনদ বা এফিডেভিট দেখে নামের রূপভেদ যাচাই করুন।",
+                "Verify mutation khatian, inheritance certificate, or name affidavit for variants."
+            )
+        if status == "Mismatch":
+            return (
+                "বিক্রেতার পূর্ববর্তী বায়া দলিল ও উপজেলা ভূমি অফিসের নামজারি খতিয়ান সরাসরি তলব করুন।",
+                "Cross-examine chain deeds (Baya dalil) and mutation record at AC Land Office."
+            )
+        return (
+            "মূল দলিল বা পর্চায় মালিকের নাম স্পষ্টভাবে উল্লেখ আছে কিনা নিশ্চিত করুন।",
+            "Confirm owner name is clearly legibly noted on the original document."
+        )
+
+    if field == "seller_name":
+        if status == "Needs review":
+            return (
+                "বিক্রেতার জাতীয় পরিচয়পত্র ও ওয়ারিশান সনদ পরীক্ষা করে নামের বানান নিশ্চিত করুন।",
+                "Review seller's NID card and inheritance credentials to confirm legal identity."
+            )
+        if status == "Mismatch":
+            return (
+                "বিক্রেতা অত্র জমির রেকর্ডীয় স্বত্বাধিকারী কিনা সাব-রেজিস্ট্রির বালাম বই থেকে নিরীক্ষা করুন।",
+                "Audit Sub-Registry Balam volume to verify seller's registered ownership title."
+            )
+        return (
+            "দলিল থেকে বিক্রেতার নাম ও পিতার নাম লিপিবদ্ধ করুন।",
+            "Record seller name and parentage from registered deed."
+        )
+
+    if field == "khatian_no":
+        if status == "Mismatch":
+            return (
+                "উপজেলা ভূমি অফিস (এসি ল্যান্ড) থেকে আর.এস./বি.এস. খতিয়ানের মূল ভলিউম তলব করুন।",
+                "Request original RS/BS khatian register from Upazila Land Office (AC Land)."
+            )
+        return (
+            "খতিয়ানের ধরণ (সি.এস./এস.এ./আর.এস./বি.এস./নামজারি) নিশ্চিত করে যাচাই করুন।",
+            "Confirm specific survey lineage (CS/SA/RS/BS/Mutation) and cross-verify."
+        )
+
+    if field == "dag_no":
+        if status == "Mismatch":
+            return (
+                "মৌজা ম্যাপ ও সিট পর্যালোচনা করে দাগের সীমানা ও হিস্যা সরেজমিনে চিহ্নিত করুন।",
+                "Audit cadastral Mouza map sheet and demarcate plot boundaries on ground."
+            )
+        return (
+            "হাল দাগ ও সাবেক দাগের মধ্যে সামঞ্জস্য নিশ্চিত করুন।",
+            "Ensure consistency between current (Hal) and former (Sabek) plot numbers."
+        )
+
+    if field == "mouza":
+        if status == "Mismatch":
+            return (
+                "উপজেলা ভূমি অফিসের মৌজা গেজেট ও সীমানা তালিকা যাচাই করুন।",
+                "Verify official mouza gazette and territorial boundaries with Land Office."
+            )
+        return (
+            "মৌজার ইংরেজি ও বাংলা বানানের সঠিক প্রতিবর্ণীকরণ নিশ্চিত করুন।",
+            "Confirm correct transliteration of Mouza name in official gazetteer."
+        )
+
+    if field == "jl_no":
+        if status == "Mismatch":
+            return (
+                "সংশ্লিষ্ট ইউনিয়নের মৌজা ও জেএল নম্বর তালিকা পুনঃনিরীক্ষা করুন।",
+                "Re-check official JL number roster for the respective Union and Mouza."
+            )
+        return (
+            "জেএল নম্বর সরকারি রেকর্ডপত্রের সাথে মিলিয়ে দেখুন।",
+            "Verify JL number against official revenue survey records."
+        )
+
+    if field == "area_decimal":
+        if status == "Needs review":
+            return (
+                "আংশিক হস্তান্তরের ক্ষেত্রে বিক্রেতার অবশিষ্ট জমা ও খারিজ প্রস্তাব পরীক্ষা করুন।",
+                "Check seller's remaining holding balance and mutation partition application."
+            )
+        if status == "Mismatch":
+            return (
+                "অতিরিক্ত জমির ক্ষেত্রে বাটোয়ারা দলিল বা এসি ল্যান্ড নামজারি প্রস্তাব পরীক্ষা আবশ্যক।",
+                "Examine partition deed or AC Land mutation record for excess area conveyance."
+            )
+        return (
+            "জমির পরিমাণের একক (শতাংশ/কাঠা/একর) রূপান্তর নিশ্চিত করুন।",
+            "Verify land area unit conversion (decimals/katha/acre)."
+        )
+
+    if field == "deed_no":
+        if status == "Needs review":
+            return (
+                "প্রস্তাবিত নতুন দলিল বা নিবন্ধিত পূর্ববর্তী দলিলের সত্যতা সাব-রেজিস্ট্রিতে যাচাই করুন।",
+                "Verify proposed or prior deed in Sub-Registry index."
+            )
+        return (
+            "সাব-রেজিস্ট্রি অফিসের ইনডেক্স ও বালাম বই থেকে দলিলের নির্ভুলতা যাচাই করুন।",
+            "Cross-verify deed index and volume registry at the Sub-Registry office."
+        )
+
+    if field == "document_date":
+        if status == "Needs review":
+            return (
+                "তারিখের ফরম্যাট (দিন/মাস বনাম মাস/দিন) মূল দলিল দেখে নিশ্চিত করুন।",
+                "Inspect physical document stamp date to resolve ambiguous date format."
+            )
+        if status == "Mismatch":
+            return (
+                "সাব-রেজিস্ট্রি বালাম বইয়ের সরকারি নিবন্ধন তারিখ ও স্ট্যাম্প তারিখ পরীক্ষা করুন।",
+                "Audit official Sub-Registry Balam entry date and revenue stamp date."
+            )
+        return (
+            "দলিল নিবন্ধনের তারিখ মূল কপি দেখে নথিবদ্ধ করুন।",
+            "Record document registration date from official stamped copy."
+        )
+
+    return (
+        "মূল সরকারি নথির সাথে তথ্য মিলিয়ে দেখুন।",
+        "Cross-verify information against original archival government records."
+    )
+
 
 def is_date_ambiguous(val: Any) -> bool:
     """Returns True if the date has an inherently ambiguous format between DD/MM/YYYY and MM/DD/YYYY."""
@@ -606,9 +829,16 @@ def compare_records(
         "notes": dt_notes
     })
 
-    # Summary counts
+    # Summary counts & explainable next verification steps
     status_counts = {"Matched": 0, "Mismatch": 0, "Needs review": 0, "Not checked": 0}
     for item in results:
+        step_bn, step_en = get_recommended_next_step(
+            item.get("field", ""),
+            item.get("status", ""),
+            item.get("reason_code", "")
+        )
+        item["recommended_next_step"] = step_en
+        item["recommended_next_step_bn"] = step_bn
         status_counts[item["status"]] = status_counts.get(item["status"], 0) + 1
 
     total_evaluable = len(results)

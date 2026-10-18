@@ -141,6 +141,36 @@ def run_tesseract_ocr(
             except OSError:
                 pass
 
+def preprocess_image_for_ocr(image_bytes: bytes) -> bytes:
+    """
+    Preprocesses uploaded document images with Pillow:
+    - Auto-corrects EXIF orientation (handles mobile camera rotation).
+    - Converts to Grayscale.
+    - Upscales low-resolution scans (if width < 1200, scale with Lanczos filter).
+    - Enhances contrast to separate faded Bengali ink from background paper.
+    """
+    try:
+        from PIL import Image, ImageOps, ImageEnhance
+        img = Image.open(io.BytesIO(image_bytes))
+        img = ImageOps.exif_transpose(img)
+        if img.mode != "L":
+            img = img.convert("L")
+        w, h = img.size
+        if w < 1200 or h < 1200:
+            scale = max(1200.0 / max(w, 1), 1200.0 / max(h, 1))
+            if 1.0 < scale <= 3.0:
+                new_w = int(w * scale)
+                new_h = int(h * scale)
+                resample_filter = getattr(Image, "Resampling", Image).LANCZOS
+                img = img.resize((new_w, new_h), resample_filter)
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(1.35)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        return image_bytes
+
 def clean_extracted_field(val: Optional[str]) -> Optional[str]:
     """Cleans extracted candidate string by stripping unwanted boundary characters and parentheticals."""
     if not val:
@@ -306,35 +336,61 @@ def extract_fields_from_text(
             if base_confidence is not None:
                 confidences["jl_no"] = base_confidence
 
-    # 7. Khatian No
-    khatian_match = re.search(
-        r"(?:খতিয়ান\s*(?:নম্বর|নং)|খতিয়ান|Khatian\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+    # 7. Khatian No (prioritize latest operative survey: BS > RS > Mutation over CS/SA)
+    bs_rs_match = re.search(
+        r"(?:বি[\.\s]*এস[\.\s]*|আর[\.\s]*এস[\.\s]*|নামজারি|খারিজ)\s*খতিয়ান\s*(?:নম্বর|নং)?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
         re.IGNORECASE
     )
-    if khatian_match:
-        cand_k = clean_extracted_field(khatian_match.group(1))
+    if bs_rs_match:
+        cand_k = clean_extracted_field(bs_rs_match.group(1))
         if cand_k:
             fields["khatian_no"] = cand_k
             if base_confidence is not None:
                 confidences["khatian_no"] = base_confidence
 
-    # 8. Dag No
-    dag_match = re.search(
-        r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+    if not fields["khatian_no"]:
+        khatian_match = re.search(
+            r"(?:(?:এস[\.\s]*এ[\.\s]*|সি[\.\s]*এস[\.\s]*)?\s*খতিয়ান\s*(?:নম্বর|নং)?|খতিয়ান|Khatian\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+            norm_text,
+            re.IGNORECASE
+        )
+        if khatian_match:
+            cand_k = clean_extracted_field(khatian_match.group(1))
+            if cand_k:
+                fields["khatian_no"] = cand_k
+                if base_confidence is not None:
+                    confidences["khatian_no"] = base_confidence
+
+    # 8. Dag No (prioritize operative Hal Dag / Current Plot over Sabek Dag)
+    hal_dag_match = re.search(
+        r"(?:হাল\s*দাগ\s*(?:নম্বর|নং)?|বর্তমান\s*দাগ)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
         re.IGNORECASE
     )
-    if dag_match:
-        cand_d = clean_extracted_field(dag_match.group(1))
+    if hal_dag_match:
+        cand_d = clean_extracted_field(hal_dag_match.group(1))
         if cand_d:
             fields["dag_no"] = cand_d
             if base_confidence is not None:
                 confidences["dag_no"] = base_confidence
 
-    # 9. Area
+    if not fields["dag_no"]:
+        dag_match = re.search(
+            r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+            norm_text,
+            re.IGNORECASE
+        )
+        if dag_match:
+            cand_d = clean_extracted_field(dag_match.group(1))
+            if cand_d:
+                fields["dag_no"] = cand_d
+                if base_confidence is not None:
+                    confidences["dag_no"] = base_confidence
+
+    # 9. Area (Support comma separators and regional units: শতক, শতাংশ, decimal, একর, কাঠা)
     area_match = re.search(
-        r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|পরিমাণ|Area)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
+        r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|মোট\s*জমি|পরিমাণ|Area)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.,]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
         norm_text,
         re.IGNORECASE
     )
@@ -686,7 +742,8 @@ def scan_uploaded_document(
 
     if is_avail and tess_bin:
         try:
-            ocr_text, ocr_meta = run_tesseract_ocr(file_bytes, tess_bin, langs)
+            processed_bytes = preprocess_image_for_ocr(file_bytes)
+            ocr_text, ocr_meta = run_tesseract_ocr(processed_bytes, tess_bin, langs)
             overall_conf = ocr_meta.get("overall_confidence", 0.0)
             res = extract_fields_from_text(
                 ocr_text,

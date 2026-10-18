@@ -361,8 +361,17 @@ def build_evidence_and_risk_report(
     Ensures strict neutral terminology, preserves ownership chain,
     and collects verified previous/current transaction IDs, dates, and areas.
     """
-    current_seller = extracted_deed.get("seller_name") or extracted_deed.get("owner_name") or "আব্দুল করিম"
-    current_buyer = extracted_deed.get("buyer_name") or "অন্য ক্রেতা (Another Buyer)"
+    current_seller = (
+        extracted_deed.get("seller_name") or 
+        extracted_deed.get("seller_name_bn") or 
+        extracted_deed.get("owner_name") or 
+        (sorted_history[0].get("seller_name_bn") if sorted_history else "অজ্ঞাত বিক্রেতা (Unspecified Seller)")
+    )
+    current_buyer = (
+        extracted_deed.get("buyer_name") or 
+        extracted_deed.get("buyer_name_bn") or 
+        "অন্য ক্রেতা (Another Buyer)"
+    )
     current_tx_id = (
         extracted_deed.get("deed_no") or 
         extracted_deed.get("proposed_deed_no") or 

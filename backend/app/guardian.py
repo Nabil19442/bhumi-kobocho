@@ -71,15 +71,36 @@ def generate_guardian_risk_report(deed_or_parcel: Any) -> Dict[str, Any]:
     """
     if isinstance(deed_or_parcel, str):
         q = str(deed_or_parcel).strip()
-        deed_dict = {
-            "parcel_id": q if q.startswith("PCL-") else ("PCL-DHK-SAV-045-0558" if "558" in q else q),
-            "dag_no": "558" if "558" in q else q,
-            "seller_name": "আব্দুল করিম",
-            "buyer_name": "অন্য ক্রেতা (Another Buyer)",
-            "area_decimal": 10.0,
-            "deed_no": "PROP-2026-9999",
-            "document_date": datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        }
+        hist = None
+        try:
+            from .transaction_registry import get_parcel_by_id, find_history_for_deed
+            hist = get_parcel_by_id(q) if (q.startswith("PCL-") or q.startswith("rec-")) else find_history_for_deed(dag_no=q)
+        except Exception:
+            pass
+
+        if hist:
+            first_tx = hist[0]
+            latest_tx = hist[-1]
+            deed_dict = {
+                "parcel_id": latest_tx.get("parcel_id", q),
+                "dag_no": str(latest_tx.get("dag_no", "558")),
+                "khatian_no": str(latest_tx.get("khatian_no", "128")),
+                "seller_name": first_tx.get("seller_name_bn") or "আব্দুল করিম",
+                "buyer_name": "অন্য ক্রেতা (Another Buyer)",
+                "area_decimal": float(latest_tx.get("transferred_area") or 10.0),
+                "deed_no": "PROP-2026-9999",
+                "document_date": datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            }
+        else:
+            deed_dict = {
+                "parcel_id": q if q.startswith("PCL-") else ("PCL-DHK-SAV-045-0558" if "558" in q else q),
+                "dag_no": "558" if "558" in q else q,
+                "seller_name": "আব্দুল করিম",
+                "buyer_name": "অন্য ক্রেতা (Another Buyer)",
+                "area_decimal": 10.0,
+                "deed_no": "PROP-2026-9999",
+                "document_date": datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            }
     elif isinstance(deed_or_parcel, dict):
         deed_dict = deed_or_parcel
     else:
