@@ -232,11 +232,21 @@ textarea:focus-visible {
   z-index: 20;
 }
 
-.app-nav-container {
+.app-nav-layout {
   width: 100%;
   max-width: var(--max-content-width, 1260px);
   margin: 0 auto;
   padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+}
+
+.app-nav-container {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -263,6 +273,157 @@ textarea:focus-visible {
 
 .app-nav-container::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
+}
+
+.app-nav-more-wrapper {
+  flex-shrink: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Nav More Menu Dropdown (Desktop) */
+.nav-more-menu-desktop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  background: #FFFFFF;
+  border-radius: 14px;
+  border: 1.5px solid var(--line, #CBD8D2);
+  box-shadow: 0 12px 28px rgba(16, 39, 42, 0.14), 0 4px 10px rgba(16, 39, 42, 0.06);
+  padding: 8px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Nav More Menu Item */
+.nav-more-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ink, #10272A);
+  font-size: 0.88rem;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+  transition: background 0.15s ease, color 0.15s ease;
+  outline: none;
+}
+
+.nav-more-item-btn:hover,
+.nav-more-item-btn:focus-visible {
+  background: var(--accent-tint, #E6F4EA);
+  color: var(--accent, #005A5B);
+  outline: 2px solid var(--accent, #005A5B);
+  outline-offset: -2px;
+}
+
+.nav-more-item-btn.active {
+  background: var(--accent-tint, #E6F4EA);
+  color: var(--accent, #005A5B);
+  font-weight: 700;
+}
+
+/* Mobile Bottom Sheet (<= 768px) */
+.nav-more-backdrop-mobile {
+  display: none;
+}
+
+.nav-more-sheet-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-more-menu-desktop {
+    display: none !important;
+  }
+  
+  .nav-more-backdrop-mobile {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 39, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 9998;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  .nav-more-sheet-mobile {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82vh;
+    background: #FFFFFF;
+    border-radius: 20px 20px 0 0;
+    border-top: 1.5px solid var(--line, #CBD8D2);
+    box-shadow: 0 -8px 30px rgba(16, 39, 42, 0.22);
+    z-index: 9999;
+    padding: 14px 16px 28px;
+    overflow-y: auto;
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-more-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: #CBD8D2;
+    margin: 0 auto 12px;
+    flex-shrink: 0;
+  }
+
+  .nav-more-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--line, #CBD8D2);
+  }
+
+  .nav-more-sheet-title {
+    font-size: 1rem;
+    font-weight: 800;
+    font-family: var(--font-heading);
+    color: var(--ink, #10272A);
+  }
+
+  .nav-more-sheet-close {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    color: var(--muted, #64748B);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .nav-item-btn {
@@ -313,15 +474,15 @@ textarea:focus-visible {
 }
 
 @media (max-width: 1100px) {
-  .app-nav-container {
+  .app-nav-layout {
     padding: 0 12px;
   }
 }
 
 @media (max-width: 640px) {
-  .app-nav-container {
+  .app-nav-layout {
     padding: 0 8px;
-    gap: 2px;
+    gap: 4px;
   }
   .nav-item-btn {
     padding: 8px 8px;

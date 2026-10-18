@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Home, 
   Search, 
@@ -6,6 +7,7 @@ import {
   QrCode, 
   MoreHorizontal, 
   ChevronDown, 
+  X,
   LayoutDashboard, 
   ScanText, 
   History, 
@@ -19,7 +21,12 @@ import {
 export default function Navigation({ activeTab, setActiveTab, t }) {
   const containerRef = useRef(null);
   const activeBtnRef = useRef(null);
+  const moreButtonRef = useRef(null);
   const dropdownRef = useRef(null);
+  const desktopMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const itemRefs = useRef([]);
+  const mobileItemRefs = useRef([]);
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isBn = t.lang_toggle === 'English';
@@ -35,35 +42,111 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
   const moreItems = [
     { id: 'overview', label: t.nav_overview || (isBn ? 'ওভারভিউ' : 'Overview'), icon: LayoutDashboard },
     { id: 'history', label: t.nav_history || (isBn ? 'লেনদেনের ইতিহাস' : 'History'), icon: History },
-    { id: 'scanner', label: t.nav_verify || (isBn ? 'দলিল স্ক্যানার' : 'Scanner'), icon: ScanText },
+    { id: 'scanner', label: t.nav_scanner || (isBn ? 'দলিল স্ক্যানার' : 'Deed Scanner'), icon: ScanText },
     { id: 'compare', label: t.nav_compare || (isBn ? 'অসঙ্গতি নিরীক্ষা' : 'Compare'), icon: GitCompare },
     { id: 'passport', label: t.nav_passport || (isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'), icon: FileBadge },
     { id: 'reports', label: t.nav_reports || (isBn ? 'যাচাই প্রতিবেদন' : 'Reports'), icon: ClipboardCheck },
     { id: 'graph', label: t.nav_graph || (isBn ? 'সম্পর্ক গ্রাফ' : 'Graph'), icon: Network },
   ];
 
-  const isMoreActive = moreItems.some(item => item.id === activeTab);
+  const activeMoreItem = moreItems.find(item => item.id === activeTab);
+  const isMoreActive = Boolean(activeMoreItem);
+  const moreButtonLabel = isMoreActive
+    ? (isBn ? `আরও: ${activeMoreItem.label}` : `More: ${activeMoreItem.label}`)
+    : (t.nav_more || (isBn ? 'আরও' : 'More'));
 
   // Close dropdown on outside click or escape key
   useEffect(() => {
     function handleClickOutside(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (
+        dropdownRef.current?.contains(e.target) ||
+        desktopMenuRef.current?.contains(e.target) ||
+        mobileMenuRef.current?.contains(e.target)
+      ) {
+        return;
+      }
+      setMoreOpen(false);
+    }
+
+    function handleGlobalKeyDown(e) {
+      if (e.key === 'Escape' && moreOpen) {
         setMoreOpen(false);
+        moreButtonRef.current?.focus();
       }
     }
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        setMoreOpen(false);
-      }
+
+    if (moreOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleGlobalKeyDown);
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [moreOpen]);
 
+  // Keyboard navigation inside menu items
+  const handleItemKeyDown = (e, index, isMobile = false) => {
+    const refs = isMobile ? mobileItemRefs : itemRefs;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIndex = (index + 1) % moreItems.length;
+      refs.current[nextIndex]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIndex = (index - 1 + moreItems.length) % moreItems.length;
+      refs.current[prevIndex]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      refs.current[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      refs.current[moreItems.length - 1]?.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setMoreOpen(false);
+      moreButtonRef.current?.focus();
+    } else if (e.key === 'Tab') {
+      setMoreOpen(false);
+    }
+  };
+
+  // Keyboard navigation on More button
+  const handleButtonKeyDown = (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!moreOpen) {
+        setMoreOpen(true);
+      }
+      setTimeout(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+        const targetRefs = isMobile ? mobileItemRefs : itemRefs;
+        const targetIdx = e.key === 'ArrowUp' ? moreItems.length - 1 : 0;
+        targetRefs.current[targetIdx]?.focus();
+      }, 50);
+    } else if (e.key === 'Escape' && moreOpen) {
+      e.preventDefault();
+      setMoreOpen(false);
+    }
+  };
+
+  // Auto-focus first item when menu opens via keyboard
+  useEffect(() => {
+    if (moreOpen) {
+      const timer = setTimeout(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+        const targetRefs = isMobile ? mobileItemRefs : itemRefs;
+        const activeIdx = moreItems.findIndex(item => item.id === activeTab);
+        const focusIdx = activeIdx >= 0 ? activeIdx : 0;
+        targetRefs.current[focusIdx]?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [moreOpen]);
+
+  // Keep active primary tab scrolled into view
   useEffect(() => {
     if (activeBtnRef.current && containerRef.current) {
       const btn = activeBtnRef.current;
@@ -79,47 +162,114 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
     }
   }, [activeTab]);
 
-  return (
-    <nav className="app-nav-bar" role="tablist" aria-label="Main Application Sections">
-      <div className="app-nav-container" ref={containerRef} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        {/* Primary Tabs */}
-        {primaryItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              ref={isActive ? activeBtnRef : null}
-              id={`tab-btn-${item.id}`}
-              role="tab"
-              aria-selected={isActive}
-              tabIndex={isActive ? 0 : -1}
-              className={`nav-item-btn ${isActive ? 'active' : ''}`}
-              onClick={() => {
-                setMoreOpen(false);
-                setActiveTab(item.id);
-              }}
-              style={{ minHeight: '44px', minWidth: '44px' }}
-            >
-              <Icon size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
-              <span className="nav-item-label">{item.label}</span>
-              {item.badge && (
-                <span className="nav-item-badge simulated">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+  const handleSelectItem = (id) => {
+    setActiveTab(id);
+    setMoreOpen(false);
+    moreButtonRef.current?.focus();
+  };
 
-        {/* More / আরও Dropdown Group */}
-        <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-flex' }}>
+  const renderMenuItems = (isMobile = false) => {
+    const refs = isMobile ? mobileItemRefs : itemRefs;
+    return moreItems.map((item, idx) => {
+      const Icon = item.icon;
+      const isActive = activeTab === item.id;
+      return (
+        <button
+          key={item.id}
+          ref={(el) => { refs.current[idx] = el; }}
+          id={`nav-more-item-${isMobile ? 'mobile-' : ''}${item.id}`}
+          data-tab-id={item.id}
+          role="menuitem"
+          type="button"
+          tabIndex={moreOpen ? 0 : -1}
+          className={`nav-more-item-btn ${isActive ? 'active' : ''}`}
+          onClick={() => handleSelectItem(item.id)}
+          onKeyDown={(e) => handleItemKeyDown(e, idx, isMobile)}
+          style={{ minHeight: '44px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Icon 
+              size={16} 
+              aria-hidden="true"
+              style={{ color: isActive ? 'var(--accent, #005A5B)' : 'var(--muted, #64748B)', flexShrink: 0 }} 
+            />
+            <span>{item.label}</span>
+          </div>
+          {item.badge && (
+            <span 
+              className="nav-item-badge" 
+              style={{ 
+                fontSize: '0.68rem', 
+                padding: '1px 5px', 
+                borderRadius: '4px', 
+                background: '#FEF3C7', 
+                color: '#92400E', 
+                fontWeight: 700 
+              }}
+            >
+              {item.badge}
+            </span>
+          )}
+        </button>
+      );
+    });
+  };
+
+  return (
+    <nav className="app-nav-bar" aria-label="Main Application Sections">
+      <div className="app-nav-layout">
+        {/* Scrollable Container with Valid Role="tablist" for Primary Tabs */}
+        <div 
+          className="app-nav-container" 
+          ref={containerRef} 
+          role="tablist" 
+          aria-label={isBn ? 'প্রধান ট্যাবসমূহ' : 'Primary Tabs'}
+        >
+          {primaryItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                ref={isActive ? activeBtnRef : null}
+                id={`tab-btn-${item.id}`}
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                className={`nav-item-btn ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  setMoreOpen(false);
+                  setActiveTab(item.id);
+                }}
+                style={{ minHeight: '44px', minWidth: '44px' }}
+              >
+                <Icon size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
+                <span className="nav-item-label">{item.label}</span>
+                {item.badge && (
+                  <span className="nav-item-badge simulated">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sibling Wrapper Outside Scroll Container for More Button & Dropdown */}
+        <div 
+          className="app-nav-more-wrapper" 
+          ref={dropdownRef}
+        >
           <button
+            ref={moreButtonRef}
             type="button"
+            id="nav-more-btn"
             className={`nav-item-btn ${isMoreActive ? 'active' : ''}`}
             onClick={() => setMoreOpen(prev => !prev)}
+            onKeyDown={handleButtonKeyDown}
             aria-expanded={moreOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
+            aria-controls="nav-more-menu-desktop"
             aria-label={isBn ? 'আরও মেনু' : 'More Menu'}
             style={{
               display: 'inline-flex',
@@ -131,7 +281,7 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
             }}
           >
             <MoreHorizontal size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
-            <span className="nav-item-label">{t.nav_more || (isBn ? 'আরও' : 'More')}</span>
+            <span className="nav-item-label">{moreButtonLabel}</span>
             <ChevronDown 
               size={13} 
               aria-hidden="true"
@@ -147,7 +297,7 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
                   width: '6px', 
                   height: '6px', 
                   borderRadius: '50%', 
-                  background: 'var(--primary-accent, #2563EB)', 
+                  background: 'var(--accent, #005A5B)', 
                   display: 'inline-block',
                   marginLeft: '2px'
                 }} 
@@ -155,78 +305,61 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
             )}
           </button>
 
+          {/* Desktop Dropdown Menu (Positioned relative to app-nav-more-wrapper, outside overflow:hidden) */}
           {moreOpen && (
             <div
+              ref={desktopMenuRef}
+              id="nav-more-menu-desktop"
+              className="nav-more-menu-desktop"
               role="menu"
-              aria-label="Secondary Sections"
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                right: 0,
-                zIndex: 1000,
-                background: '#FFFFFF',
-                borderRadius: '12px',
-                border: '1px solid #CBD5E1',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                padding: '8px',
-                minWidth: '220px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
-              }}
+              aria-label={isBn ? 'আরও মেনু' : 'More Menu'}
             >
-              {moreItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    role="menuitem"
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setMoreOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: isActive ? 'var(--accent-tint, #EFF6FF)' : 'transparent',
-                      color: isActive ? 'var(--primary-accent, #2563EB)' : '#1E293B',
-                      fontSize: '0.88rem',
-                      fontWeight: isActive ? 700 : 500,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      minHeight: '44px',
-                      transition: 'background 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.background = '#F8FAFC';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Icon size={16} style={{ color: isActive ? 'var(--primary-accent, #2563EB)' : '#64748B' }} />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span className="nav-item-badge" style={{ fontSize: '0.68rem', padding: '1px 5px', borderRadius: '4px', background: '#FEF3C7', color: '#92400E', fontWeight: 700 }}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              {renderMenuItems(false)}
             </div>
           )}
         </div>
       </div>
+
+      {/* Mobile Bottom Sheet Portal (<= 768px, mounted on document.body to guarantee no clipping) */}
+      {moreOpen && typeof document !== 'undefined' && createPortal(
+        <>
+          <div 
+            className="nav-more-backdrop-mobile" 
+            onClick={() => {
+              setMoreOpen(false);
+              moreButtonRef.current?.focus();
+            }}
+            aria-hidden="true"
+          />
+          <div
+            ref={mobileMenuRef}
+            id="nav-more-menu-mobile"
+            className="nav-more-sheet-mobile"
+            role="menu"
+            aria-label={isBn ? 'আরও মেনু' : 'More Menu'}
+          >
+            <div className="nav-more-sheet-handle" />
+            <div className="nav-more-sheet-header">
+              <span className="nav-more-sheet-title">{isBn ? 'আরও ফিচারসমূহ' : 'More Features'}</span>
+              <button
+                type="button"
+                className="nav-more-sheet-close"
+                onClick={() => {
+                  setMoreOpen(false);
+                  moreButtonRef.current?.focus();
+                }}
+                aria-label={isBn ? 'বন্ধ করুন' : 'Close'}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              {renderMenuItems(true)}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </nav>
   );
 }
