@@ -760,7 +760,45 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
             </div>
           ))}
 
-          {/* 3. CLEAN TITLE CHAIN BANNER (When no conflict detected) */}
+          {/* FIELD COMPARISON AUDIT SUMMARY (When baseline discrepancies exist) */}
+          {comparison.results?.some(r => r.status === 'Mismatch') && (
+            <div style={{
+              background: '#FFFBEB',
+              border: '2px solid #F59E0B',
+              borderRadius: 'var(--radius-std)',
+              padding: '18px 24px',
+              marginBottom: '24px',
+              boxShadow: 'var(--shadow-hard-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={22} color="#D97706" />
+                  <h3 style={{ margin: 0, fontSize: '1.14rem', fontWeight: 800, color: '#92400E', fontFamily: 'var(--font-heading)' }}>
+                    {isBn ? 'ফিল্ড তুলনা (Field comparison) — অগ্রাধিকার পর্যালোচনা' : 'Field comparison — Priority review / অগ্রাধিকার পর্যালোচনা'}
+                  </h3>
+                </div>
+                <span style={{
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  background: '#FEF3C7',
+                  color: '#92400E',
+                  fontSize: '0.78rem',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 800,
+                  border: '1px solid #FCD34D'
+                }}>
+                  {isBn ? 'অগ্রাধিকার পর্যালোচনা' : 'Priority review'}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350F', lineHeight: 1.5 }}>
+                {isBn
+                  ? (comparison.risk_assessment?.title_bn || comparison.risk_assessment?.description_bn || 'রেফারেন্স রেকর্ডের সাথে তথ্যের অমিল চিহ্নিত। বিস্তারিত ফলাফল নিচে দেখুন।')
+                  : (comparison.risk_assessment?.title_en || comparison.risk_assessment?.description_en || 'Field variances detected against reference record. See details below.')}
+              </p>
+            </div>
+          )}
+
+          {/* 3. TRANSACTION HISTORY CHECK BANNER */}
           {comparison.conflict_analysis?.has_history && (!comparison.conflict_analysis?.conflicts || comparison.conflict_analysis.conflicts.length === 0) && (
             <div style={{
               background: '#F0FDF4',
@@ -773,13 +811,19 @@ export default function ComparePage({ t, lang = 'bn', sharedExtractedData, onVie
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={22} color="#16A34A" />
                 <h3 style={{ margin: 0, fontSize: '1.14rem', fontWeight: 800, color: '#166534', fontFamily: 'var(--font-heading)' }}>
-                  {isBn ? comparison.conflict_analysis.status_label_bn : comparison.conflict_analysis.status_label_en}
+                  {isBn 
+                    ? `লেনদেনের ইতিহাস যাচাই: ${comparison.conflict_analysis.status_label_bn}` 
+                    : `Transaction history check: ${comparison.conflict_analysis.status_label_en}`}
                 </h3>
               </div>
               <p style={{ margin: '6px 0 0', fontSize: '0.88rem', color: '#14532D', lineHeight: 1.5 }}>
-                {isBn 
-                  ? 'এই দলিলের স্বত্বধারার ধারাবাহিকতা এবং হস্তান্তরিত পরিমাণ পূর্ববর্তী লেনদেনের সাথে সামঞ্জস্যপূর্ণ। কোনো দ্বৈত বিক্রয় বা সীমার অতিরিক্ত হস্তান্তরের অমিল পাওয়া যায়নি।'
-                  : 'The chain of title and transferred area are consistent with previous transactions on this parcel. No duplicate conveyances or area overlaps detected.'}
+                {comparison.results?.some(r => r.status === 'Mismatch')
+                  ? (isBn 
+                      ? 'আর্কাইভভুক্ত পূর্ববর্তী দলিলের ধারাবাহিকতায় কোনো দ্বৈত বিক্রয় পাওয়া যায়নি। তবে বর্তমান দাখিলকৃত দলিলের ক্ষেত্রফলের অমিলের জন্য ওপরের ফিল্ড তুলনা পর্যবেক্ষণ করুন।'
+                      : 'Registered sequential sales chain is clean in archives. However, observe deed variances in the Field comparison section above.')
+                  : (isBn 
+                      ? 'এই দলিলের স্বত্বধারার ধারাবাহিকতা সন্তোষজনক এবং পূর্ববর্তী লেনদেনের সাথে কোনো বিরোধ পাওয়া যায়নি।'
+                      : 'The chain of title is consistent with previous registered transactions on this parcel.')}
               </p>
             </div>
           )}

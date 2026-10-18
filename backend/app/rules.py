@@ -625,10 +625,10 @@ def evaluate_comparison_risk(
                 "severity": "HIGH",
                 "status_key": "OVERLAPPING_SALE",
                 "is_unrelated_record": False,
-                "badge_bn": "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ",
-                "badge_en": "Potential Conflict Found (Area Overlap)",
-                "title_bn": "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ",
-                "title_en": "Potential Conflict Found (Area Overlap)",
+                "badge_bn": "অগ্রাধিকার পর্যালোচনা (ক্ষেত্রফল পার্থক্য)",
+                "badge_en": "Priority review / অগ্রাধিকার পর্যালোচনা",
+                "title_bn": "অগ্রাধিকার পর্যালোচনা — অবশিষ্ট ব্যালেন্সের অতিরিক্ত পরিমাণ",
+                "title_en": "Priority review — Area exceeds remaining holding balance",
                 "description_bn": "বিক্রেতার পূর্ববর্তী বিক্রয়ের পর অবশিষ্ট জমির চেয়ে প্রস্তাবিত হস্তান্তরের পরিমাণ বেশি।",
                 "description_en": "Transferred area exceeds seller's remaining unencumbered holding balance.",
                 "flagged_fields": ["area_decimal"],
@@ -755,10 +755,32 @@ def evaluate_comparison_risk(
         is_area_overlap = any(f == "area_decimal" for f in flagged_fields)
 
         status_key = "OVERLAPPING_SALE" if is_area_overlap else "NEEDS_REVIEW_VARIANCES"
-        badge_bn = "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ" if is_area_overlap else "তথ্যের অমিল চিহ্নিত (সতর্ক পর্যালোচনা আবশ্যক)"
-        badge_en = "Potential Conflict Found (Area Overlap)" if is_area_overlap else "Field Variances Detected (Review Required)"
-        title_bn = "জমির ক্ষেত্রফল ওভারল্যাপ বিরোধ" if is_area_overlap else "রেফারেন্স রেকর্ডের সাথে তথ্যের অমিল পরিলক্ষিত হয়েছে"
-        title_en = "Potential Conflict Found (Area Overlap)" if is_area_overlap else "Field Variances Detected Against Reference Record"
+        
+        area_m = next((m for m in mismatches if m.get("field") == "area_decimal"), None)
+        diff_val = area_m.get("difference") if area_m else None
+        diff_str = f"{float(diff_val):.2f}".rstrip("0").rstrip(".") if diff_val is not None else ""
+
+        if is_area_overlap and diff_str:
+            badge_bn = "অগ্রাধিকার পর্যালোচনা (ক্ষেত্রফল পার্থক্য)"
+            badge_en = "Priority review / অগ্রাধিকার পর্যালোচনা"
+            title_bn = f"অগ্রাধিকার পর্যালোচনা — রেফারেন্স রেকর্ড থেকে জমির পরিমাণ {diff_str} শতক ভিন্ন"
+            title_en = f"Priority review — Area differs from reference record by {diff_str} decimal"
+            description_bn = f"রেফারেন্স রেকর্ডের সাথে জমির পরিমাণে {diff_str} শতক পার্থক্য পরিলক্ষিত হয়েছে: দলিলের মূল বালাম ও সংশ্লিষ্ট খতিয়ান যাচাই করুন।"
+            description_en = f"Area differs from the reference record by {diff_str} decimal. Cross-check against the original Volume Book (Balam) and mutation khatian."
+        elif has_critical:
+            badge_bn = "অগ্রাধিকার পর্যালোচনা"
+            badge_en = "Priority review / অগ্রাধিকার পর্যালোচনা"
+            title_bn = "অগ্রাধিকার পর্যালোচনা — রেফারেন্স রেকর্ডের সাথে তথ্যের অমিল"
+            title_en = "Priority review — Field variances detected against reference record"
+            description_bn = f"রেফারেন্স রেকর্ডের সাথে নিম্নলিখিত ফিল্ডগুলোতে অমিল রয়েছে: {', '.join(labels_bn)}। দলিলের মূল বালাম ও সংশ্লিষ্ট খতিয়ান যাচাই করুন।"
+            description_en = f"Discrepancies detected against the reference record in: {', '.join(labels_en)}. Cross-check against the original Volume Book (Balam) and mutation khatian."
+        else:
+            badge_bn = "পর্যালোচনা আবশ্যক"
+            badge_en = "Review Required"
+            title_bn = "রেফারেন্স রেকর্ডের সাথে তথ্যের অমিল পরিলক্ষিত হয়েছে"
+            title_en = "Field Variances Detected Against Reference Record"
+            description_bn = f"রেফারেন্স রেকর্ডের সাথে নিম্নলিখিত ফিল্ডগুলোতে অমিল রয়েছে: {', '.join(labels_bn)}। দলিলের মূল বালাম ও সংশ্লিষ্ট খতিয়ান যাচাই করুন।"
+            description_en = f"Discrepancies detected against the reference record in: {', '.join(labels_en)}. Cross-check against the original Volume Book (Balam) and mutation khatian."
 
         return {
             "risk_level": "HIGH_RISK" if has_critical else "NEEDS_REVIEW",
@@ -769,8 +791,8 @@ def evaluate_comparison_risk(
             "badge_en": badge_en,
             "title_bn": title_bn,
             "title_en": title_en,
-            "description_bn": f"রেফারেন্স রেকর্ডের সাথে নিম্নলিখিত ফিল্ডগুলোতে অমিল রয়েছে: {', '.join(labels_bn)}। দলিলের মূল বালাম ও সংশ্লিষ্ট খতিয়ান যাচাই করুন।",
-            "description_en": f"Discrepancies detected against the reference record in: {', '.join(labels_en)}. Cross-check against the original Volume Book (Balam) and mutation khatian.",
+            "description_bn": description_bn,
+            "description_en": description_en,
             "flagged_fields": flagged_fields,
             "discrepancies": mismatches,
             "recommendations_bn": [

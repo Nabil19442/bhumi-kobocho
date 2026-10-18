@@ -1,6 +1,7 @@
 import io
 import base64
 import hashlib
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 import qrcode
 from PIL import Image
@@ -31,7 +32,7 @@ def check_file_integrity(
         "calculated_sha256": calculated_hash,
         "expected_sha256": expected_hash,
         "disclaimer": "DEMO DATA — not a legal verdict. Cryptographic hash checks document bit-integrity only, never legal title or authentic ownership.",
-        "verified_at": "timestamp_now",
+        "verified_at": datetime.now(timezone.utc).isoformat(),
         "notice": "Unchanged indicates only that byte data matches the reference file. File content changed indicates any byte modification."
     }
 

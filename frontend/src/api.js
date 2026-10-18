@@ -194,7 +194,7 @@ export async function fetchSimulationEvents() {
   return request("/guardian/events");
 }
 
-// SECURITY NOTE: Hackathon demonstration key for simulation endpoints.
+// Guardian API Key (demo only, protects simulated events, no real data)
 const DEMO_GUARDIAN_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_GUARDIAN_API_KEY) || "demo-zenox-2026";
 
 export async function triggerSimulationApi(eventId) {

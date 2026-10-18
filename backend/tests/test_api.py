@@ -10,6 +10,16 @@ def test_api_health():
     assert data["status"] == "healthy"
     assert "DEMO DATA" in data["disclaimer"]
 
+def test_api_health_includes_ocr_field():
+    """FIX 6: Verifies GET /api/health includes ocr availability and language list."""
+    res = client.get("/api/health")
+    assert res.status_code == 200
+    data = res.json()
+    assert "ocr" in data
+    assert isinstance(data["ocr"]["available"], bool)
+    assert isinstance(data["ocr"]["languages"], list)
+
+
 def test_api_records_and_passport():
     res = client.get("/api/records")
     assert res.status_code == 200

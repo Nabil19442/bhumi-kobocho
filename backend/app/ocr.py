@@ -215,7 +215,7 @@ def extract_fields_from_text(
 
     # 1. Deed No
     deed_match = re.search(
-        r"(?:দলিল\s*(?:নম্বর|নং)|দলিল|Deed\s*(?:No|Number)?)[\s:：\-—]*\n?[\s:：\-—]*([A-Za-z0-9০-৯\-_/]+)",
+        r"(?:দলিল\s*(?:নম্বর|নং)?|Deed\s*(?:No|Number)?|দলিল)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([A-Za-z0-9০-৯\-_/]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -245,7 +245,7 @@ def extract_fields_from_text(
         r"[\d০-৯]{1,2}[-/][\d০-৯]{1,2}[-/][\d০-৯]{2,4}"
     )
     date_match = re.search(
-        r"(?:তারিখ|Date)[\s:：\-—]*\n?[\s:：\-—]*(" + date_pat + r")",
+        r"(?:তারিখ|Date)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*(" + date_pat + r")",
         norm_text,
         re.IGNORECASE
     )
@@ -258,7 +258,7 @@ def extract_fields_from_text(
 
     # 3. Seller Name (বিক্রেতার নাম, বিক্রেতা, হস্তান্তরকারী, দাতা, Seller)
     seller_match = re.search(
-        r"(?:বিক্রেতার\s*নাম|বিক্রেতা|হস্তান্তরকারী|দাতার\s*নাম|দাতার|Seller(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        r"(?:বিক্রেতার\s*নাম|বিক্রেতা|হস্তান্তরকারী|দাতার\s*নাম|দাতার|Seller(?:\s*Name)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -270,10 +270,8 @@ def extract_fields_from_text(
                 confidences["seller_name"] = base_confidence
 
     # 4. Buyer Name & Owner Name
-    # Priority: buyer (ক্রেতা), grantee (গ্রহীতা), owner (মালিক/মালিকের নাম)
-    # Note: (?<!বি) ensures 'বিক্রেতা' (seller) is not mistaken for 'ক্রেতা'
     buyer_match = re.search(
-        r"(?:ক্রেতার\s*নাম|(?<!বি)ক্রেতা|গ্রহীতার\s*নাম|Buyer(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        r"(?:ক্রেতার\s*নাম|(?<!বি)ক্রেতা|গ্রহীতার\s*নাম|Buyer(?:\s*Name)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -286,7 +284,7 @@ def extract_fields_from_text(
                 confidences["buyer_name"] = base_confidence
 
     name_match = re.search(
-        r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|জমির\s*মালিক|Owner(?:\s*Name)?)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        r"(?:গ্রহীতা\s*/\s*মালিকের\s*নাম|মালিকের\s*নাম|জমির\s*মালিক|Owner(?:\s*Name)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -312,7 +310,7 @@ def extract_fields_from_text(
 
     # 5. Mouza (মৌজা, মৌজা নং, Mouza)
     mouza_match = re.search(
-        r"(?:মৌজার\s*নাম|মৌজা|Mouza)[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
+        r"(?:মৌজার\s*নাম|মৌজা|Mouza)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([^\n\r,(\[]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -325,7 +323,7 @@ def extract_fields_from_text(
 
     # 6. JL No (জেএল নম্বর, জেএল নং, জে.এল. নং, JL No)
     jl_match = re.search(
-        r"(?:জে[\.\s]*এল[\.\s]*(?:নম্বর|নং)?|JL\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯]+)",
+        r"(?:জে[\.\s]*এল[\.\s]*(?:নম্বর|নং)?|JL\s*(?:No)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -338,7 +336,7 @@ def extract_fields_from_text(
 
     # 7. Khatian No (prioritize latest operative survey: BS > RS > Mutation over CS/SA)
     bs_rs_match = re.search(
-        r"(?:বি[\.\s]*এস[\.\s]*|আর[\.\s]*এস[\.\s]*|নামজারি|খারিজ)\s*খতিয়ান\s*(?:নম্বর|নং)?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+        r"(?:বি[\.\s]*এস[\.\s]*|আর[\.\s]*এস[\.\s]*|নামজারি|খারিজ)\s*(?:খতিয়ান|খতিয়ান)\s*(?:নম্বর|নং)?\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -351,7 +349,7 @@ def extract_fields_from_text(
 
     if not fields["khatian_no"]:
         khatian_match = re.search(
-            r"(?:(?:এস[\.\s]*এ[\.\s]*|সি[\.\s]*এস[\.\s]*)?\s*খতিয়ান\s*(?:নম্বর|নং)?|খতিয়ান|Khatian\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+            r"(?:(?:এস[\.\s]*এ[\.\s]*|সি[\.\s]*এস[\.\s]*)?\s*(?:খতিয়ান|খতিয়ান)\s*(?:নম্বর|নং)?|খতিয়ান|খতিয়ান|Khatian\s*(?:No)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
             norm_text,
             re.IGNORECASE
         )
@@ -364,7 +362,7 @@ def extract_fields_from_text(
 
     # 8. Dag No (prioritize operative Hal Dag / Current Plot over Sabek Dag)
     hal_dag_match = re.search(
-        r"(?:হাল\s*দাগ\s*(?:নম্বর|নং)?|বর্তমান\s*দাগ)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+        r"(?:হাল\s*দাগ\s*(?:নম্বর|নং)?|বর্তমান\s*দাগ)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
         norm_text,
         re.IGNORECASE
     )
@@ -377,7 +375,7 @@ def extract_fields_from_text(
 
     if not fields["dag_no"]:
         dag_match = re.search(
-            r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
+            r"(?:দাগ\s*(?:নম্বর|নং)|দাগ|Dag\s*(?:No)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯/]+)",
             norm_text,
             re.IGNORECASE
         )
@@ -390,7 +388,7 @@ def extract_fields_from_text(
 
     # 9. Area (Support comma separators and regional units: শতক, শতাংশ, decimal, একর, কাঠা)
     area_match = re.search(
-        r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|মোট\s*জমি|পরিমাণ|Area)[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.,]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
+        r"(?:জমির\s*পরিমাণ|জমির\s*রকমারি|মোট\s*জমি|পরিমাণ|Area(?:\s*Decimal)?)\s*(?:\([^)]*\))?[\s:：\-—]*\n?[\s:：\-—]*([\d০-৯\.,]+\s*(?:শতাংশ|শতক|decimal|একর|shotangsho|কাঠা)?)",
         norm_text,
         re.IGNORECASE
     )

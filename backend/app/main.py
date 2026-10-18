@@ -48,7 +48,8 @@ from .explain import explain_comparison
 from .ocr import (
     load_known_demo_specimen,
     scan_uploaded_document,
-    scan_document_bytes
+    scan_document_bytes,
+    is_tesseract_available
 )
 from .graph import build_relationship_graph, build_parcel_graph
 from .conflict_detector import detect_conflicts
@@ -104,10 +105,23 @@ MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB limit
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf", ".txt"}
 SHA256_HEX_REGEX = re.compile(r"^[a-fA-F0-9]{64}$")
 
+from contextlib import asynccontextmanager
+
+DEFAULT_GUARDIAN_KEY = "demo-zenox-2026"
+if not os.getenv("GUARDIAN_API_KEY"):
+    logger.warning("using public DEMO guardian key; simulation endpoints only")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if not os.getenv("GUARDIAN_API_KEY"):
+        logger.warning("using public DEMO guardian key; simulation endpoints only")
+    yield
+
 app = FastAPI(
     title="Bhumi Kobocho (ভূমি কবচ) API",
     description="Citizen-facing Demo: Plot Passport & Land Guardian. DEMO DATA — not a legal verdict.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 @app.exception_handler(RequestValidationError)
@@ -212,10 +226,15 @@ class ExplainRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
+    is_avail, _, langs = is_tesseract_available()
     return {
         "status": "healthy",
         "app": "Bhumi Kobocho (ভূমি কবচ)",
-        "disclaimer": "DEMO DATA — not a legal verdict"
+        "disclaimer": "DEMO DATA — not a legal verdict",
+        "ocr": {
+            "available": is_avail,
+            "languages": langs
+        }
     }
 
 @app.get("/api/records")
@@ -1093,7 +1112,7 @@ def verify_guardian_key(x_guardian_key: Optional[str] = Header(None)) -> str:
     SEC-06: Validates demo admin key for mutating in-memory simulation demo state.
     Configurable via GUARDIAN_API_KEY environment variable.
     """
-    expected_key = os.getenv("GUARDIAN_API_KEY", "demo-zenox-2026")
+    expected_key = os.getenv("GUARDIAN_API_KEY") or DEFAULT_GUARDIAN_KEY
     if not x_guardian_key or x_guardian_key.strip() != expected_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

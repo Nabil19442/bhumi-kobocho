@@ -23,7 +23,7 @@ import {
   HelpCircle,
   Database
 } from 'lucide-react';
-import { scanDocument, compareRecordsApi, fetchRecords, fetchDevDeeds } from '../api';
+import { scanDocument, compareRecordsApi, fetchRecords, fetchDevDeeds, fetchHealth } from '../api';
 import ProposedPurchaseModal from '../components/ProposedPurchaseModal';
 
 const DEMO_SPECIMENS = [
@@ -135,6 +135,7 @@ export default function ScannerPage({
   const [availableRecords, setAvailableRecords] = useState([]);
   const [devDeeds, setDevDeeds] = useState([]);
   const [selectedRefRecordId, setSelectedRefRecordId] = useState('');
+  const [ocrAvailable, setOcrAvailable] = useState(true);
 
   const cleanVal = (v) => {
     if (v === null || v === undefined) return '';
@@ -174,13 +175,14 @@ export default function ScannerPage({
     return '';
   };
 
-  // Load available demo reference records and development test deeds on mount
+  // Load available demo reference records, dev test deeds, and check OCR health on mount
   useEffect(() => {
     let active = true;
     Promise.all([
       fetchRecords().catch(() => ({ records: [] })),
-      fetchDevDeeds().catch(() => ({ deeds: [] }))
-    ]).then(([recordsRes, devRes]) => {
+      fetchDevDeeds().catch(() => ({ deeds: [] })),
+      fetchHealth().catch(() => null)
+    ]).then(([recordsRes, devRes, healthRes]) => {
       if (!active) return;
       if (recordsRes && recordsRes.records) {
         setAvailableRecords(recordsRes.records);
@@ -191,6 +193,9 @@ export default function ScannerPage({
       }
       if (devRes && devRes.deeds) {
         setDevDeeds(devRes.deeds);
+      }
+      if (healthRes && healthRes.ocr && healthRes.ocr.available === false) {
+        setOcrAvailable(false);
       }
     }).catch(err => {
       console.warn('Could not load reference or dev records:', err);
@@ -732,7 +737,34 @@ export default function ScannerPage({
       {/* STEP 1: UPLOAD DEED OR SELECT DEMO SPECIMEN */}
       {/* ======================================================== */}
       {currentStep === 1 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+        <div>
+          {!ocrAvailable && (
+            <div style={{
+              padding: '14px 18px',
+              borderRadius: 'var(--radius-std)',
+              background: '#FEF3C7',
+              color: '#92400E',
+              border: '1.5px solid #FDE68A',
+              marginBottom: '20px',
+              fontSize: '0.88rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              lineHeight: 1.5,
+              boxShadow: 'var(--shadow-subtle)'
+            }}>
+              <AlertTriangle size={22} style={{ flexShrink: 0, color: '#D97706', marginTop: '2px' }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem', marginBottom: '4px' }}>
+                  ছবি স্ক্যান করার জন্য ওসিআর ইঞ্জিন প্রয়োজন, যা বর্তমানে অফলাইনে রয়েছে। আপনি টেক্সট পিডিএফ আপলোড করতে পারেন অথবা তথ্য ম্যানুয়ালি লিখতে পারেন।
+                </div>
+                <div style={{ fontSize: '0.84rem', opacity: 0.9 }}>
+                  Scanning images needs the OCR engine, which is offline right now. You can still upload a text PDF or enter fields manually.
+                </div>
+              </div>
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
           {/* File Upload Box */}
           <div style={{
             background: 'var(--bg-card)',
@@ -845,6 +877,7 @@ export default function ScannerPage({
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* ======================================================== */}

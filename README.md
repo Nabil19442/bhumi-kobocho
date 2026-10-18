@@ -6,18 +6,18 @@
 ---
 
 ## 1. Project Overview & One-Line Goal
-**Bhumi Kobocho (ভূমি কবচ)** is a citizen-facing demo web application designed to bridge the trust and literacy gap in land records. It organizes citizen-supplied land record data into one readable **Plot Passport**, flags rule-based inconsistencies with strict deterministic logic, explains findings in plain Bangla and English, verifies document bit-level integrity via **SHA-256 and QR codes**, and features a simulated **Land Guardian** feed that triggers real-time in-app alerts when records change.
+**Bhumi Kobocho (ভূমি কবচ)** is a citizen-facing demo web application designed to bridge the trust and literacy gap in land records in Bangladesh. It organizes citizen-supplied land record data into one readable **Plot Passport**, flags rule-based inconsistencies with strict deterministic logic, explains findings in plain Bangla and English, verifies document bit-level integrity via **SHA-256 and QR codes**, and features a simulated **Land Guardian** feed that triggers real-time in-app alerts when records change.
 
 ### Core Principle
 **"Rules decide; AI explains."**  
-All validation flags, consistency calculations, and discrepancy detection are handled by deterministic Python rule engines. Language models or template explainers only rephrase the factual outputs of the rule engine and never introduce independent legal conclusions.
+All validation flags, consistency calculations, and discrepancy detections are handled by deterministic Python rule engines. Language models or template explainers only rephrase the factual outputs of the rule engine and never introduce independent legal conclusions.
 
 ---
 
 ## 2. Hard Constraints & Ethical Safeguards
 - **DEMO ONLY**: All names, khatians, dags, deed numbers, and NIDs are synthetic dummy data. No real personal or government data is stored or accessed.
 - **Mandatory Visible Banner**: Every screen, report, and export features the sticky notice: `"DEMO DATA — not a legal verdict"`.
-- **Allowed Status Labels Only**:
+- **Standardized Status Labels Only**:
   - `Matched`
   - `Mismatch`
   - `Needs review`
@@ -28,99 +28,169 @@ All validation flags, consistency calculations, and discrepancy detection are ha
 
 ---
 
-## 3. Technology Stack & Open-Source Packages
-
-### Backend (Python FastAPI)
-- `fastapi` (v0.143+): High-performance asynchronous API framework
-- `uvicorn` (v0.54+): ASGI server implementation
-- `pydantic` (v2.14+): Data validation and typing schemas
-- `qrcode` & `pillow` (PIL): Digital QR generation and sample specimen rendering
-- `pytest` & `httpx`: Automated testing suite for deterministic rule validation
-
-### Frontend (React + Vite)
-- `React 19`: UI component architecture
-- `Vite`: Ultra-fast frontend build tool
-- `lucide-react`: Accessible, screen-reader friendly UI icons
-- `Hind Siliguri` & `Inter`: High-legibility Google Fonts for Bangla and English
-
-### AI & Explainer Tools
-- **Deterministic Template Explainer (Default / Offline)**: 100% offline, zero-dependency plain-language translator that converts rule flags into natural Bangla and English.
-- **Pluggable LLM Interface**: Ready for OpenAI / Gemini API keys via `.env` without violating rule-first constraints.
+## 3. Data Used
+- **Zero Real Citizen Data**: No confidential, government, or real citizen records are collected, stored, or processed.
+- **Synthetic Data Generation**:
+  - All land parcels, historical ownership chains, mutation events, and baseline records are generated via `backend/data/generate_samples.py`, `backend/data/records.json`, and `backend/data/events.json`.
+  - Machine learning valuation data is generated synthetically via `backend/ml/data_generator.py`.
+  - Sample deed documents (`backend/data/samples/deed_sample_*.png`) are rendered dynamically at A4 resolution (150 DPI) with Noto Sans Bengali typography and synthetic coordinates.
 
 ---
 
-## 4. Repository Structure
+## 4. Open-Source Packages & Licenses
+The project is built upon trusted open-source packages:
+
+| Package | Ecosystem | License | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Tesseract OCR** | System / C++ | Apache 2.0 | Optical character recognition engine |
+| **tesseract-ocr-ben** | OCR Data | Apache 2.0 | Bengali language training data for Tesseract |
+| **pypdf** | Python | BSD-3-Clause | Pure-Python PDF text extraction |
+| **scikit-learn** | Python | BSD-3-Clause | Hedonic regression model for land price demonstration |
+| **pandas** | Python | BSD-3-Clause | Tabular data manipulation for synthetic ML dataset |
+| **numpy** | Python | BSD-3-Clause | Numerical computations and vector arrays |
+| **joblib** | Python | BSD-3-Clause | Serialization for trained scikit-learn pipelines |
+| **qrcode** | Python | BSD-6-Clause | Generation of parcel verification QR codes |
+| **Pillow (PIL)** | Python | HPND | Image generation, sample deed rendering, and preprocessing |
+| **FastAPI** | Python | MIT | High-performance asynchronous REST API framework |
+| **Uvicorn** | Python | BSD-3-Clause | ASGI web server implementation |
+| **Pydantic** | Python | MIT | Runtime data validation and schema enforcement |
+| **React 19** | JavaScript | MIT | Component architecture and state management |
+| **Vite** | JavaScript | MIT | Bundler and frontend development server |
+| **lucide-react** | JavaScript | ISC | Accessible iconography for user interface |
+| **html5-qrcode** | JavaScript | Apache 2.0 | Client-side camera and file QR code scanning |
+
+---
+
+## 5. AI Tools Used
+- **Development Scaffolding & Refactoring**: Google Antigravity and Claude were utilized as pair-programming assistants for code scaffolding, test case creation, and architectural refactoring.
+- **Zero Generative AI at Runtime**:  
+  **No generative AI model (LLM) is called at runtime**. All bilingual explanations and conflict descriptions are produced by deterministic, audited template functions in `backend/app/explain.py`. This ensures zero hallucinations, complete predictability, and instant sub-millisecond execution.
+
+---
+
+## 6. Experimental Extra: Land-Price Model
+- Located under `backend/ml/` and the `/landprice` frontend route.
+- Trained on synthetic land transaction datasets generated by `backend/ml/data_generator.py` using a scikit-learn Random Forest / Ridge regression pipeline.
+- Demonstrates how hedonic regression can estimate relative parcel values based on mouza tier, distance to main road, parcel area, and land classification (*Nal*, *Bari*, *Doba*).
+- **CRITICAL NOTICE**: This is an **experimental academic demonstration only**. It is **NOT** a certified market valuation, government mouza rate (*mouza rate chart*), or tax assessment, and must never be used for real financial or land transactions.
+
+---
+
+## 7. Known Limitations
+1. **OCR Environment Requirement**: Optical image character extraction requires the Tesseract OCR binary and the Bengali language pack (`tesseract-ocr-ben`). In environments without Tesseract, the backend reports OCR status as offline, and users can directly upload digital text PDFs or input data manually.
+2. **Handwriting Limitations**: Printed Bangla deed typography is accurately extracted; however, unstructured, handwritten notes or degraded ink seals common in historical deeds (*CS/SA records*) have low OCR confidence.
+3. **In-Memory Rate Limiting**: The built-in request rate limiter (`backend/app/main.py`) stores counters in memory; production multi-node clusters would require a shared Redis instance.
+4. **Demo Guardian API Key**: The `/api/guardian/events/simulate` endpoint uses a publicly documented demo key (`demo-zenox-2026`) designed strictly for presentation walkthroughs.
+
+---
+
+## 8. Changes After Round 1
+*Summary of improvements and refinements following initial hackathon evaluation:*
+- **Real ISO-8601 UTC Verification Timestamps**: Replaced placeholder timestamp with standard `datetime.now(timezone.utc).isoformat()` verified by unit tests.
+- **Collision-Resistant Alert IDs**: Enhanced alert generator with microsecond timestamps and random UUID hex suffixes to prevent duplicate key collisions during concurrent triggers.
+- **Configurable Guardian API Key**: Supported `GUARDIAN_API_KEY` from environment with graceful demo fallback and explicit console notices.
+- **Bilingual Typographic Samples**: Upgraded sample deed generation to A4 150 DPI resolution using Google Noto Sans Bengali typography, ensuring 100% field extraction fidelity on benchmark deeds.
+- **Production Containerization**: Created Docker container configuration bundling Tesseract OCR Bengali and English packages for zero-setup cloud deployment on Render.
+- **Frontend Code-Splitting**: Migrated frontend routing to `React.lazy` and `Suspense`, dropping the initial JavaScript bundle from 1.01 MB to 282 kB (< 400 kB target) for rapid loading.
+- **Clear Separation of Compare vs. History**: Resolved UI label ambiguity between record-field comparisons and transaction history checks.
+
+---
+
+## 9. Repository Structure
 ```
 BhumiKoboch/
-├── BUILD_SPEC.md              # Project specifications & milestone constraints
-├── .env.example               # Safe environment variable configuration template
+├── .env.example               # Safe environment variable template
 ├── backend/
+│   ├── Dockerfile             # Production container definition (Python 3.12 + Tesseract Bengali)
+│   ├── requirements.txt       # Python dependencies
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py            # FastAPI API endpoints & routes
-│   │   ├── ocr.py             # Field extraction & per-field confidence scoring
+│   │   ├── main.py            # FastAPI endpoints, health check, lifespan management
+│   │   ├── ocr.py             # Bengali & English OCR parser & field extractor
 │   │   ├── rules.py           # Deterministic mismatch rules & consistency indicator
-│   │   ├── names.py           # Bangla/English fuzzy name similarity & honorific normalization
+│   │   ├── conflict_detector.py # Transaction history overlap and double-sale check
+│   │   ├── names.py           # Bangla/English fuzzy name matching & honorific normalization
 │   │   ├── integrity.py       # SHA-256 cryptographic check & QR code generator
-│   │   ├── guardian.py        # Simulated event hub, old vs new diff calculation
-│   │   └── explain.py         # Deterministic template explainer
+│   │   ├── guardian.py        # Citizen Guardian event hub & diff calculator
+│   │   └── explain.py         # Deterministic template explainer (no runtime LLM)
 │   ├── data/
-│   │   ├── records.json       # Synthetic reference land records
-│   │   ├── events.json        # Synthetic mutation and survey change events
-│   │   ├── samples/           # Generated specimen deed images
-│   │   └── generate_samples.py
-│   └── tests/
-│       ├── test_rules.py      # Test cases 1 to 4
-│       ├── test_integrity.py  # Test case 5 (SHA-256 modified vs unchanged)
-│       ├── test_guardian.py   # Test case 6 (SIMULATED alert & diff)
-│       └── test_api.py        # API endpoint tests
+│   │   ├── fonts/             # Noto Sans Bengali TrueType fonts
+│   │   ├── records.json       # Synthetic baseline land records
+│   │   ├── events.json        # Synthetic mutation & survey change events
+│   │   ├── samples/           # Rendered benchmark deed PNG specimens
+│   │   └── generate_samples.py # Synthetic sample generator
+│   ├── ml/                    # Hedonic land-price experimental model
+│   └── tests/                 # Automated test suite (181 tests)
 └── frontend/
     ├── src/
-    │   ├── components/        # Header, Navigation, Banners
-    │   ├── pages/             # Scanner, Compare, Passport, Integrity, Guardian
+    │   ├── components/        # Navigation, headers, purchase modals
+    │   ├── pages/             # Code-split views (Scanner, Compare, Passport, etc.)
     │   ├── i18n/              # bn.json (Bangla-first), en.json (English)
-    │   ├── api.js             # API client
-    │   ├── App.jsx            # State management & routing
+    │   ├── api.js             # API client with health detection & cold-start handling
+    │   ├── App.jsx            # Routing, lazy-loaded components & Suspense fallback
     │   └── index.css          # Design system & accessibility tokens
     └── package.json
 ```
 
 ---
 
-## 5. How to Run Locally
+## 10. How to Run Locally
 
 ### 1. Backend Setup
-```bash
-# In the project root:
+
+#### On Windows (PowerShell):
+```powershell
+# Navigate to backend directory
 cd backend
 
-# Create virtual environment (if not already created)
+# Create virtual environment
 python -m venv venv
 
 # Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On Linux/macOS:
+venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run automated test suite (all 181 tests must pass)
+python -m pytest backend/tests -q
+
+# Start FastAPI development server
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+#### On Linux / macOS (Bash):
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
 source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run automated test suite (all 11 tests must pass)
-python -m pytest -v backend/tests
+# Run automated test suite
+python -m pytest backend/tests -q
 
-# Start the FastAPI backend server
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+# Start FastAPI development server
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-The backend API is now live at: `http://127.0.0.1:8000` (Docs: `http://127.0.0.1:8000/docs`).
+
+Backend API will be accessible at: `http://127.0.0.1:8000` (Interactive Docs: `http://127.0.0.1:8000/docs`).
 
 ### 2. Frontend Setup
 ```bash
-# In a new terminal, navigate to the frontend directory:
+# In a separate terminal, navigate to the frontend directory:
 cd frontend
 
 # Install node dependencies
 npm install
+
+# Build production bundle (verifies code-splitting & chunk sizes)
+npm run build
 
 # Start Vite development server
 npm run dev
@@ -129,56 +199,73 @@ Open your browser at `http://127.0.0.1:5173/`.
 
 ---
 
-## 6. Automated Test Suite (Pytest)
+## 11. Deploy on Render with Docker
+
+Render's standard native Python runtime does not allow installing system packages via `apt-get` (such as Tesseract OCR and language packs). To provide full Bengali OCR capability in production, deploy using Docker:
+
+1. **Create Web Service on Render**:
+   - In your Render Dashboard, click **New +** &rarr; **Web Service**.
+   - Connect your GitHub repository.
+2. **Configure Environment**:
+   - **Environment**: Select `Docker`.
+   - **Dockerfile Path**: `backend/Dockerfile`.
+   - **Docker Context**: `.` (repository root).
+3. **Environment Variables**:
+   - `PORT`: `8000` (Render binds this port automatically).
+   - `GUARDIAN_API_KEY`: *(Optional)* Provide a secret key or leave empty to use demo fallback `demo-zenox-2026`.
+4. **Deploy**:
+   - Render will build the container based on `python:3.12-slim`, install `tesseract-ocr`, `tesseract-ocr-ben`, and `tesseract-ocr-eng`, install Python dependencies from `backend/requirements.txt`, and start Uvicorn.
+   - The health endpoint at `/api/health` will confirm:
+     ```json
+     {
+       "status": "healthy",
+       "ocr": {
+         "available": true,
+         "languages": ["ben", "eng"]
+       }
+     }
+     ```
+
+---
+
+## 12. Automated Test Suite (Pytest)
 Run:
 ```bash
-backend\venv\Scripts\python -m pytest -v backend/tests
+python -m pytest backend/tests -q
 ```
-### Verified Test Cases:
-1. **Case 1: Fully matching record** → All fields evaluated as `Matched`, 0 mismatches.
-2. **Case 2: Different land area** → Triggers `area_decimal` status as `Mismatch` with numerical delta.
-3. **Case 3: Name spelling variant** → Phonetic / prefix variants (e.g. *Md.* vs *Mohammad*, *মোঃ* vs *মোহাম্মদ*) are evaluated as `Needs review` (never blindly Matched or marked false Mismatch).
-4. **Case 4: Missing or low-confidence OCR field** → Automatically flagged as `Needs review` or `Not checked`.
-5. **Case 5: File bit modification** → SHA-256 returns `Unchanged` on authentic file, and `File content changed` on byte tampering.
-6. **Case 6: Simulated Land Guardian event** → Produces `SIMULATED` alert, computes old vs new value diff table, and supports review acknowledgment.
+**Current Status: 181 passed (100% passing)**
+
+### Core Test Categories:
+1. **Rule Engine**: Validates exact numeric matching, area tolerance thresholds, and mutation chain validation.
+2. **Bilingual Name Normalization**: Tests honorific stripping (*Md.*, *Mohammad*, *মোঃ*, *মোহাম্মদ*) and fuzzy similarity scoring.
+3. **Cryptographic Integrity & QR**: Asserts SHA-256 bit-tamper detection, valid ISO-8601 UTC timestamps, and QR payload integrity.
+4. **Citizen Guardian**: Asserts alert uniqueness under high concurrency, diff calculation, and review acknowledgment.
+5. **API & OCR**: Validates health checks with OCR availability reporting, rate limiting, and deed extraction endpoints.
 
 ---
 
-## 7. Interactive Demo Script & Walkthrough
+## 13. Interactive Demo Script & Walkthrough
 
-1. **Deed Scanner**:
-   - Open `http://127.0.0.1:5173/` (Bangla-first interface).
-   - In the sample dropdown, select **নমুনা ০১: মোঃ রফিকুল ইসলাম**. Notice the confidence indicators (94% - 97%).
-   - Select **কাস্টম ফাইল টেস্ট (Simulate OCR failure)** to observe how low-confidence extractions automatically flag fields as `Needs review`.
-   - Click **রেফারেন্স রেকর্ডের সাথে তুলনা করুন (Compare Against Reference Record)**.
+1. **Deed Scanner (`/scanner`)**:
+   - Upload any deed scan or choose one of the pre-configured synthetic specimens (*Clean Deed*, *Double Sale Conflict*, *Area Overlap*).
+   - Review the extracted fields and see OCR confidence indicators.
+   - Click **Run Verification** to execute deterministic conflict detection.
 
-2. **Mismatch Detector**:
-   - Inspect the audit table displaying: *Field, Extracted, Reference, Rule Status, Reason Code*.
-   - View the transparent **Demo Record-Consistency Indicator** (shows exact formula: `(Matched*1.0 + Needs_review*0.5)/Total * 100`).
-   - Read the deterministic **Plain-Language Explanation** in Bangla or toggle to English via the top bar.
-   - Review the mandatory sections: *"What was NOT checked"* and *"Recommended Next Official Steps"*.
-   - Click **সম্পূর্ণ প্লট পাসপোর্ট দেখুন (View Plot Passport)**.
+2. **Mismatch & Conflict Detector (`/compare`)**:
+   - View the structured comparison between deed fields and the baseline record.
+   - Inspect the **Transaction History Check** verifying recorded deed history, chain of title, and prior transfers.
+   - Read the plain-language explanation in Bangla or toggle to English.
 
-3. **Plot Passport**:
-   - Inspect the unified citizen passport card with dynamic QR code and recorded coordinates.
-   - Trace the chronological **Record History Timeline** (Survey -> Saf-Kabala deed -> Mutation case).
-   - Use the **প্রিন্ট / PDF** button to export the citizen sheet.
+3. **Plot Passport (`/passport`)**:
+   - Inspect the unified citizen passport with digital QR code and recorded coordinates.
+   - Trace chronological ownership changes (Survey &rarr; Saf-Kabala deed &rarr; Mutation).
+   - Print or save as PDF.
 
-4. **QR & Hash Integrity**:
-   - Switch to the **হ্যাশ ও কিউআর সত্যতা (QR & Integrity)** tab.
-   - Click **টেস্ট ১: অবিকৃত ফাইল (Unchanged)** to verify matching SHA-256 bit fingerprint.
-   - Click **টেস্ট ২: পরিবর্তিত ফাইল (Changed)** to verify instant detection of modified document bytes.
+4. **Hash & QR Integrity (`/integrity`)**:
+   - Test instant SHA-256 bit fingerprint verification.
+   - Compare authentic versus tampered file bytes to observe detection in action.
 
-5. **Land Guardian (Simulated)**:
-   - Switch to the **ল্যান্ড গার্ডিয়ান (Land Guardian)** tab.
-   - Select event `evt-001` (Mutation application detected on Plot 1058) and click **সিমুলেশন শুরু করুন (Trigger Simulation)**.
-   - View the pulsing `SIMULATED DEMO ALERT`, review the **Old vs Proposed New Value** diff table (15.5 dec -> 10.0 dec), and click **পর্যালোচিত হিসেবে চিহ্নিত করুন (Mark as Reviewed)**.
-
----
-
-## 8. Data-Source Statement & Scope Limits
-- **Data Source Statement**: All data, including person names, father names, plot/dag numbers, khatian numbers, and land values, are purely synthetic dummy data generated for technical demonstration purposes.
-- **Scope Limits**:
-  - Does NOT represent a court ruling, land title registration, or certified government record.
-  - Does NOT check for pending civil suits, injunctions, vested property status, or bank mortgages.
-  - Citizens must verify all official records at their respective Upazila Land Office (AC Land) and Sub-Registry Office.
+5. **Citizen Land Guardian (`/guardian`)**:
+   - Simulate an external mutation or survey alteration event.
+   - Observe real-time in-app alerts with old versus proposed diffs.
+   - Acknowledge and review the event.

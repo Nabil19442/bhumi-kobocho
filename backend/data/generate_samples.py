@@ -6,30 +6,50 @@ DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLES_DIR = os.path.join(DATA_DIR, "samples")
 os.makedirs(SAMPLES_DIR, exist_ok=True)
 
+FONTS_DIR = os.path.join(DATA_DIR, "fonts")
+REGULAR_FONT_PATH = os.path.join(FONTS_DIR, "NotoSansBengali-Regular.ttf")
+BOLD_FONT_PATH = os.path.join(FONTS_DIR, "NotoSansBengali-Bold.ttf")
+
 def generate_sample_deed(filename, text_lines):
-    img = Image.new("RGB", (800, 1100), color=(254, 252, 245))
+    # Render at 1240x1754 (A4 @ 150dpi), black text on near-white background
+    img = Image.new("RGB", (1240, 1754), color=(252, 252, 250))
     draw = ImageDraw.Draw(img)
 
-    # Draw border
-    draw.rectangle([20, 20, 780, 1080], outline=(70, 60, 40), width=3)
-    draw.rectangle([28, 28, 772, 1072], outline=(150, 140, 120), width=1)
+    # Load Noto Sans Bengali fonts
+    title_font = ImageFont.truetype(BOLD_FONT_PATH, 38)
+    sub_font = ImageFont.truetype(BOLD_FONT_PATH, 24)
+    body_font = ImageFont.truetype(REGULAR_FONT_PATH, 32)
+    seal_font = ImageFont.truetype(BOLD_FONT_PATH, 26)
+
+    # Draw ornamental border
+    draw.rectangle([40, 40, 1200, 1714], outline=(70, 60, 40), width=4)
+    draw.rectangle([52, 52, 1188, 1702], outline=(150, 140, 120), width=2)
 
     # Header
-    y = 50
-    draw.text((250, y), "গণপ্রজাতন্ত্রী বাংলাদেশ (DEMO DEED)", fill=(30, 70, 32))
-    y += 35
-    draw.text((220, y), "DEMO DATA — NOT A LEGAL VERDICT", fill=(180, 40, 40))
-    y += 40
-    draw.line([50, y, 750, y], fill=(120, 110, 90), width=2)
-    y += 30
+    y = 80
+    header_title = "গণপ্রজাতন্ত্রী বাংলাদেশ (DEMO DEED)"
+    bbox_title = draw.textbbox((0, 0), header_title, font=title_font)
+    title_w = bbox_title[2] - bbox_title[0]
+    draw.text(((1240 - title_w) // 2, y), header_title, font=title_font, fill=(30, 70, 32))
+    
+    y += 55
+    header_sub = "DEMO DATA — NOT A LEGAL VERDICT"
+    bbox_sub = draw.textbbox((0, 0), header_sub, font=sub_font)
+    sub_w = bbox_sub[2] - bbox_sub[0]
+    draw.text(((1240 - sub_w) // 2, y), header_sub, font=sub_font, fill=(180, 40, 40))
+
+    y += 45
+    draw.line([80, y, 1160, y], fill=(120, 110, 90), width=3)
+    y += 50
 
     for line in text_lines:
-        draw.text((60, y), line, fill=(20, 20, 20))
-        y += 32
+        draw.text((90, y), line, font=body_font, fill=(15, 15, 15))
+        y += 65
 
-    # Stamp box
-    draw.rectangle([550, 850, 730, 1030], outline=(180, 40, 40), width=2)
-    draw.text((570, 930), "DEMO SEAL\nBHUMI KOBOCH", fill=(180, 40, 40))
+    # Stamp box (Seal)
+    draw.rectangle([860, 1380, 1140, 1630], outline=(180, 40, 40), width=3)
+    seal_text = "DEMO SEAL\nBHUMI KOBOCH"
+    draw.text((890, 1470), seal_text, font=seal_font, fill=(180, 40, 40))
 
     filepath = os.path.join(SAMPLES_DIR, filename)
     img.save(filepath, "PNG")

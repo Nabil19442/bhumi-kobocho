@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
@@ -166,8 +167,10 @@ def trigger_simulation_event(event_id: str) -> Dict[str, Any]:
     }
     risk_report = generate_guardian_risk_report(sim_deed)
 
+    microsecond_ts = int(datetime.now(timezone.utc).timestamp() * 1_000_000)
+    short_hex = uuid.uuid4().hex[:8]
     alert = {
-        "alert_id": f"alert-{event_id}-{int(datetime.now().timestamp())}",
+        "alert_id": f"alert-{event_id}-{microsecond_ts}-{short_hex}",
         "event_id": event_id,
         "record_id": rec_id,
         "status_label": "SIMULATED",

@@ -12,12 +12,18 @@ def test_case_5_modified_file_hash_check():
     intact_check = check_file_integrity(original_data, expected_hash)
     assert intact_check["status"] == "Unchanged"
     assert intact_check["is_intact"] is True
+    from datetime import datetime
+    parsed_dt = datetime.fromisoformat(intact_check["verified_at"])
+    assert parsed_dt is not None
+    assert parsed_dt.tzinfo is not None
 
     # 2. Test modified
     altered_check = check_file_integrity(modified_data, expected_hash)
     assert altered_check["status"] == "File content changed"
     assert altered_check["is_intact"] is False
     assert altered_check["calculated_sha256"] != expected_hash
+    parsed_altered_dt = datetime.fromisoformat(altered_check["verified_at"])
+    assert parsed_altered_dt is not None
     # Check strict disclaimer adherence
     assert "DEMO DATA — not a legal verdict" in altered_check["disclaimer"]
 
@@ -27,7 +33,7 @@ def test_qr_generation():
         "khatian_no": "412",
         "dag_no": "1058",
         "area_decimal": 15.5,
-        "file_hash_sha256": "07913647653f602004c31fa30728000171f061307ac630c319f7d5cb1b928e47"
+        "file_hash_sha256": "45e014bec467973a4585fb6078178be5a065652f70b81f17d1cfdf4a4bfda7aa"
     }
     qr_b64 = generate_record_qr_base64(dummy_record)
     assert qr_b64.startswith("data:image/png;base64,")
@@ -88,7 +94,7 @@ def test_third_demo_specimen_loading_and_api():
     assert res["extracted_fields"]["dag_no"] == "784"
     assert res["extracted_fields"]["area_decimal"] == "24.0"
     assert res["extracted_fields"]["deed_no"] == "2311/2018"
-    assert res["uploaded_file_sha256"] == "d1d1d5b15349b6d569bc4fe02c23c4fa97b58725bc2db501f0fff57d2974824b"
+    assert res["uploaded_file_sha256"] == "488ee25bb6189920d80dfd24ee637e4855ce6c07882d3a8c1c81587d27d323e1"
 
     # Also test through /api/scan endpoint
     api_res = api_client.post("/api/scan", data={"sample_id": "003"})
@@ -96,7 +102,7 @@ def test_third_demo_specimen_loading_and_api():
     api_data = api_res.json()
     assert api_data["ocr_engine"] == "known_demo_specimen"
     assert api_data["extracted_fields"]["dag_no"] == "784"
-    assert api_data["uploaded_file_sha256"] == "d1d1d5b15349b6d569bc4fe02c23c4fa97b58725bc2db501f0fff57d2974824b"
+    assert api_data["uploaded_file_sha256"] == "488ee25bb6189920d80dfd24ee637e4855ce6c07882d3a8c1c81587d27d323e1"
 
 def test_missing_sample_file_produces_clear_error(monkeypatch):
     """Verify that a missing sample file produces a clear error rather than fabricated data."""
@@ -131,7 +137,7 @@ def test_public_verification_endpoint_success():
     
     # Bit integrity status must be explicitly 'Not checked'
     assert data["file_hash_status"] == "Not checked"
-    assert data["reference_sha256"] == "07913647653f602004c31fa30728000171f061307ac630c319f7d5cb1b928e47"
+    assert data["reference_sha256"] == "45e014bec467973a4585fb6078178be5a065652f70b81f17d1cfdf4a4bfda7aa"
     assert "T" in data["verification_timestamp"]
 
 def test_public_verification_no_sensitive_fields_leaked():

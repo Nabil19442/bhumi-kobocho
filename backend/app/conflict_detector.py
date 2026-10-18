@@ -194,8 +194,8 @@ def detect_conflicts(extracted_deed: Dict[str, Any]) -> Dict[str, Any]:
     ):
         conflict_type = "DUPLICATE_SALE"
         status_badge = "Conflict Detected (Duplicate Sale)"
-        status_label_bn = "উচ্চ ঝুঁকি — সম্ভাব্য দ্বৈত বিক্রয় সতর্কতা"
-        status_label_en = "High Risk — Potential Duplicate Sale Detected"
+        status_label_bn = "অগ্রাধিকার পর্যালোচনা — সম্ভাব্য দ্বৈত বিক্রয় সতর্কতা"
+        status_label_en = "Priority review — Potential Duplicate Sale Detected"
         conflicting_tx = seller_holdings["transfers"][-1] if seller_holdings["transfers"] else (previous_deeds[-1] if previous_deeds else {})
         conflicts.append({
             "code": "DUPLICATE_SALE_DETECTED",
@@ -215,8 +215,8 @@ def detect_conflicts(extracted_deed: Dict[str, Any]) -> Dict[str, Any]:
     ):
         conflict_type = "OVERLAPPING_SALE"
         status_badge = "Conflict Detected (Area Overlap)"
-        status_label_bn = "সতর্কতা — হস্তান্তরিত অংশে জমির পরিমাণের অমিল ও দ্বন্দ্ব"
-        status_label_en = "Warning — Overlapping Land Area Detected"
+        status_label_bn = "অগ্রাধিকার পর্যালোচনা — হস্তান্তরিত অংশে জমির পরিমাণের অমিল"
+        status_label_en = "Priority review — Overlapping Land Area Detected"
         if is_dynamic_area_overlap:
             excess = round(proposed_area - seller_holdings["balance"], 2)
         else:
@@ -225,8 +225,8 @@ def detect_conflicts(extracted_deed: Dict[str, Any]) -> Dict[str, Any]:
         conflicts.append({
             "code": "OVERLAPPING_AREA_DETECTED",
             "severity": "HIGH",
-            "title_bn": "অনুমোদিত সীমার চেয়ে অতিরিক্ত পরিমাণ জমি বিক্রির চেষ্টা",
-            "title_en": "Conveyance Exceeds Seller's Remaining Holding Balance",
+            "title_bn": "অগ্রাধিকার পর্যালোচনা — অবশিষ্ট ব্যালেন্সের চেয়ে অতিরিক্ত পরিমাণ",
+            "title_en": "Priority review — Conveyance Exceeds Remaining Balance",
             "description_bn": f"বিক্রেতার পূর্ববর্তী বিক্রয়ের পর অবশিষ্ট জমির চেয়ে প্রস্তাবিত হস্তান্তরের পরিমাণ {excess:.2f} শতক বেশি।",
             "description_en": f"The transferred area exceeds the seller's available unencumbered balance by approximately {excess:.2f} decimals.",
             "conflicting_deed_no": conflicting_tx.get("deed_no") or (previous_deeds[-1].get("deed_no") if previous_deeds else "PRIOR-TX"),

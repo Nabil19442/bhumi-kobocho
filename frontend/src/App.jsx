@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import LandingHeader from './components/LandingHeader';
 import LandingPage from './pages/LandingPage';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
-import OverviewPage from './pages/OverviewPage';
-import ScannerPage from './pages/ScannerPage';
-import HistoryPage from './pages/HistoryPage';
-import ComparePage from './pages/ComparePage';
-import PassportPage from './pages/PassportPage';
-import ReportsPage from './pages/ReportsPage';
-import GuardianPage from './pages/GuardianPage';
-import IntegrityPage from './pages/IntegrityPage';
-import GraphPage from './pages/GraphPage';
-import VerificationPage from './pages/VerificationPage';
-import LandPricePage from './pages/LandPricePage';
+
+const OverviewPage = lazy(() => import('./pages/OverviewPage'));
+const ScannerPage = lazy(() => import('./pages/ScannerPage'));
+const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const ComparePage = lazy(() => import('./pages/ComparePage'));
+const PassportPage = lazy(() => import('./pages/PassportPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const GuardianPage = lazy(() => import('./pages/GuardianPage'));
+const IntegrityPage = lazy(() => import('./pages/IntegrityPage'));
+const GraphPage = lazy(() => import('./pages/GraphPage'));
+const VerificationPage = lazy(() => import('./pages/VerificationPage'));
+const LandPricePage = lazy(() => import('./pages/LandPricePage'));
 
 import bnTranslations from './i18n/bn.json';
 import enTranslations from './i18n/en.json';
@@ -140,119 +141,131 @@ export default function App() {
 
       {/* Active View / Main Area */}
       <main id="main-content" tabIndex="-1" style={{ flex: 1 }}>
-        {activeTab === 'landing' && (
-          <LandingPage
-            lang={lang}
-            t={t}
-            onStartScanning={() => setActiveTab('scanner')}
-            onStartCompare={() => setActiveTab('compare')}
-            onViewHistory={() => setActiveTab('history')}
-            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
-            onViewIntegrity={() => setActiveTab('integrity')}
-            onViewLandPrice={() => setActiveTab('landprice')}
-            onViewGuardian={() => setActiveTab('guardian')}
-            onViewReports={() => setActiveTab('reports')}
-          />
-        )}
+        <Suspense fallback={
+          <div style={{
+            padding: '60px 24px',
+            textAlign: 'center',
+            color: 'var(--text-muted, #64748B)',
+            fontSize: '0.94rem',
+            fontFamily: 'var(--font-body, system-ui, sans-serif)'
+          }}>
+            <span style={{ fontWeight: 700, color: 'var(--text-main, #1E293B)' }}>লোড হচ্ছে...</span> / Loading...
+          </div>
+        }>
+          {activeTab === 'landing' && (
+            <LandingPage
+              lang={lang}
+              t={t}
+              onStartScanning={() => setActiveTab('scanner')}
+              onStartCompare={() => setActiveTab('compare')}
+              onViewHistory={() => setActiveTab('history')}
+              onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
+              onViewIntegrity={() => setActiveTab('integrity')}
+              onViewLandPrice={() => setActiveTab('landprice')}
+              onViewGuardian={() => setActiveTab('guardian')}
+              onViewReports={() => setActiveTab('reports')}
+            />
+          )}
 
-        {activeTab === 'overview' && (
-          <OverviewPage
-            t={t}
-            lang={lang}
-            onNavigate={(tab) => setActiveTab(tab)}
-          />
-        )}
+          {activeTab === 'overview' && (
+            <OverviewPage
+              t={t}
+              lang={lang}
+              onNavigate={(tab) => setActiveTab(tab)}
+            />
+          )}
 
-        {activeTab === 'scanner' && (
-          <ScannerPage
-            t={t}
-            lang={lang}
-            setSharedExtractedData={setSharedExtractedData}
-            onProceedToCompare={handleProceedToCompare}
-            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
-          />
-        )}
+          {activeTab === 'scanner' && (
+            <ScannerPage
+              t={t}
+              lang={lang}
+              setSharedExtractedData={setSharedExtractedData}
+              onProceedToCompare={handleProceedToCompare}
+              onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
+            />
+          )}
 
-        {activeTab === 'history' && (
-          <HistoryPage
-            t={t}
-            lang={lang}
-            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
-          />
-        )}
+          {activeTab === 'history' && (
+            <HistoryPage
+              t={t}
+              lang={lang}
+              onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
+            />
+          )}
 
-        {activeTab === 'compare' && (
-          <ComparePage
-            t={t}
-            lang={lang}
-            sharedExtractedData={sharedExtractedData}
-            onViewPassport={handleViewPassport}
-            onComparisonUpdated={setLatestComparisonResult}
-          />
-        )}
+          {activeTab === 'compare' && (
+            <ComparePage
+              t={t}
+              lang={lang}
+              sharedExtractedData={sharedExtractedData}
+              onViewPassport={handleViewPassport}
+              onComparisonUpdated={setLatestComparisonResult}
+            />
+          )}
 
-        {activeTab === 'passport' && (
-          <PassportPage
-            t={t}
-            lang={lang}
-            selectedPlotId={selectedPlotId}
-            sharedExtractedData={sharedExtractedData}
-            comparisonResult={latestComparisonResult}
-            onViewGraph={handleViewGraph}
-          />
-        )}
+          {activeTab === 'passport' && (
+            <PassportPage
+              t={t}
+              lang={lang}
+              selectedPlotId={selectedPlotId}
+              sharedExtractedData={sharedExtractedData}
+              comparisonResult={latestComparisonResult}
+              onViewGraph={handleViewGraph}
+            />
+          )}
 
-        {activeTab === 'guardian' && (
-          <GuardianPage
-            t={t}
-            lang={lang}
-          />
-        )}
+          {activeTab === 'guardian' && (
+            <GuardianPage
+              t={t}
+              lang={lang}
+            />
+          )}
 
-        {activeTab === 'reports' && (
-          <ReportsPage
-            t={t}
-            lang={lang}
-            onStartScanning={() => setActiveTab('scanner')}
-            onNavigate={(tab) => setActiveTab(tab)}
-            onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
-          />
-        )}
+          {activeTab === 'reports' && (
+            <ReportsPage
+              t={t}
+              lang={lang}
+              onStartScanning={() => setActiveTab('scanner')}
+              onNavigate={(tab) => setActiveTab(tab)}
+              onViewPassport={(id) => handleViewPassport(id || 'PCL-DHK-GUL-015-0550')}
+            />
+          )}
 
-        {activeTab === 'graph' && (
-          <GraphPage
-            t={t}
-            lang={lang}
-            initialRecordId={selectedPlotId}
-            onSelectRecord={(id) => setSelectedPlotId(id)}
-            onViewPassport={handleViewPassport}
-          />
-        )}
+          {activeTab === 'graph' && (
+            <GraphPage
+              t={t}
+              lang={lang}
+              initialRecordId={selectedPlotId}
+              onSelectRecord={(id) => setSelectedPlotId(id)}
+              onViewPassport={handleViewPassport}
+            />
+          )}
 
-        {activeTab === 'integrity' && (
-          <IntegrityPage
-            t={t}
-            lang={lang}
-            onOpenVerification={handleOpenVerification}
-          />
-        )}
+          {activeTab === 'integrity' && (
+            <IntegrityPage
+              t={t}
+              lang={lang}
+              onOpenVerification={handleOpenVerification}
+            />
+          )}
 
-        {activeTab === 'verify' && (
-          <VerificationPage
-            recordId={verifyRecordId || selectedPlotId}
-            lang={lang}
-            onBackToApp={handleReturnFromVerification}
-            onViewPassport={handleViewPassport}
-            onViewGraph={handleViewGraph}
-          />
-        )}
+          {activeTab === 'verify' && (
+            <VerificationPage
+              recordId={verifyRecordId || selectedPlotId}
+              lang={lang}
+              onBackToApp={handleReturnFromVerification}
+              onViewPassport={handleViewPassport}
+              onViewGraph={handleViewGraph}
+            />
+          )}
 
-        {activeTab === 'landprice' && (
-          <LandPricePage
-            t={t}
-            lang={lang}
-          />
-        )}
+          {activeTab === 'landprice' && (
+            <LandPricePage
+              t={t}
+              lang={lang}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Accessible Cadastral Footer for App Pages */}
