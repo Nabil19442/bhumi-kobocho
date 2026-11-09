@@ -52,6 +52,7 @@ from .ocr import (
     scan_document_bytes,
     is_tesseract_available
 )
+from .adapters import get_record_source
 from .check_land import check_land
 from .graph import build_relationship_graph, build_parcel_graph
 from .conflict_detector import detect_conflicts
@@ -558,13 +559,16 @@ def search_land_history(
     parcel_id: Optional[str] = Query(None)
 ):
     """Searches synthetic transaction history by Dag, Khatian, Mouza, Deed, or Parcel ID."""
-    records = find_history_for_deed(
-        dag_no=dag_no,
-        khatian_no=khatian_no,
-        mouza=mouza,
-        deed_no=deed_no,
-        parcel_id=parcel_id
-    )
+    source = get_record_source()
+    if parcel_id:
+        records = source.get_history(parcel_id)
+    else:
+        records = source.search(
+            dag_no=dag_no,
+            khatian_no=khatian_no,
+            mouza=mouza,
+            deed_no=deed_no
+        )
     if not records:
         return {
             "has_history": False,
@@ -581,7 +585,7 @@ def search_land_history(
 @app.get("/api/history/parcel/{parcel_id}")
 def get_parcel_history(parcel_id: str):
     """Returns chronological transaction history for a specific parcel ID."""
-    transactions = get_parcel_by_id(parcel_id)
+    transactions = get_record_source().get_history(parcel_id)
     if not transactions:
         return {
             "found": False,

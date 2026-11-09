@@ -19,21 +19,13 @@ from typing import Dict, Any, List, Optional, Tuple
 import re
 
 try:
-    from .transaction_registry import (
-        find_history_for_deed,
-        get_parcel_by_id,
-        normalize_digits
-    )
+    from .adapters import get_record_source
+    from .transaction_registry import normalize_digits
     from .conflict_detector import parse_decimal_value
-    from .case_registry import get_cases_for_parcel
 except ImportError:
-    from backend.app.transaction_registry import (
-        find_history_for_deed,
-        get_parcel_by_id,
-        normalize_digits
-    )
+    from backend.app.adapters import get_record_source
+    from backend.app.transaction_registry import normalize_digits
     from backend.app.conflict_detector import parse_decimal_value
-    from backend.app.case_registry import get_cases_for_parcel
 
 NOT_CHECKED_DEFAULT = [
     "লাইভ দেওয়ানি আদালত রেকর্ড ও স্থগিতাদেশ (Live Civil Court Records & Injunctions)",
@@ -182,14 +174,17 @@ def check_land(
     deed_no = normalize_digits(extracted_data.get("deed_no"))
     parcel_id = extracted_data.get("parcel_id")
 
-    # Locate parcel by mouza + khatian + dag, fallback deed_no
-    history = find_history_for_deed(
-        dag_no=dag_no,
-        khatian_no=khatian_no,
-        mouza=mouza,
-        deed_no=deed_no,
-        parcel_id=parcel_id
-    )
+    # Locate parcel via data adapter layer
+    source = get_record_source()
+    if parcel_id:
+        history = source.get_history(parcel_id)
+    else:
+        history = source.search(
+            dag_no=dag_no,
+            khatian_no=khatian_no,
+            mouza=mouza,
+            deed_no=deed_no
+        )
 
     if not history:
         return {
@@ -208,7 +203,7 @@ def check_land(
     # Parcel identified
     first_record = history[0]
     matched_parcel_id = first_record.get("parcel_id")
-    complete_history = get_parcel_by_id(matched_parcel_id) or history
+    complete_history = source.get_history(matched_parcel_id) or history
 
     parcel = {
         "parcel_id": matched_parcel_id,
@@ -220,7 +215,7 @@ def check_land(
     }
 
     ownership_history, transactions = build_ownership_and_transactions(complete_history)
-    cases = get_cases_for_parcel(matched_parcel_id)
+    cases = source.get_cases(matched_parcel_id)
 
     return {
         "status": "found",
