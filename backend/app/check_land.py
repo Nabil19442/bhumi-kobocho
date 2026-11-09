@@ -15,7 +15,7 @@ HARD RULES:
 - All case records carry is_synthetic=True.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import re
 
 try:
