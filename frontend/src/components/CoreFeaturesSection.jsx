@@ -1,6 +1,5 @@
 import React from 'react';
-import bnTranslations from '../i18n/bn.json';
-import enTranslations from '../i18n/en.json';
+import { createTranslator } from '../i18n/translate';
 
 /**
  * CoreFeaturesSection ("যা যা পাবেন / What you get")
@@ -16,10 +15,7 @@ export default function CoreFeaturesSection({
   onViewPassport,
   onViewGuardian
 }) {
-  const t = (key) => {
-    const dict = lang === 'bn' ? bnTranslations : enTranslations;
-    return dict[key] || bnTranslations[key] || key;
-  };
+  const t = createTranslator(lang);
 
   const cards = [
     {

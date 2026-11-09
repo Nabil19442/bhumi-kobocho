@@ -2,8 +2,7 @@ import React from 'react';
 import LandingHero from '../components/LandingHero';
 import CoreFeaturesSection from '../components/CoreFeaturesSection';
 import LandingFooter from '../components/LandingFooter';
-import bnTranslations from '../i18n/bn.json';
-import enTranslations from '../i18n/en.json';
+import { createTranslator } from '../i18n/translate';
 
 /**
  * LandingPage
@@ -17,10 +16,7 @@ export default function LandingPage({
   onStartWalkthrough
 }) {
   const isBn = lang === 'bn';
-  const t = (key) => {
-    const dict = isBn ? bnTranslations : enTranslations;
-    return dict[key] || bnTranslations[key] || key;
-  };
+  const t = createTranslator(lang);
 
   return (
     <div 

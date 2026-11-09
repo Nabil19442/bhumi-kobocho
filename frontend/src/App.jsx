@@ -20,6 +20,7 @@ const LandPricePage = lazy(() => import('./pages/LandPricePage'));
 
 import bnTranslations from './i18n/bn.json';
 import enTranslations from './i18n/en.json';
+import { getDictionaryWithDevWarnings } from './i18n/translate';
 
 function PassportRouteWrapper({ t, lang, sharedExtractedData, comparisonResult, onViewGraph }) {
   const { id } = useParams();
@@ -62,7 +63,8 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const t = lang === 'bn' ? bnTranslations : enTranslations;
+  const rawTranslations = lang === 'bn' ? bnTranslations : enTranslations;
+  const t = getDictionaryWithDevWarnings(rawTranslations, lang);
 
   // Track online/offline status for PWA support
   useEffect(() => {

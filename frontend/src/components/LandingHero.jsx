@@ -1,6 +1,5 @@
 import React from 'react';
-import bnTranslations from '../i18n/bn.json';
-import enTranslations from '../i18n/en.json';
+import { createTranslator } from '../i18n/translate';
 
 /**
  * LandingHero
@@ -19,10 +18,7 @@ export default function LandingHero({
   lang = 'bn',
   onStartScanning
 }) {
-  const t = (key) => {
-    const dict = lang === 'bn' ? bnTranslations : enTranslations;
-    return dict[key] || bnTranslations[key] || key;
-  };
+  const t = createTranslator(lang);
   const isBn = lang === 'bn';
 
   return (

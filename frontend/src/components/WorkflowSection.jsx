@@ -11,8 +11,7 @@ import {
   FileCheck2,
   ChevronRight
 } from 'lucide-react';
-import bnTranslations from '../i18n/bn.json';
-import enTranslations from '../i18n/en.json';
+import { createTranslator } from '../i18n/translate';
 
 /**
  * WorkflowSection: Land Information Flow
@@ -24,10 +23,7 @@ import enTranslations from '../i18n/en.json';
  * 4 See the experimental price and next official steps
  */
 export default function WorkflowSection({ lang = 'bn', onStartScanning }) {
-  const t = (key) => {
-    const dict = lang === 'bn' ? bnTranslations : enTranslations;
-    return dict[key] || bnTranslations[key] || key;
-  };
+  const t = createTranslator(lang);
   const isBn = lang === 'bn';
   const [activeStep, setActiveStep] = useState(0);
 

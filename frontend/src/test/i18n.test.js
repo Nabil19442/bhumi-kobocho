@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import bnTranslations from '../i18n/bn.json';
 import enTranslations from '../i18n/en.json';
+import { translate, createTranslator } from '../i18n/translate';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const srcDir = path.resolve(__dirname, '..');
 
 describe('i18n Parity & Content Safety', () => {
   it('has identical keys between bn.json and en.json', () => {
@@ -54,5 +62,90 @@ describe('i18n Parity & Content Safety', () => {
 
     checkDictionary(bnTranslations, 'bn');
     checkDictionary(enTranslations, 'en');
+  });
+
+  it('statically extracts all translation keys in src and verifies they exist in both bn.json and en.json', () => {
+    function getSourceFiles(dir) {
+      let results = [];
+      const list = fs.readdirSync(dir);
+      list.forEach((file) => {
+        const fullPath = path.join(dir, file);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+          // Skip test folder and node_modules
+          if (file !== 'test' && file !== 'node_modules' && file !== 'styles') {
+            results = results.concat(getSourceFiles(fullPath));
+          }
+        } else if (file.endsWith('.jsx') || file.endsWith('.js')) {
+          results.push(fullPath);
+        }
+      });
+      return results;
+    }
+
+    const files = getSourceFiles(srcDir);
+    const bnKeys = new Set(Object.keys(bnTranslations));
+    const enKeys = new Set(Object.keys(enTranslations));
+
+    const tCallRegex = /\bt\(\s*['"]([a-zA-Z0-9_\-]+)['"]\s*\)/g;
+    const tPropRegex = /\bt\.([a-zA-Z0-9_]+)\b/g;
+    const tBracketRegex = /\bt\[\s*['"]([a-zA-Z0-9_\-]+)['"]\s*\]/g;
+
+    const ignoredProps = new Set([
+      'target', 'type', 'title', 'timestamp', 'trim', 'toLowerCase', 'toUpperCase', 'time',
+      'total', 'test', 'text', 'then', 'top', 'toString', 'length', 'split', 'replace',
+      'join', 'filter', 'map', 'some', 'every', 'includes', 'indexOf', 'slice', 'substr', 'substring'
+    ]);
+
+    const missingInBn = [];
+    const missingInEn = [];
+
+    files.forEach((file) => {
+      const rawContent = fs.readFileSync(file, 'utf8');
+      // Strip JavaScript comments so comments describing t.some_key are not treated as code
+      const content = rawContent.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+      const relativePath = path.relative(srcDir, file);
+
+      let match;
+      while ((match = tCallRegex.exec(content)) !== null) {
+        const key = match[1];
+        if (!bnKeys.has(key)) missingInBn.push({ key, file: relativePath });
+        if (!enKeys.has(key)) missingInEn.push({ key, file: relativePath });
+      }
+
+      while ((match = tPropRegex.exec(content)) !== null) {
+        const key = match[1];
+        if (!ignoredProps.has(key)) {
+          if (!bnKeys.has(key)) missingInBn.push({ key, file: relativePath });
+          if (!enKeys.has(key)) missingInEn.push({ key, file: relativePath });
+        }
+      }
+
+      while ((match = tBracketRegex.exec(content)) !== null) {
+        const key = match[1];
+        if (!bnKeys.has(key)) missingInBn.push({ key, file: relativePath });
+        if (!enKeys.has(key)) missingInEn.push({ key, file: relativePath });
+      }
+    });
+
+    expect(missingInBn, `Keys used in src but missing in bn.json: ${JSON.stringify(missingInBn, null, 2)}`).toHaveLength(0);
+    expect(missingInEn, `Keys used in src but missing in en.json: ${JSON.stringify(missingInEn, null, 2)}`).toHaveLength(0);
+  });
+
+  it('logs console.warn in dev when a key is missing in translation helper', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const missingResult = translate('completely_non_existent_key_12345', 'bn');
+    expect(missingResult).toBe('completely_non_existent_key_12345');
+    expect(warnSpy).toHaveBeenCalled();
+
+    const tHelper = createTranslator('en');
+    const helperResult = tHelper('another_missing_key_67890');
+    expect(helperResult).toBe('another_missing_key_67890');
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[i18n warning] Missing translation key: "another_missing_key_67890"')
+    );
+
+    warnSpy.mockRestore();
   });
 });

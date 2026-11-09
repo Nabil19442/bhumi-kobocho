@@ -206,5 +206,11 @@
   "walkthrough_exit": "Exit Walkthrough ✕",
   "walkthrough_badge": "Judge Demo Walkthrough",
   "offline_badge": "Offline Mode",
-  "offline_notice": "You are currently offline. Displaying cached data. DEMO DATA — not a legal verdict."
+  "offline_notice": "You are currently offline. Displaying cached data. DEMO DATA — not a legal verdict.",
+  "landing_features_title": "Key Capabilities",
+  "landing_features_subtitle": "3 primary verification and registry monitoring services for citizens",
+  "landing_card_view_btn": "Explore",
+  "landing_scope_banner_quote": "This is a Demonstration Prototype",
+  "landing_scope_banner_desc": "All data is simulated. Not a legal verdict or proof of title — DEMO DATA.",
+  "landing_final_cta_desc": "Verify records before purchasing any parcel or monitor your owned plots to stay aware of potential discrepancies."
 }
