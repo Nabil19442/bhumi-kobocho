@@ -5,16 +5,14 @@ import enTranslations from '../i18n/en.json';
 /**
  * CoreFeaturesSection ("যা যা পাবেন / What you get")
  * 
- * 4 Core Feature Cards (Accessible buttons):
+ * 3 Primary Feature Cards (Accessible buttons):
  * 1. Check a deed (দলিল যাচাই) -> onStartScanning
- * 2. Land price analysis (জমির দাম বিশ্লেষণ) [ML · Experimental badge] -> onViewLandPrice
- * 3. Plot Passport (প্লট পাসপোর্ট) -> onViewPassport
- * 4. Land Guardian (ল্যান্ড গার্ডিয়ান) -> onViewGuardian
+ * 2. Plot Passport (প্লট পাসপোর্ট) -> onViewPassport
+ * 3. Land Guardian (ল্যান্ড গার্ডিয়ান) -> onViewGuardian
  */
 export default function CoreFeaturesSection({
   lang = 'bn',
   onStartScanning,
-  onViewLandPrice,
   onViewPassport,
   onViewGuardian
 }) {
@@ -30,13 +28,6 @@ export default function CoreFeaturesSection({
       badge: null,
       desc: t('landing_card_check_desc'),
       onClick: onStartScanning
-    },
-    {
-      id: 'land-price',
-      title: t('landing_card_price_title'),
-      badge: t('landing_card_price_badge'),
-      desc: t('landing_card_price_desc'),
-      onClick: onViewLandPrice
     },
     {
       id: 'plot-passport',
@@ -69,114 +60,144 @@ export default function CoreFeaturesSection({
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '72px 24px',
+          padding: '60px 24px 70px',
           boxSizing: 'border-box'
         }}
       >
-        {/* Section Heading */}
-        <h2 
-          style={{
-            fontFamily: "'Anek Bangla', system-ui, sans-serif",
-            fontWeight: 800,
-            fontSize: 'clamp(28px, 4vw, 40px)',
-            margin: '0 0 34px',
-            textAlign: 'center',
-            letterSpacing: '-0.5px'
-          }}
-        >
-          {t('landing_what_you_get')}
-        </h2>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h2 
+            style={{
+              fontFamily: "'Anek Bangla', system-ui, sans-serif",
+              fontWeight: 800,
+              fontSize: 'clamp(32px, 4vw, 44px)',
+              letterSpacing: '-0.5px',
+              margin: '0 0 10px',
+              color: '#0D2B2E'
+            }}
+          >
+            {t('landing_features_title')}
+          </h2>
+          <p 
+            style={{
+              fontSize: '18px',
+              color: '#556A64',
+              margin: 0
+            }}
+          >
+            {t('landing_features_subtitle')}
+          </p>
+        </div>
 
-        {/* 4 Feature Cards Grid */}
+        {/* 3 Primary Feature Cards Grid */}
         <div 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '18px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '24px'
           }}
         >
           {cards.map((card) => (
             <button
               key={card.id}
               type="button"
-              className="ref-feature-card"
+              id={`feature-card-${card.id}`}
               onClick={card.onClick}
               style={{
+                background: '#FFFFFF',
+                borderRadius: '24px',
+                padding: '32px 28px',
+                textAlign: 'left',
+                border: '1px solid #D6E3DE',
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.04)',
+                cursor: 'pointer',
+                fontFamily: "'Hind Siliguri', system-ui, sans-serif",
+                color: '#10272A',
                 display: 'flex',
                 flexDirection: 'column',
-                textAlign: 'left',
-                background: '#FFFFFF',
-                border: '1.5px solid #CBD8D2',
-                borderRadius: '18px',
-                padding: '26px',
-                cursor: 'pointer',
-                minHeight: '44px',
-                width: '100%',
-                boxSizing: 'border-box',
-                fontFamily: "'Hind Siliguri', system-ui, sans-serif",
-                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                outline: 'none'
+                justifyContent: 'space-between',
+                minHeight: '220px',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+                boxSizing: 'border-box'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.borderColor = '#005A5B';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.04)';
+                e.currentTarget.style.borderColor = '#D6E3DE';
               }}
             >
-              <div 
-                style={{
-                  fontFamily: "'Anek Bangla', system-ui, sans-serif",
-                  fontWeight: 700,
-                  fontSize: '22px',
-                  color: '#10272A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  width: '100%'
-                }}
-              >
-                <span>{card.title}</span>
-                {card.badge && (
-                  <span 
+              <div>
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    marginBottom: '14px' 
+                  }}
+                >
+                  <h3 
                     style={{
-                      fontSize: '11px',
-                      background: '#E6F4EA',
-                      color: '#137333',
+                      fontFamily: "'Anek Bangla', system-ui, sans-serif",
                       fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      fontFamily: "'Hind Siliguri', system-ui, sans-serif",
-                      whiteSpace: 'nowrap'
+                      fontSize: '22px',
+                      margin: 0,
+                      color: '#0D2B2E',
+                      lineHeight: 1.25
                     }}
                   >
-                    {card.badge}
-                  </span>
-                )}
+                    {card.title}
+                  </h3>
+                  {card.badge && (
+                    <span 
+                      style={{
+                        background: '#FEF3C7',
+                        color: '#92400E',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        letterSpacing: '0.3px',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {card.badge}
+                    </span>
+                  )}
+                </div>
+                <p 
+                  style={{
+                    fontSize: '15px',
+                    lineHeight: 1.6,
+                    color: '#556A64',
+                    margin: 0
+                  }}
+                >
+                  {card.desc}
+                </p>
               </div>
-              <div 
+
+              <span 
                 style={{
-                  fontSize: '16px',
-                  lineHeight: 1.6,
-                  color: '#2D4649',
-                  marginTop: '8px'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  color: '#005A5B',
+                  marginTop: '20px'
                 }}
               >
-                {card.desc}
-              </div>
+                {t('landing_card_view_btn')} →
+              </span>
             </button>
           ))}
         </div>
       </div>
-
-      {/* Feature Card Hover and Accessible Focus Effects */}
-      <style>{`
-        .ref-feature-card:hover {
-          transform: translateY(-4px) !important;
-          border-color: #B7DFCA !important;
-          box-shadow: 0 12px 28px rgba(16, 39, 42, 0.08) !important;
-        }
-        .ref-feature-card:focus-visible {
-          outline: 2px solid #0D2B2E !important;
-          outline-offset: 3px !important;
-          border-color: #0D2B2E !important;
-        }
-      `}</style>
     </div>
   );
 }

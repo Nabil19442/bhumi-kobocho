@@ -322,9 +322,14 @@ def generate_markdown_report(report_data: Dict[str, Any], output_path: Any):
     md = f"""# Rural Land Price Intelligence — Machine Learning Evaluation Report
 
 > [!WARNING]
-> **SYNTHETIC DATA — NOT REAL MARKET VALIDATION**
+> **SYNTHETIC DATA & EXPERIMENTAL DEMO ONLY — NOT REAL MARKET VALUATION**
 > All metrics and evaluations describe synthetic mathematical simulation models only.
-> These results do not establish real-world price accuracy in Bangladesh land markets.
+> **Critical Methodological Caveat**: The reported $R^2 \\approx 0.97$ measures goodness-of-fit
+> purely against our own synthetic hedonic generator equations (`data_generator.py`),
+> NOT accuracy in real Bangladesh commercial land markets. Unrecorded real-world dynamics
+> (litigation, local syndicates, coercive distress sales, informal unrecorded payments)
+> would significantly reduce empirical $R^2$ in production. This module is maintained solely
+> as an experimental technological demonstration under "More / Experimental".
 
 ---
 

@@ -1,28 +1,26 @@
 import React from 'react';
 import LandingHero from '../components/LandingHero';
 import CoreFeaturesSection from '../components/CoreFeaturesSection';
-import LandPricePreviewSection from '../components/LandPricePreviewSection';
+import LandingFooter from '../components/LandingFooter';
+import bnTranslations from '../i18n/bn.json';
+import enTranslations from '../i18n/en.json';
 
 /**
  * LandingPage
- * 
- * Complete Option C Reference Design:
- * 1. Hero: Dark #0D2B2E background with headline, description, primary CTA and rotated specimen deed
- * 2. Features Section (#c): Light curved container (#F1F5F0) with "যা যা পাবেন" and 4 accessible feature cards
- * 3. Rural Land Price Preview Section
- * 4. Scope / Philosophy Banner (#d): "নিয়ম সিদ্ধান্ত নেয়, এআই শুধু ব্যাখ্যা করে"
- * 5. Final CTA: "এখনই শুরু করুন →"
- * 6. Hackathon Footer: Team ZENOX · LandTech Innovation Hackathon 2026
+ * Primary citizen flow: Check Before You Buy -> Plot Passport -> Land Guardian
  */
 export default function LandingPage({
   lang = 'bn',
   onStartScanning,
-  onStartCompare,
   onViewPassport,
   onViewGuardian,
-  onViewLandPrice
+  onStartWalkthrough
 }) {
   const isBn = lang === 'bn';
+  const t = (key) => {
+    const dict = isBn ? bnTranslations : enTranslations;
+    return dict[key] || bnTranslations[key] || key;
+  };
 
   return (
     <div 
@@ -41,11 +39,38 @@ export default function LandingPage({
         onStartScanning={onStartScanning}
       />
 
+      {/* Optional Walkthrough Banner */}
+      {onStartWalkthrough && (
+        <div style={{ background: '#092123', padding: '12px 24px', textAlign: 'center', borderTop: '1px solid #1A3E42' }}>
+          <button
+            type="button"
+            id="demo-walkthrough-btn"
+            onClick={onStartWalkthrough}
+            style={{
+              background: '#005A5B',
+              color: '#FFFFFF',
+              border: '1px solid #B7DFCA',
+              borderRadius: '20px',
+              padding: '8px 20px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>🎯</span>
+            <span>{isBn ? 'বিচারক ও পরীক্ষকদের জন্য নির্দেশিত ডেমো ওয়াকথ্রু (Demo Walkthrough)' : 'Guided Judge & Evaluator Demo Walkthrough'}</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. Curved Light Features Container (#c) */}
       <CoreFeaturesSection
         lang={lang}
         onStartScanning={onStartScanning}
-        onViewLandPrice={onViewLandPrice}
         onViewPassport={onViewPassport}
         onViewGuardian={onViewGuardian}
       />
@@ -58,13 +83,7 @@ export default function LandingPage({
           zIndex: 2
         }}
       >
-        {/* 3. Rural Land Price Intelligence Preview Section */}
-        <LandPricePreviewSection
-          lang={lang}
-          onViewLandPrice={onViewLandPrice}
-        />
-
-        {/* 4. Dark Philosophy / Scope Box Banner (#d) */}
+        {/* 3. Dark Philosophy / Scope Box Banner (#d) */}
         <div 
           id="d"
           style={{
@@ -88,89 +107,85 @@ export default function LandingPage({
               letterSpacing: '-0.3px'
             }}
           >
-            {isBn ? 'নিয়ম সিদ্ধান্ত নেয়, এআই শুধু ব্যাখ্যা করে' : 'Rules decide, AI only explains'}
+            {t('landing_scope_banner_quote')}
           </div>
-          <div 
+          <p 
             style={{
               fontSize: '16px',
-              color: '#B7C9C3',
-              marginTop: '8px',
-              lineHeight: 1.6
+              lineHeight: 1.6,
+              color: '#B7DFCA',
+              maxWidth: '680px',
+              margin: '12px auto 0'
             }}
           >
-            {isBn
-              ? 'প্রদর্শিত তথ্য জমি বোঝার জন্য প্রাথমিক সংকেত, আদালতের আইনি রায় বা জালিয়াতির প্রমাণ নয়।'
-              : 'Displayed information helps you understand the land, not a court verdict or proof of fraud.'}
-          </div>
+            {t('landing_scope_banner_desc')}
+          </p>
         </div>
 
-        {/* 4. Final CTA Button */}
-        <div style={{ padding: '50px 24px 56px', textAlign: 'center' }}>
+        {/* 4. Final CTA Section */}
+        <div 
+          style={{
+            textAlign: 'center',
+            padding: '70px 24px 80px',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}
+        >
+          <h2 
+            style={{
+              fontFamily: "'Anek Bangla', system-ui, sans-serif",
+              fontWeight: 800,
+              fontSize: 'clamp(28px, 3.6vw, 40px)',
+              margin: '0 0 16px',
+              color: '#0D2B2E'
+            }}
+          >
+            {t('landing_final_cta_heading')}
+          </h2>
+          <p 
+            style={{
+              fontSize: '17px',
+              color: '#556A64',
+              lineHeight: 1.6,
+              margin: '0 0 32px'
+            }}
+          >
+            {t('landing_final_cta_desc')}
+          </p>
           <button
             type="button"
-            id="landing-final-cta"
+            id="landing-bottom-cta"
             onClick={onStartScanning}
             style={{
               display: 'inline-block',
-              background: '#10272A',
+              background: '#005A5B',
               color: '#FFFFFF',
-              padding: '18px 34px',
+              padding: '16px 36px',
               borderRadius: '14px',
               fontWeight: 700,
-              fontSize: '18px',
-              fontFamily: "'Hind Siliguri', system-ui, sans-serif",
+              fontSize: '17px',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 39, 42, 0.2)',
-              transition: 'transform 0.15s ease, background 0.15s ease'
+              fontFamily: "'Hind Siliguri', system-ui, sans-serif",
+              boxShadow: '0 4px 14px rgba(0, 90, 91, 0.25)',
+              transition: 'background 0.15s ease, transform 0.15s ease'
             }}
             onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#004849';
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.background = '#1A3F44';
             }}
             onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#005A5B';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.background = '#10272A';
             }}
           >
-            {isBn ? 'এখনই শুরু করুন →' : 'Get Started Now →'}
+            {t('landing_final_cta_btn')}
           </button>
         </div>
-
-        {/* 5. Hackathon Footer */}
-        <footer 
-          style={{
-            background: '#10272A',
-            color: '#B7C9C3',
-            padding: '24px',
-            textAlign: 'center',
-            fontSize: '13px',
-            lineHeight: 1.7,
-            fontFamily: "'Hind Siliguri', system-ui, sans-serif"
-          }}
-        >
-          {isBn ? (
-            <>
-              ডেমো ডেটা: আইনি রায় নয়। সব নাম, দলিল ও খতিয়ান কাল্পনিক。<br />
-              Team ZENOX · LandTech Innovation Hackathon 2026
-            </>
-          ) : (
-            <>
-              Demo data: Not a legal verdict. All names, deeds, and khatians are fictitious.<br />
-              Team ZENOX · LandTech Innovation Hackathon 2026
-            </>
-          )}
-        </footer>
       </div>
 
-      {/* Feature Card Hover Effects */}
-      <style>{`
-        .ref-feature-card:hover {
-          transform: translateY(-4px) !important;
-          border-color: #B7DFCA !important;
-          box-shadow: 0 12px 28px rgba(16, 39, 42, 0.08) !important;
-        }
-      `}</style>
+      {/* 5. Hackathon Footer with Team ZENOX */}
+      <LandingFooter lang={lang} />
     </div>
   );
 }

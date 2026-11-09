@@ -34,19 +34,19 @@ export default function Navigation({ activeTab, setActiveTab, t }) {
   const primaryItems = [
     { id: 'landing', label: isBn ? 'হোম পেজ' : 'Home', icon: Home },
     { id: 'check', label: t.nav_check || (isBn ? 'জমি যাচাই' : 'Check Land'), icon: Search },
-    { id: 'landprice', label: t.nav_landprice || (isBn ? 'জমির মূল্য' : 'Land Price'), icon: TrendingUp, badge: 'ML' },
+    { id: 'passport', label: t.nav_passport || (isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'), icon: FileBadge },
     { id: 'guardian', label: t.nav_guardian || (isBn ? 'ল্যান্ড গার্ডিয়ান' : 'Land Guardian'), icon: ShieldAlert, badge: 'DEMO' },
-    { id: 'integrity', label: t.nav_integrity || (isBn ? 'হ্যাশ ও কিউআর' : 'QR & Hash'), icon: QrCode },
   ];
 
   const moreItems = [
-    { id: 'overview', label: t.nav_overview || (isBn ? 'ওভারভিউ' : 'Overview'), icon: LayoutDashboard },
-    { id: 'history', label: t.nav_history || (isBn ? 'লেনদেনের ইতিহাস' : 'History'), icon: History },
-    { id: 'scanner', label: t.nav_scanner || (isBn ? 'দলিল স্ক্যানার' : 'Deed Scanner'), icon: ScanText },
     { id: 'compare', label: t.nav_compare || (isBn ? 'অসঙ্গতি নিরীক্ষা' : 'Compare'), icon: GitCompare },
-    { id: 'passport', label: t.nav_passport || (isBn ? 'প্লট পাসপোর্ট' : 'Plot Passport'), icon: FileBadge },
+    { id: 'history', label: t.nav_history || (isBn ? 'লেনদেনের ইতিহাস' : 'History'), icon: History },
+    { id: 'integrity', label: t.nav_integrity || (isBn ? 'হ্যাশ ও কিউআর' : 'QR & Hash'), icon: QrCode },
+    { id: 'scanner', label: t.nav_scanner || (isBn ? 'দলিল স্ক্যানার' : 'Deed Scanner'), icon: ScanText },
     { id: 'reports', label: t.nav_reports || (isBn ? 'যাচাই প্রতিবেদন' : 'Reports'), icon: ClipboardCheck },
     { id: 'graph', label: t.nav_graph || (isBn ? 'সম্পর্ক গ্রাফ' : 'Graph'), icon: Network },
+    { id: 'overview', label: t.nav_overview || (isBn ? 'ওভারভিউ' : 'Overview'), icon: LayoutDashboard },
+    { id: 'landprice', label: t.nav_landprice || (isBn ? 'জমির মূল্য' : 'Land Price'), icon: TrendingUp, badge: isBn ? 'সিন্থেটিক • পরীক্ষামূলক' : 'Synthetic • Experimental' },
   ];
 
   const activeMoreItem = moreItems.find(item => item.id === activeTab);
