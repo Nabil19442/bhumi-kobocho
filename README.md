@@ -104,7 +104,16 @@ The project is built upon trusted open-source packages:
 - **Empirical OCR Degradation Benchmark**: Expanded `generate_samples.py` with 9 realistic physical degradations (Gaussian noise, ±3° rotation, perspective skew, blur, low contrast, JPEG artifacts, phone-body shadows, and composite mobile photos). Generated complete per-field accuracy analysis in [`docs/ocr_benchmark.md`](docs/ocr_benchmark.md).
 - **Land Price ML Demotion & Academic Transparency**: Demoted experimental land price intelligence from primary navigation and hero CTAs to "More / Experimental", with explicit disclaimers noting $R^2 \approx 0.97$ reflects synthetic generator fit, not real-world market appraisal.
 - **Decoupled Data-Adapter Layer & Production Roadmap**: Introduced abstract `LandRecordSource` and `SyntheticSource` in `backend/app/adapters/`, and published [`docs/production_roadmap.md`](docs/production_roadmap.md) outlining lawful government API integration (e-Khatian, citizen OTP consent, mTLS, and immutable audit logs).
-- **Expanded Test Suite**: Grew test coverage to **205 automated tests** across all security, adapter, OCR, and reliability modules.
+- **Full SPA Routing & Deep Links**: Replaced manual tab state with `react-router-dom`, supporting real deep links (`/check`, `/passport/:id`, `/guardian`, `/verify/:id`), browser history (Back/Forward), and Render/Netlify SPA fallback (`public/_redirects`).
+- **Guided Demo Walkthrough**: Added an interactive 3-step walkthrough banner guiding evaluators through the primary story: *Check Before You Buy → Plot Passport → Land Guardian*.
+- **PWA Offline Capabilities**: Added `manifest.webmanifest`, icons, and a custom Service Worker (`sw.js`) caching the app shell and last-viewed passport for offline viewing, complete with an accessible offline status banner.
+- **Guardian Simulated SMS Preview**: Added realistic SMS/Push notification simulation preview cards with pulsing `SIMULATED` badges and background polling (every 10s) with `prefers-reduced-motion` and `aria-live` support.
+- **Frontend Performance Optimization**: Lazy-loaded `html5-qrcode` and `qrcode` libraries in `IntegrityPage.jsx` and `VerificationPage.jsx`, reducing `IntegrityPage` chunk from **399.86 kB to 21.03 kB (95% reduction)**.
+- **Multi-Tier Quality Gates**:
+  - **Backend**: **209 automated pytest tests** including strict forbidden claim and legal verdict verification.
+  - **Frontend Unit Tests**: **14 Vitest + React Testing Library tests** for i18n parity, banner presence on every route, and status label integrity.
+  - **E2E Smoke Tests**: **4 Playwright tests** across Desktop Chrome and Mobile (360px viewport).
+  - **Automated CI**: Added `.github/workflows/ci.yml` running lint, unit tests, build, and E2E tests on push/PR.
 
 ---
 
@@ -131,7 +140,7 @@ BhumiKoboch/
 │   │   ├── samples/           # Rendered benchmark deed PNG specimens
 │   │   └── generate_samples.py # Synthetic sample generator
 │   ├── ml/                    # Hedonic land-price experimental model
-│   └── tests/                 # Automated test suite (205 tests)
+│   └── tests/                 # Automated test suite (209 tests)
 └── frontend/
     ├── src/
     │   ├── components/        # Navigation, headers, purchase modals
@@ -163,7 +172,7 @@ venv\Scripts\Activate.ps1
 # Install dependencies
 pip install -r requirements.txt
 
-# Run automated test suite (all 205 tests must pass)
+# Run automated test suite (all 209 tests must pass)
 python -m pytest backend/tests -q
 
 # Start FastAPI development server
