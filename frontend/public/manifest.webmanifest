@@ -1,0 +1,17 @@
+{
+  "name": "Bhumi Kobocho (ভূমি কবচ)",
+  "short_name": "BhumiKoboch",
+  "description": "Citizen Land Record Intelligence & Cadastral Verification",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D2B2E",
+  "theme_color": "#0D2B2E",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

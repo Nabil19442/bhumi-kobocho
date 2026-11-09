@@ -1309,11 +1309,41 @@ textarea:focus-visible {
   }
 }
 
+/* Accessibility & Small Screen (360px) Optimization */
+@media (max-width: 380px) {
+  html, body {
+    font-size: 14px;
+  }
+  .landing-hero-ref h1 {
+    font-size: 32px !important;
+  }
+  .app-shell button,
+  .app-header button,
+  .nav-item {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Simulated Pulse Badge for Demo Alerts */
+@keyframes simulatedPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.88; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.simulated-pulse-badge {
+  display: inline-block;
+  animation: simulatedPulse 2.5s infinite ease-in-out;
+}
+
 /* Support Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .parcel-3d-wrapper,
   .pulse-beacon,
-  .floating-passport-card {
+  .floating-passport-card,
+  .simulated-pulse-badge,
+  .spin {
     animation: none !important;
     transition: none !important;
   }

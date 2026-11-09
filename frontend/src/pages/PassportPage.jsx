@@ -47,10 +47,26 @@ export default function PassportPage({ t, lang = 'bn', selectedPlotId = 'rec-dem
       fetchPlotPassport(plotId, lang)
         .then(data => {
           setPassport(data);
+          try {
+            localStorage.setItem('bhumi_last_passport', JSON.stringify({ plotId, data, timestamp: Date.now() }));
+          } catch (e) {
+            // quota/private browsing
+          }
         })
     ])
       .catch(err => {
-        console.error(err);
+        console.warn('Network fetch error, attempting offline cache:', err);
+        try {
+          const cached = localStorage.getItem('bhumi_last_passport');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.data) {
+              setPassport(parsed.data);
+              setError(null);
+              return;
+            }
+          }
+        } catch (e) {}
         setError(err);
       })
       .finally(() => {

@@ -1,19 +1,11 @@
 import React from 'react';
 import { 
   FileBadge, 
-  MapPin, 
-  User, 
-  Layers, 
   Calendar, 
   ShieldAlert, 
   Compass, 
   CheckCircle2, 
-  AlertTriangle, 
-  HelpCircle, 
-  ArrowRight,
-  ExternalLink,
-  ShieldCheck,
-  Hash
+  AlertTriangle 
 } from 'lucide-react';
 
 export default function PassportPreviewSection({ lang = 'bn', onViewPassport }) {

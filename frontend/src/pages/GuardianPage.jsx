@@ -98,6 +98,20 @@ export default function GuardianPage({ lang = 'bn' }) {
     loadGuardianData();
     // Run initial evidence audit for Dag 558 duplicate sale scenario
     runEvidenceAudit();
+
+    // Periodic polling for simulated alerts (every 10s)
+    const pollTimer = setInterval(async () => {
+      try {
+        const alertsData = await fetchGuardianAlerts();
+        if (alertsData && alertsData.alerts) {
+          setActiveAlerts(alertsData.alerts);
+        }
+      } catch (pollErr) {
+        // silent polling catch
+      }
+    }, 10000);
+
+    return () => clearInterval(pollTimer);
   }, []);
 
   const handleTriggerSimulation = async () => {
@@ -1001,6 +1015,109 @@ export default function GuardianPage({ lang = 'bn' }) {
         </div>
       </div>
 
+      {/* SECTION 2.5: CITIZEN NOTIFICATION PREVIEW (SIMULATED SMS/PUSH) */}
+      <div style={{
+        background: 'var(--paper)',
+        borderRadius: 'var(--radius-std)',
+        border: '1.5px dashed var(--accent)',
+        padding: '20px',
+        marginBottom: '28px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '14px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="simulated-pulse-badge" style={{
+              background: '#9A2C14',
+              color: '#FFFFFF',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              letterSpacing: '0.5px'
+            }}>
+              SIMULATED
+            </span>
+            <h3 style={{
+              margin: 0,
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              fontFamily: 'var(--font-heading)'
+            }}>
+              {isBn ? 'নাগরিক নোটিফিকেশন নমুনা (SMS / পুশ নোটিফিকেশন প্রিভিউ)' : 'Citizen Notification Preview (SMS / Push Simulation)'}
+            </h3>
+          </div>
+          <span style={{ fontSize: '0.76rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+            {isBn ? 'সিমুলেশন ডেমো • কোনো বাস্তব বার্তা পাঠানো হয় না' : 'Simulation Demo • No actual messages sent'}
+          </span>
+        </div>
+
+        {/* Mock Smartphone SMS Card */}
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: '12px',
+          border: '1px solid var(--line)',
+          boxShadow: '0 4px 12px rgba(16, 39, 42, 0.06)',
+          maxWidth: '560px',
+          margin: '0 auto',
+          overflow: 'hidden'
+        }}>
+          {/* Simulated SMS Header */}
+          <div style={{
+            background: '#0D2B2E',
+            color: '#FFFFFF',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.82rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+              <span>🔔</span>
+              <span>BhumiKoboch Alert (ভূমি কবচ)</span>
+            </div>
+            <span style={{ color: '#8FB3AB', fontSize: '0.74rem', fontFamily: 'var(--font-mono)' }}>
+              {isBn ? 'এইমাত্র' : 'Just now'}
+            </span>
+          </div>
+
+          {/* Simulated SMS Body */}
+          <div style={{ padding: '16px', fontSize: '0.88rem', lineHeight: '1.6', color: '#10272A' }}>
+            <p style={{ margin: '0 0 10px', fontWeight: 600, color: '#9A2C14' }}>
+              {isBn 
+                ? '⚠️ সতর্কতা: আপনার নিবন্ধিত মৌজা সাভার, দাগ ৫৫৮ এর রেকর্ডে একটি নতুন আবেদন শনাক্ত হয়েছে।'
+                : '⚠️ ALERT: A new transaction or mutation application was detected on your registered Plot Dag 558, Mouza Savar.'}
+            </p>
+            <div style={{
+              background: '#F8FAF9',
+              borderRadius: '6px',
+              padding: '10px 12px',
+              fontSize: '0.8rem',
+              color: '#3C5558',
+              fontFamily: 'var(--font-mono)',
+              marginBottom: '10px',
+              borderLeft: '3px solid #9A2C14'
+            }}>
+              <div><strong>Parcel:</strong> PCL-DHK-SAV-045-0558</div>
+              <div><strong>Status:</strong> Needs review (সম্ভাব্য দ্বৈত বিক্রয় সংঘাত)</div>
+              <div><strong>Deed No:</strong> PROP-2026-9999</div>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>
+              {isBn 
+                ? 'সম্পূর্ণ অডিট ও ঐতিহাসিক প্রমাণ দেখতে ভিজিট করুন: bhumikoboch.demo/guardian'
+                : 'To view full title evidence and conflict analysis visit: bhumikoboch.demo/guardian'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* SECTION 3: ACTIVE SIMULATED ALERTS LIST */}
       <div>
         <div style={{
@@ -1009,15 +1126,28 @@ export default function GuardianPage({ lang = 'bn' }) {
           justifyContent: 'space-between',
           marginBottom: '16px'
         }}>
-          <h2 style={{
-            fontSize: '1.18rem',
-            fontWeight: 800,
-            color: 'var(--ink)',
-            fontFamily: 'var(--font-heading)',
-            margin: 0
-          }}>
-            {isBn ? 'সক্রিয় সিমুলেটেড সতর্কতা সমূহ' : 'Active Simulated Alerts'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{
+              fontSize: '1.18rem',
+              fontWeight: 800,
+              color: 'var(--ink)',
+              fontFamily: 'var(--font-heading)',
+              margin: 0
+            }}>
+              {isBn ? 'সক্রিয় সিমুলেটেড সতর্কতা সমূহ' : 'Active Simulated Alerts'}
+            </h2>
+            <span className="simulated-pulse-badge" style={{
+              background: '#B45309',
+              color: '#FFFFFF',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '10px'
+            }}>
+              SIMULATED
+            </span>
+          </div>
           <span style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '0.76rem',
@@ -1045,7 +1175,7 @@ export default function GuardianPage({ lang = 'bn' }) {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }} aria-live="polite" aria-relevant="additions text">
             {activeAlerts.map((alert) => {
               const isReviewed = alert.is_reviewed;
 
