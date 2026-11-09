@@ -17,7 +17,6 @@ import {
   Clock
 } from 'lucide-react';
 import { fetchRecordVerification, fetchRecordQr, checkIntegrityApi } from '../api';
-import QRCode from 'qrcode';
 
 export default function VerificationPage({ 
   recordId = 'rec-demo-001', 
@@ -49,6 +48,8 @@ export default function VerificationPage({
       // Generate verification QR code data URL client-side or fetch from backend
       const canonicalUrl = `${window.location.origin}/verify/${encodeURIComponent(recordId)}`;
       try {
+        const QRCodeModule = await import('qrcode');
+        const QRCode = QRCodeModule.default || QRCodeModule;
         const clientQr = await QRCode.toDataURL(canonicalUrl, {
           width: 200,
           margin: 2,

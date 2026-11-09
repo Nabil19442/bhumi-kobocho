@@ -10,7 +10,6 @@ import {
   Smartphone, 
   RefreshCw 
 } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
 
 export default function QrScannerModal({ isOpen, onClose, onScanSuccess, lang = 'bn' }) {
   const isBn = lang === 'bn';
@@ -97,53 +96,64 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess, lang = 
     setExternalPrompt(null);
     setUnrecognizedPayload(null);
 
-    const timer = setTimeout(() => {
-      const qrScanner = new Html5Qrcode(regionId);
-      html5QrCodeRef.current = qrScanner;
+    const timer = setTimeout(async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const qrScanner = new Html5Qrcode(regionId);
+        html5QrCodeRef.current = qrScanner;
 
-      const config = {
-        fps: 10,
-        qrbox: { width: 240, height: 240 },
-        aspectRatio: 1.0
-      };
+        const config = {
+          fps: 10,
+          qrbox: { width: 240, height: 240 },
+          aspectRatio: 1.0
+        };
 
-      qrScanner.start(
-        { facingMode: 'environment' },
-        config,
-        (decodedText) => {
-          handleDecoded(decodedText);
-        },
-        () => {
-          // ignore continuous scanning attempts
-        }
-      )
-      .then(() => {
+        qrScanner.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText) => {
+            handleDecoded(decodedText);
+          },
+          () => {
+            // ignore continuous scanning attempts
+          }
+        )
+        .then(() => {
+          setIsInitializing(false);
+        })
+        .catch((err) => {
+          console.warn('Camera start error:', err);
+          setIsInitializing(false);
+          const msg = String(err || '');
+          if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
+            setCameraError(
+              isBn
+                ? 'ক্যামেরা ব্যবহারের অনুমতি দেওয়া হয়নি। ব্রাউজার সেটিংসে ক্যামেরা পারমিশন চালু করুন অথবা নিচের বাটন দিয়ে কিউআর ছবির ফাইল আপলোড করুন।'
+                : 'Camera access denied. Please allow camera permissions in browser settings, or upload a QR image below.'
+            );
+          } else if (msg.includes('NotFoundError') || msg.includes('no camera')) {
+            setCameraError(
+              isBn
+                ? 'আপনার ডিভাইসে কোনো উপযুক্ত ক্যামেরা পাওয়া যায়নি। নিচে কিউআর ছবির ফাইল আপলোড করে স্ক্যান করতে পারেন।'
+                : 'No camera found on this device. You can upload a QR image below.'
+            );
+          } else {
+            setCameraError(
+              isBn
+                ? 'ক্যামেরা চালু করা সম্ভব হয়নি। অনুগ্রহ করে নিচের ফাইল আপলোড অপশন ব্যবহার করুন।'
+                : 'Unable to start camera preview. Please use the image upload option below.'
+            );
+          }
+        });
+      } catch (importErr) {
+        console.warn('Failed to load QR scanner library:', importErr);
         setIsInitializing(false);
-      })
-      .catch((err) => {
-        console.warn('Camera start error:', err);
-        setIsInitializing(false);
-        const msg = String(err || '');
-        if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
-          setCameraError(
-            isBn
-              ? 'ক্যামেরা ব্যবহারের অনুমতি দেওয়া হয়নি। ব্রাউজার সেটিংসে ক্যামেরা পারমিশন চালু করুন অথবা নিচের বাটন দিয়ে কিউআর ছবির ফাইল আপলোড করুন।'
-              : 'Camera access denied. Please allow camera permissions in browser settings, or upload a QR image below.'
-          );
-        } else if (msg.includes('NotFoundError') || msg.includes('no camera')) {
-          setCameraError(
-            isBn
-              ? 'আপনার ডিভাইসে কোনো উপযুক্ত ক্যামেরা পাওয়া যায়নি। নিচে কিউআর ছবির ফাইল আপলোড করে স্ক্যান করতে পারেন।'
-              : 'No camera found on this device. You can upload a QR image below.'
-          );
-        } else {
-          setCameraError(
-            isBn
-              ? 'ক্যামেরা চালু করা সম্ভব হয়নি। অনুগ্রহ করে নিচের ফাইল আপলোড অপশন ব্যবহার করুন।'
-              : 'Unable to start camera preview. Please use the image upload option below.'
-          );
-        }
-      });
+        setCameraError(
+          isBn
+            ? 'স্ক্যানার লাইব্রেরি লোড করা যায়নি।'
+            : 'Failed to load QR scanner library.'
+        );
+      }
     }, 200);
 
     return () => {
@@ -160,6 +170,7 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess, lang = 
     try {
       let scanner = html5QrCodeRef.current;
       if (!scanner) {
+        const { Html5Qrcode } = await import('html5-qrcode');
         scanner = new Html5Qrcode(regionId);
         html5QrCodeRef.current = scanner;
       }

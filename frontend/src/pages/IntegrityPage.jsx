@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { 
   QrCode, 
   CheckCircle2, 
@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import { fetchRecords, fetchRecordQr, checkIntegrityApi } from '../api';
 import ApiErrorNotice from '../components/ApiErrorNotice';
-import QrScannerModal from '../components/QrScannerModal';
+
+const QrScannerModal = lazy(() => import('../components/QrScannerModal'));
 
 export default function IntegrityPage({ t, lang = 'bn', onOpenVerification }) {
   const isBn = lang === 'bn';
@@ -725,17 +726,21 @@ export default function IntegrityPage({ t, lang = 'bn', onOpenVerification }) {
       </div>
 
       {/* QR Scanner Camera Modal */}
-      <QrScannerModal
-        isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onScanSuccess={(scannedId) => {
-          setSelectedRecordId(scannedId);
-          if (onOpenVerification) {
-            onOpenVerification(scannedId);
-          }
-        }}
-        lang={lang}
-      />
+      {scannerOpen && (
+        <Suspense fallback={null}>
+          <QrScannerModal
+            isOpen={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onScanSuccess={(scannedId) => {
+              setSelectedRecordId(scannedId);
+              if (onOpenVerification) {
+                onOpenVerification(scannedId);
+              }
+            }}
+            lang={lang}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
