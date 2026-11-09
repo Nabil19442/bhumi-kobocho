@@ -31,3 +31,9 @@ backend/data/samples/degraded/
 *.db
 *.sqlite*
 *.sqlite3
+
+# Test artifacts
+test-results/
+frontend/test-results/
+playwright-report/
+frontend/playwright-report/
