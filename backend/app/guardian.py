@@ -1,18 +1,121 @@
 import json
 import os
+import re
+import time
 import uuid
+import threading
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-
-import threading
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 EVENTS_FILE = os.path.join(DATA_DIR, "events.json")
 RECORDS_FILE = os.path.join(DATA_DIR, "records.json")
 
-# In-memory store for active alerts in demo session protected by threading.Lock
-_LOCK = threading.Lock()
-_ACTIVE_ALERTS: List[Dict[str, Any]] = []
+# Session limits and validation
+SESSION_ID_REGEX = re.compile(r"^[a-zA-Z0-9_\-]{8,64}$")
+MAX_SESSIONS = 500
+MAX_ALERTS_PER_SESSION = 50
+SESSION_TTL_SECONDS = 86400  # 24 hours
+
+
+def validate_session_id(session_id: Optional[str]) -> str:
+    """
+    Validates a client-provided session ID header.
+    Defaults to 'default' if None or blank.
+    Raises ValueError if formatted improperly.
+    """
+    if not session_id or not str(session_id).strip():
+        return "default"
+    clean_sid = str(session_id).strip()
+    if clean_sid == "default":
+        return "default"
+    if not SESSION_ID_REGEX.match(clean_sid):
+        raise ValueError(
+            "Invalid session ID format. Must be 8-64 alphanumeric characters, dashes, or underscores."
+        )
+    return clean_sid
+
+
+class SessionAlertStore:
+    def __init__(self):
+        self._lock = threading.Lock()
+        # session_id -> {"last_active": float, "alerts": List[Dict[str, Any]]}
+        self._sessions: Dict[str, Dict[str, Any]] = {}
+
+    def _cleanup_unlocked(self, now: float) -> None:
+        # 1. Expire stale sessions older than TTL
+        expired = [
+            sid
+            for sid, data in self._sessions.items()
+            if (now - data["last_active"]) > SESSION_TTL_SECONDS
+        ]
+        for sid in expired:
+            del self._sessions[sid]
+
+        # 2. If still exceeding MAX_SESSIONS, evict least recently active sessions (LRU)
+        if len(self._sessions) > MAX_SESSIONS:
+            sorted_sids = sorted(
+                self._sessions.keys(), key=lambda k: self._sessions[k]["last_active"]
+            )
+            excess = len(self._sessions) - MAX_SESSIONS
+            for sid in sorted_sids[:excess]:
+                del self._sessions[sid]
+
+    def add_alert(self, session_id: str, alert: Dict[str, Any]) -> None:
+        now = time.time()
+        with self._lock:
+            data = self._sessions.setdefault(
+                session_id, {"last_active": now, "alerts": []}
+            )
+            data["last_active"] = now
+            data["alerts"].insert(0, alert)
+            if len(data["alerts"]) > MAX_ALERTS_PER_SESSION:
+                data["alerts"] = data["alerts"][:MAX_ALERTS_PER_SESSION]
+            self._cleanup_unlocked(now)
+
+    def get_alerts(self, session_id: str) -> List[Dict[str, Any]]:
+        now = time.time()
+        with self._lock:
+            self._cleanup_unlocked(now)
+            if session_id not in self._sessions:
+                return []
+            self._sessions[session_id]["last_active"] = now
+            return [dict(a) for a in self._sessions[session_id]["alerts"]]
+
+    def mark_reviewed(
+        self, alert_id: str, session_id: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        now = time.time()
+        with self._lock:
+            self._cleanup_unlocked(now)
+            target_sessions = (
+                [session_id]
+                if (session_id and session_id in self._sessions)
+                else list(self._sessions.keys())
+            )
+            for sid in target_sessions:
+                for a in self._sessions[sid]["alerts"]:
+                    if a["alert_id"] == alert_id:
+                        a["is_reviewed"] = True
+                        self._sessions[sid]["last_active"] = now
+                        return dict(a)
+            return None
+
+    def clear(self, session_id: Optional[str] = None) -> None:
+        with self._lock:
+            if session_id:
+                self._sessions.pop(session_id, None)
+            else:
+                self._sessions.clear()
+
+    @property
+    def session_count(self) -> int:
+        with self._lock:
+            return len(self._sessions)
+
+
+_SESSION_STORE = SessionAlertStore()
+
 
 def load_events() -> List[Dict[str, Any]]:
     if not os.path.exists(EVENTS_FILE):
@@ -20,13 +123,13 @@ def load_events() -> List[Dict[str, Any]]:
     with open(EVENTS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def load_records() -> List[Dict[str, Any]]:
     if not os.path.exists(RECORDS_FILE):
         return []
     with open(RECORDS_FILE, "r", encoding="utf-8") as f:
         records = json.load(f)
 
-    # Check if any record has updated demo ownership in transaction registry
     try:
         try:
             from .transaction_registry import get_parcel_by_id
@@ -49,6 +152,7 @@ def load_records() -> List[Dict[str, Any]]:
 
     return records
 
+
 def check_deed_with_guardian(deed_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Land Guardian audit routine: checks latest ownership records before evaluating a deed for duplicate sale conflicts.
@@ -58,6 +162,7 @@ def check_deed_with_guardian(deed_dict: Dict[str, Any]) -> Dict[str, Any]:
     except ImportError:
         from backend.app.conflict_detector import detect_conflicts
     return detect_conflicts(deed_dict)
+
 
 def generate_guardian_risk_report(deed_or_parcel: Any) -> Dict[str, Any]:
     """
@@ -110,11 +215,15 @@ def generate_guardian_risk_report(deed_or_parcel: Any) -> Dict[str, Any]:
     analysis = check_deed_with_guardian(deed_dict)
     return analysis.get("risk_report") or analysis
 
-def trigger_simulation_event(event_id: str) -> Dict[str, Any]:
+
+def trigger_simulation_event(
+    event_id: str, session_id: str = "default"
+) -> Dict[str, Any]:
     """
     Triggers a simulated event, computes diff between old record and changes,
-    attaches Evidence & Risk Report, and returns a clearly labelled SIMULATED alert.
+    attaches Evidence & Risk Report, and scopes the SIMULATED alert to the session.
     """
+    clean_sid = validate_session_id(session_id)
     events = load_events()
     records = load_records()
 
@@ -171,6 +280,7 @@ def trigger_simulation_event(event_id: str) -> Dict[str, Any]:
     short_hex = uuid.uuid4().hex[:8]
     alert = {
         "alert_id": f"alert-{event_id}-{microsecond_ts}-{short_hex}",
+        "session_id": clean_sid,
         "event_id": event_id,
         "record_id": rec_id,
         "status_label": "SIMULATED",
@@ -197,31 +307,29 @@ def trigger_simulation_event(event_id: str) -> Dict[str, Any]:
         "disclaimer": "DEMO DATA — not a legal verdict. This alert is a synthetic simulation for demonstration purposes."
     }
 
-    with _LOCK:
-        _ACTIVE_ALERTS.insert(0, alert)
+    _SESSION_STORE.add_alert(clean_sid, alert)
     return alert
 
-def get_alerts() -> List[Dict[str, Any]]:
-    # If no alerts triggered yet, initialize with the default simulated event
-    with _LOCK:
-        has_alerts = len(_ACTIVE_ALERTS) > 0
-    if not has_alerts:
+
+def get_alerts(session_id: str = "default") -> List[Dict[str, Any]]:
+    clean_sid = validate_session_id(session_id)
+    alerts = _SESSION_STORE.get_alerts(clean_sid)
+    if not alerts:
         events = load_events()
         if events:
-            trigger_simulation_event(events[0]["event_id"])
-    with _LOCK:
-        return [dict(a) for a in _ACTIVE_ALERTS]
+            trigger_simulation_event(events[0]["event_id"], session_id=clean_sid)
+            alerts = _SESSION_STORE.get_alerts(clean_sid)
+    return alerts
 
-def mark_alert_reviewed(alert_id: str) -> Optional[Dict[str, Any]]:
-    with _LOCK:
-        for a in _ACTIVE_ALERTS:
-            if a["alert_id"] == alert_id:
-                a["is_reviewed"] = True
-                return dict(a)
-    return None
 
-def reset_alerts() -> None:
+def mark_alert_reviewed(
+    alert_id: str, session_id: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    clean_sid = validate_session_id(session_id) if session_id else None
+    return _SESSION_STORE.mark_reviewed(alert_id, session_id=clean_sid)
+
+
+def reset_alerts(session_id: Optional[str] = None) -> None:
     """Reset active alerts for test isolation."""
-    with _LOCK:
-        _ACTIVE_ALERTS.clear()
-
+    clean_sid = validate_session_id(session_id) if session_id else None
+    _SESSION_STORE.clear(session_id=clean_sid)

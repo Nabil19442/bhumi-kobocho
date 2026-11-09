@@ -197,17 +197,34 @@ export async function fetchSimulationEvents() {
 // Guardian API Key (demo only, protects simulated events, no real data)
 const DEMO_GUARDIAN_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_GUARDIAN_API_KEY) || "demo-zenox-2026";
 
+export function getGuardianSessionId() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return "default";
+  }
+  let sid = localStorage.getItem("bhumi_guardian_session_id");
+  if (!sid || !/^[a-zA-Z0-9_-]{8,64}$/.test(sid)) {
+    sid = "sess-" + Math.random().toString(36).substring(2, 10) + "-" + Date.now().toString(36);
+    localStorage.setItem("bhumi_guardian_session_id", sid);
+  }
+  return sid;
+}
+
 export async function triggerSimulationApi(eventId) {
   return request(`/guardian/simulate/${eventId}`, {
     method: "POST",
     headers: {
       "X-Guardian-Key": DEMO_GUARDIAN_KEY,
+      "X-Session-ID": getGuardianSessionId(),
     },
   });
 }
 
 export async function fetchGuardianAlerts() {
-  return request("/guardian/alerts");
+  return request("/guardian/alerts", {
+    headers: {
+      "X-Session-ID": getGuardianSessionId(),
+    },
+  });
 }
 
 export async function markAlertReviewedApi(alertId) {
@@ -215,6 +232,7 @@ export async function markAlertReviewedApi(alertId) {
     method: "POST",
     headers: {
       "X-Guardian-Key": DEMO_GUARDIAN_KEY,
+      "X-Session-ID": getGuardianSessionId(),
     },
   });
 }

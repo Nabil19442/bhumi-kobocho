@@ -42,7 +42,8 @@ from .guardian import (
     trigger_simulation_event,
     get_alerts,
     mark_alert_reviewed,
-    generate_guardian_risk_report
+    generate_guardian_risk_report,
+    validate_session_id
 )
 from .explain import explain_comparison
 from .ocr import (
@@ -1210,22 +1211,37 @@ def verify_guardian_key(x_guardian_key: Optional[str] = Header(None)) -> str:
 def simulate_guardian_event(
     event_id: str,
     request: Request,
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
     _auth: str = Depends(verify_guardian_key)
 ):
     """
     Simulates an event on demo data and emits a SIMULATED alert.
     Requires X-Guardian-Key header authentication and is rate limited.
+    Scopes alerts to the caller's session ID.
     """
     limiter.check_rate_limit(request, "guardian_simulate", max_requests=20, window_seconds=60)
     try:
-        alert = trigger_simulation_event(event_id)
+        sid = validate_session_id(x_session_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    try:
+        alert = trigger_simulation_event(event_id, session_id=sid)
         return alert
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/api/guardian/alerts")
-def get_guardian_alerts():
-    alerts = get_alerts()
+def get_guardian_alerts(
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
+):
+    """
+    Fetches active simulated alerts scoped to the caller's session ID.
+    """
+    try:
+        sid = validate_session_id(x_session_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    alerts = get_alerts(session_id=sid)
     return {
         "disclaimer": "DEMO DATA — not a legal verdict",
         "alerts": alerts
@@ -1235,14 +1251,19 @@ def get_guardian_alerts():
 def review_guardian_alert(
     alert_id: str,
     request: Request,
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
     _auth: str = Depends(verify_guardian_key)
 ):
     """
-    Marks simulated demo alert as reviewed.
+    Marks simulated demo alert as reviewed for the given session.
     Requires X-Guardian-Key header authentication and is rate limited.
     """
     limiter.check_rate_limit(request, "guardian_review", max_requests=30, window_seconds=60)
-    reviewed = mark_alert_reviewed(alert_id)
+    try:
+        sid = validate_session_id(x_session_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    reviewed = mark_alert_reviewed(alert_id, session_id=sid)
     if not reviewed:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {
