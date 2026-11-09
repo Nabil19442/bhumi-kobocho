@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, Tuple
 from datetime import datetime, timezone
+import sklearn
 
 from sklearn.base import clone
 from sklearn.model_selection import train_test_split
@@ -271,6 +272,7 @@ def train_and_evaluate_all_models(
         "model_id": f"rural-land-price-{best_candidate_name.lower()}-v1",
         "model_sha256": model_sha256,
         "algorithm": best_candidate_name,
+        "sklearn_version": sklearn.__version__,
         "selected_at_utc": datetime.now(timezone.utc).isoformat(),
         "random_seed": random_seed,
         "dataset_version": "synthetic_rural_land_prices_20k_v1",

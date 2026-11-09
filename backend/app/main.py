@@ -117,6 +117,11 @@ if not os.getenv("GUARDIAN_API_KEY"):
 async def lifespan(app: FastAPI):
     if not os.getenv("GUARDIAN_API_KEY"):
         logger.warning("using public DEMO guardian key; simulation endpoints only")
+    try:
+        from backend.ml.predict import check_sklearn_version_alignment
+        check_sklearn_version_alignment()
+    except Exception as e:
+        logger.warning("Startup ML version check skipped: %s", e)
     yield
 
 app = FastAPI(

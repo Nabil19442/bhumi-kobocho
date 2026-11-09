@@ -10,7 +10,7 @@
 ## 1. Executive Summary & Model Selection
 - **Selected Model**: `HistGradientBoostingRegressor`
 - **Model ID**: `rural-land-price-histgradientboostingregressor-v1`
-- **Training Timestamp**: `2026-10-16T18:49:43.691326+00:00`
+- **Training Timestamp**: `2026-11-09T17:20:22.569572+00:00`
 - **Dataset Size**: `20,000` synthetic observations
 - **Split Strategy**: 70% Train (14,000), 15% Validation (3,000), 15% Test (3,000)
 
@@ -20,10 +20,10 @@
 
 | Algorithm Candidate | Train MAE (BDT) | Val MAE (BDT) | Val R² Score | Val MedAE (BDT) | Val MAPE (%) | Training Time |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **DummyRegressor_Baseline** | 30,772.03 | 30,310.03 | -0.0584 | 22,168.68 | 63.35% | 0.06s |
-| **HistGradientBoostingRegressor** | 4,213.46 | 4,941.50 | 0.9697 | 3,158.90 | 8.17% | 1.35s |
-| **RandomForestRegressor** | 4,095.70 | 7,425.77 | 0.9356 | 4,858.98 | 12.52% | 1.56s |
-| **ExtraTreesRegressor** | 3,524.95 | 7,939.84 | 0.9227 | 5,145.62 | 13.26% | 1.67s |
+| **DummyRegressor_Baseline** | 30,772.03 | 30,310.03 | -0.0584 | 22,168.68 | 63.35% | 0.07s |
+| **HistGradientBoostingRegressor** | 4,213.46 | 4,941.50 | 0.9697 | 3,158.90 | 8.17% | 1.6s |
+| **RandomForestRegressor** | 4,095.70 | 7,425.77 | 0.9356 | 4,858.98 | 12.52% | 1.96s |
+| **ExtraTreesRegressor** | 3,524.95 | 7,939.84 | 0.9227 | 5,145.62 | 13.26% | 2.25s |
 
 ---
 

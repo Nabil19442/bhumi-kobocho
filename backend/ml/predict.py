@@ -109,6 +109,32 @@ class ModelNotAvailableError(Exception):
     pass
 
 
+def check_sklearn_version_alignment() -> Optional[str]:
+    """
+    Checks if recorded model metadata sklearn version matches currently installed scikit-learn.
+    Logs a warning if mismatched. Returns warning message or None.
+    """
+    import sklearn
+    if not os.path.exists(MODEL_METADATA_PATH):
+        return None
+    try:
+        with open(MODEL_METADATA_PATH, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+        recorded = metadata.get("sklearn_version")
+        installed = sklearn.__version__
+        if recorded and recorded != installed:
+            msg = (
+                f"ML MODEL VERSION MISMATCH: Model was serialized with scikit-learn {recorded}, "
+                f"but current runtime has scikit-learn {installed}. "
+                "This may cause model deserialization or prediction warnings."
+            )
+            logger.warning(msg)
+            return msg
+    except Exception as e:
+        logger.warning("Could not read model metadata for version check: %s", e)
+    return None
+
+
 def reset_model_cache() -> None:
     """Reset cached pipeline and metadata (useful for tests)."""
     global _CACHED_PIPELINE, _CACHED_METADATA, _MODEL_LOAD_ATTEMPTED
@@ -178,6 +204,7 @@ def load_model_and_metadata(force_reload: bool = False) -> Tuple[Any, Dict[str, 
         )
 
     # Safe to deserialize verified artifact
+    check_sklearn_version_alignment()
     try:
         pipeline = joblib.load(BEST_MODEL_PATH)
         _CACHED_PIPELINE = pipeline

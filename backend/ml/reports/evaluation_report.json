@@ -1,8 +1,10 @@
 {
   "metadata": {
     "model_id": "rural-land-price-histgradientboostingregressor-v1",
+    "model_sha256": "3292c4599bd67761847b0aa6e60c98136da0737d7b82f4b07968514d54407910",
     "algorithm": "HistGradientBoostingRegressor",
-    "selected_at_utc": "2026-10-16T18:49:43.691326+00:00",
+    "sklearn_version": "1.9.1",
+    "selected_at_utc": "2026-11-09T17:20:22.569572+00:00",
     "random_seed": 42,
     "dataset_version": "synthetic_rural_land_prices_20k_v1",
     "dataset_samples": 20000,
@@ -70,7 +72,7 @@
   },
   "candidate_comparisons": {
     "DummyRegressor_Baseline": {
-      "training_time_seconds": 0.06,
+      "training_time_seconds": 0.07,
       "train_metrics": {
         "mae_bdt": 30772.03,
         "rmse_bdt": 47190.52,
@@ -94,7 +96,7 @@
       }
     },
     "HistGradientBoostingRegressor": {
-      "training_time_seconds": 1.35,
+      "training_time_seconds": 1.6,
       "train_metrics": {
         "mae_bdt": 4213.46,
         "rmse_bdt": 6610.56,
@@ -118,7 +120,7 @@
       }
     },
     "RandomForestRegressor": {
-      "training_time_seconds": 1.56,
+      "training_time_seconds": 1.96,
       "train_metrics": {
         "mae_bdt": 4095.7,
         "rmse_bdt": 6164.49,
@@ -135,7 +137,7 @@
       }
     },
     "ExtraTreesRegressor": {
-      "training_time_seconds": 1.67,
+      "training_time_seconds": 2.25,
       "train_metrics": {
         "mae_bdt": 3524.95,
         "rmse_bdt": 5534.6,
