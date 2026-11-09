@@ -77,10 +77,19 @@ The project is built upon trusted open-source packages:
 ---
 
 ## 7. Known Limitations
-1. **OCR Environment Requirement**: Optical image character extraction requires the Tesseract OCR binary and the Bengali language pack (`tesseract-ocr-ben`). In environments without Tesseract, the backend reports OCR status as offline, and users can directly upload digital text PDFs or input data manually.
-2. **Handwriting Limitations**: Printed Bangla deed typography is accurately extracted; however, unstructured, handwritten notes or degraded ink seals common in historical deeds (*CS/SA records*) have low OCR confidence.
-3. **In-Memory Rate Limiting**: The built-in request rate limiter (`backend/app/main.py`) stores counters in memory; production multi-node clusters would require a shared Redis instance.
-4. **Demo Guardian API Key**: The `/api/guardian/events/simulate` endpoint uses a publicly documented demo key (`demo-zenox-2026`) designed strictly for presentation walkthroughs.
+1. **OCR Environment Requirement**: Optical image character extraction requires the Tesseract OCR binary and the Bengali language pack (`tesseract-ocr-ben`). In environments without Tesseract, the backend honestly reports OCR status as offline/unavailable, and citizens can upload text-based PDFs (parsed via `pypdf`) or enter data manually.
+2. **Empirical OCR Degradation Limits (Real Benchmark Numbers)**: As documented in [`docs/ocr_benchmark.md`](docs/ocr_benchmark.md), while clean synthetic deeds achieve 100% extraction, realistic physical degradations reveal significant real-world limits:
+   - **Deed No**: 55.0% accuracy (slash `/` confused with `1` or `7` under blur).
+   - **Date**: 55.0% accuracy (Bengali numerals `১`/`৯` and `৪`/`৮` confused under noise).
+   - **Buyer Name**: 32.5% accuracy (complex Bengali conjuncts/যুক্তবর্ণ such as `ক্ষ`, `ল্দ` fragment under blur).
+   - **Mouza**: 42.5% accuracy (head-stroke / মাত্রা continuity breaks under ±3° paper tilt).
+   - **Khatian No & Dag No**: 55.0% accuracy under sensor grain and skew.
+   - **Area (Decimal)**: 45.0% accuracy (decimal points merged with ink specks).
+   - **Composite Mobile Photos**: 21.4% overall accuracy under simultaneous tilt, shadow, compression, and blur.
+   *Mitigation*: Bhumi Kobocho automatically flags any field with confidence < 0.65 as **Needs review (যাচাই প্রয়োজন)** and provides inline manual editing before running registry queries.
+3. **Handwriting Limitations**: Printed Bangla deed typography is supported; however, handwritten cursive notes or degraded ink seals common in historical deeds (*CS/SA records*) have low OCR confidence and require manual verification.
+4. **In-Memory Rate Limiting**: The built-in request rate limiter (`backend/app/limiter.py`) enforces IP sliding-window limits in-process. Behind reverse proxies (e.g. Render), it safely resolves real client IPs via `FORWARDED_ALLOW_IPS` while ignoring spoofed headers from untrusted peers. Multi-node clusters would require a shared Redis instance.
+5. **Demo Guardian API Key**: The `/api/guardian/simulate` endpoint uses a documented demo key (`demo-zenox-2026`) designed strictly for presentation walkthroughs. Alerts are scoped per-session via `X-Session-ID`.
 
 ---
 

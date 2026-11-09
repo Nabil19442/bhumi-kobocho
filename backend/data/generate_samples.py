@@ -1,18 +1,25 @@
 import hashlib
+import io
 import os
-from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLES_DIR = os.path.join(DATA_DIR, "samples")
+DEGRADED_DIR = os.path.join(SAMPLES_DIR, "degraded")
 os.makedirs(SAMPLES_DIR, exist_ok=True)
+os.makedirs(DEGRADED_DIR, exist_ok=True)
 
 FONTS_DIR = os.path.join(DATA_DIR, "fonts")
 REGULAR_FONT_PATH = os.path.join(FONTS_DIR, "NotoSansBengali-Regular.ttf")
 BOLD_FONT_PATH = os.path.join(FONTS_DIR, "NotoSansBengali-Bold.ttf")
 
+BG_COLOR = (252, 252, 250)
+
+
 def generate_sample_deed(filename, text_lines):
     # Render at 1240x1754 (A4 @ 150dpi), black text on near-white background
-    img = Image.new("RGB", (1240, 1754), color=(252, 252, 250))
+    img = Image.new("RGB", (1240, 1754), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
     # Load Noto Sans Bengali fonts
@@ -31,7 +38,7 @@ def generate_sample_deed(filename, text_lines):
     bbox_title = draw.textbbox((0, 0), header_title, font=title_font)
     title_w = bbox_title[2] - bbox_title[0]
     draw.text(((1240 - title_w) // 2, y), header_title, font=title_font, fill=(30, 70, 32))
-    
+
     y += 55
     header_sub = "DEMO DATA — NOT A LEGAL VERDICT"
     bbox_sub = draw.textbbox((0, 0), header_sub, font=sub_font)
@@ -59,6 +66,111 @@ def generate_sample_deed(filename, text_lines):
 
     return filepath, file_hash
 
+
+# ============================================================================
+# REALISTIC DOCUMENT DEGRADATION TRANSFORMS
+# ============================================================================
+
+def apply_gaussian_noise(img: Image.Image, sigma: float = 22.0) -> Image.Image:
+    """Adds realistic sensor noise and micro-grain to simulate poor scanner/sensor."""
+    arr = np.array(img, dtype=np.float32)
+    noise = np.random.normal(0, sigma, arr.shape)
+    noisy_arr = np.clip(arr + noise, 0, 255).astype(np.uint8)
+    return Image.fromarray(noisy_arr)
+
+
+def apply_rotation(img: Image.Image, angle: float = 3.0) -> Image.Image:
+    """Simulates physical paper tilt during citizen scanning / photography (+-3 deg)."""
+    return img.rotate(angle, resample=Image.BICUBIC, expand=False, fillcolor=BG_COLOR)
+
+
+def apply_perspective_skew(img: Image.Image, distortion: float = 0.035) -> Image.Image:
+    """Simulates non-parallel camera angle and trapezoidal perspective distortion."""
+    w, h = img.size
+    dx = int(w * distortion)
+    dy = int(h * distortion)
+    quad = (dx, 0, 0, h - dy, w - dx, h, w, dy)
+    return img.transform((w, h), Image.QUAD, quad, resample=Image.BICUBIC, fillcolor=BG_COLOR)
+
+
+def apply_blur(img: Image.Image, radius: float = 2.0) -> Image.Image:
+    """Simulates lens defocus and motion blur commonly seen in mobile phone captures."""
+    return img.filter(ImageFilter.GaussianBlur(radius=radius))
+
+
+def apply_low_contrast(img: Image.Image, factor: float = 0.42) -> Image.Image:
+    """Simulates faded carbon copies, aged paper, and washed-out exposure."""
+    enhancer = ImageEnhance.Contrast(img)
+    low_c = enhancer.enhance(factor)
+    # Slightly elevate brightness to wash out dark text
+    return ImageEnhance.Brightness(low_c).enhance(1.15)
+
+
+def apply_jpeg_compression(img: Image.Image, quality: int = 22) -> Image.Image:
+    """Simulates lossy messaging app / MMS image re-compression artifacts."""
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=quality)
+    buf.seek(0)
+    return Image.open(buf).copy()
+
+
+def apply_phone_shadow(img: Image.Image) -> Image.Image:
+    """Simulates hand or mobile phone cast shadow over part of the document."""
+    w, h = img.size
+    arr = np.array(img, dtype=np.float32)
+    y_grad, x_grad = np.mgrid[0:h, 0:w]
+    # Elliptical / corner shadow falling across document
+    shadow_map = 0.50 + 0.50 * np.clip(
+        np.sqrt(((x_grad - w * 0.8) / (w * 0.9)) ** 2 + ((y_grad - h * 0.7) / (h * 0.9)) ** 2),
+        0.0,
+        1.0
+    )
+    shadow_3d = shadow_map[:, :, np.newaxis]
+    shadowed = np.clip(arr * shadow_3d, 0, 255).astype(np.uint8)
+    return Image.fromarray(shadowed)
+
+
+def apply_composite_degradation(img: Image.Image) -> Image.Image:
+    """Combines tilt, shadow, compression, and slight blur for a realistic citizen photo."""
+    tilted = apply_rotation(img, angle=-2.2)
+    shadowed = apply_phone_shadow(tilted)
+    blurred = apply_blur(shadowed, radius=1.0)
+    return apply_jpeg_compression(blurred, quality=35)
+
+
+def generate_degraded_variants_for_image(source_path: str) -> Dict[str, str]:
+    """
+    Generates all benchmark degradation variants for a source deed image.
+    Saves outputs in backend/data/samples/degraded/.
+    Returns map of degradation_type -> output_filepath.
+    """
+    base_name = os.path.splitext(os.path.basename(source_path))[0]
+    img = Image.open(source_path).convert("RGB")
+
+    variants = {
+        "gaussian_noise": apply_gaussian_noise(img),
+        "rotation_pos3": apply_rotation(img, angle=3.0),
+        "rotation_neg3": apply_rotation(img, angle=-3.0),
+        "perspective_skew": apply_perspective_skew(img),
+        "gaussian_blur": apply_blur(img),
+        "low_contrast": apply_low_contrast(img),
+        "jpeg_compression": apply_jpeg_compression(img),
+        "phone_shadow": apply_phone_shadow(img),
+        "composite_photo": apply_composite_degradation(img),
+    }
+
+    output_paths = {}
+    for deg_name, deg_img in variants.items():
+        ext = "jpg" if "jpeg" in deg_name or "composite" in deg_name else "png"
+        out_filename = f"{base_name}_{deg_name}.{ext}"
+        out_path = os.path.join(DEGRADED_DIR, out_filename)
+        fmt = "JPEG" if ext == "jpg" else "PNG"
+        deg_img.save(out_path, fmt)
+        output_paths[deg_name] = out_path
+
+    return output_paths
+
+
 if __name__ == "__main__":
     lines1 = [
         "দলিল নম্বর (Deed No): 1482/2021",
@@ -72,7 +184,6 @@ if __name__ == "__main__":
         "এনআইডি শেষ ৪ সংখ্যা (NID Last 4): 8912",
         "স্বত্ব বিবরণ: বৈধ খরিদ সূত্রে দখলকার (DEMO SPECIMEN)"
     ]
-
     path1, hash1 = generate_sample_deed("deed_sample_001.png", lines1)
     print(f"Generated {path1} with SHA-256: {hash1}")
 
@@ -119,3 +230,8 @@ if __name__ == "__main__":
     ]
     path4, hash4 = generate_sample_deed("deed_sample_004.png", lines4)
     print(f"Generated {path4} with SHA-256: {hash4}")
+
+    print("\nGenerating realistic degradation variants across all deeds...")
+    for p in [path1, path2, path3, path4]:
+        vars_created = generate_degraded_variants_for_image(p)
+        print(f"Created {len(vars_created)} variants for {os.path.basename(p)}")
