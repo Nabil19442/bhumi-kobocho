@@ -27,3 +27,6 @@ build/
 
 # Runtime demo persistence
 backend/data/user_transactions.json*
+*.db
+*.sqlite*
+*.sqlite3
